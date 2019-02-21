@@ -3062,7 +3062,7 @@ void client_dns_remove(struct client_state *client, struct iaddr *addr);
 
 void dhcpv4_client_assignments(void);
 void dhcpv6_client_assignments(void);
-void form_duid(struct data_string *duid, const char *file, int line);
+isc_result_t form_duid(struct data_string *duid, const char *file, int line);
 
 void dhcp4o6_start(void);
 

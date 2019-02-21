@@ -1207,8 +1207,8 @@ main(int argc, char **argv) {
 			if (default_duid.buffer != NULL)
 				data_string_forget(&default_duid, MDL);
 
-			form_duid(&default_duid, MDL);
-			write_duid(&default_duid);
+			if (form_duid(&default_duid, MDL) == ISC_R_SUCCESS)
+				write_duid(&default_duid);
 		}
 	}
 
@@ -4061,7 +4061,7 @@ write_options(struct client_state *client, struct option_state *options,
  * is not how it is intended.  Upcoming rearchitecting the client should
  * address this "one daemon model."
  */
-void
+isc_result_t
 form_duid(struct data_string *duid, const char *file, int line)
 {
 	struct interface_info *ip;
@@ -4073,6 +4073,15 @@ form_duid(struct data_string *duid, const char *file, int line)
 
 	if (ip == NULL)
 		log_fatal("Impossible condition at %s:%d.", MDL);
+
+	while (ip && ip->hw_address.hbuf[0] == HTYPE_RESERVED) {
+		/* Try the other interfaces */
+		log_debug("Cannot form default DUID from interface %s.", ip->name);
+		ip = ip->next;
+	}
+	if (ip == NULL) {
+		return ISC_R_UNEXPECTED;
+	}
 
 	if ((ip->hw_address.hlen == 0) ||
 	    (ip->hw_address.hlen > sizeof(ip->hw_address.hbuf)))
@@ -4119,6 +4128,8 @@ form_duid(struct data_string *duid, const char *file, int line)
 		log_info("Created duid %s.", str);
 		dfree(str, MDL);
 	}
+	
+	return ISC_R_SUCCESS;
 }
 
 /* Write the default DUID to the lease store. */
