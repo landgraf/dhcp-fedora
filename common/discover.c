@@ -650,6 +650,8 @@ discover_interfaces(int state) {
 			interface_dereference(&tmp, MDL);
 			tmp = interfaces; /* XXX */
 		}
+		if (tmp != NULL)
+			try_hw_addr(tmp);
 
 		if (dhcp_interface_discovery_hook) {
 			(*dhcp_interface_discovery_hook)(tmp);

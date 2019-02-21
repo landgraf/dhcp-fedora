@@ -2648,7 +2648,10 @@ void print_dns_status (int, struct dhcp_ddns_cb *, isc_result_t);
 #endif
 const char *print_time(TIME);
 
+
 void get_hw_addr(struct interface_info *info);
+void try_hw_addr(struct interface_info *info);
+isc_result_t get_hw_addr2(struct interface_info *info);
 char *buf_to_hex (const unsigned char *s, unsigned len,
                    const char *file, int line);
 char *format_lease_id(const unsigned char *s, unsigned len, int format,

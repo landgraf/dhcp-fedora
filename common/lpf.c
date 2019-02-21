@@ -699,8 +699,22 @@ ioctl_get_ll(char *name)
 	return sll;
 }
 
+// define ? 
+void try_hw_addr(struct interface_info *info){
+  get_hw_addr2(info);
+};
+
 void
 get_hw_addr(struct interface_info *info)
+{
+  if (get_hw_addr2(info) == ISC_R_NOTFOUND){
+    log_fatal("Unsupported device type for \"%s\"",
+              info->name);
+  }
+}
+
+isc_result_t
+get_hw_addr2(struct interface_info *info)
 {
 	struct hardware *hw = &info->hw_address;
 	char *name = info->name;
@@ -710,7 +724,8 @@ get_hw_addr(struct interface_info *info)
 	int sll_allocated = 0;
 	char *dup = NULL;
 	char *colon = NULL;
-
+        isc_result_t result = ISC_R_SUCCESS;
+        
 	if (getifaddrs(&ifaddrs) == -1)
 		log_fatal("Failed to get interfaces");
 
@@ -794,14 +809,16 @@ get_hw_addr(struct interface_info *info)
 			hw->hbuf[4] = 0xef;
 			break;
 #endif
-		default:
-			freeifaddrs(ifaddrs);
-			log_fatal("Unsupported device type %hu for \"%s\"",
-				  sll->sll_hatype, name);
+        default:
+          log_error("Unsupported device type %hu for \"%s\"",
+                      sll->sll_hatype, name);
+          result = ISC_R_NOTFOUND;
+
 	}
 
 	if (sll_allocated)
 		dfree(sll, MDL);
 	freeifaddrs(ifaddrs);
+        return result;
 }
 #endif
