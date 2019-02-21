@@ -5224,6 +5224,7 @@ int locate_network (packet)
 	struct data_string data;
 	struct subnet *subnet = (struct subnet *)0;
 	struct option_cache *oc;
+	int norelay = 0;
 
 #if defined(DHCPv6) && defined(DHCP4o6)
 	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
@@ -5245,12 +5246,24 @@ int locate_network (packet)
 	   from the interface, if there is one.   If not, fail. */
 	if (!oc && !packet -> raw -> giaddr.s_addr) {
 		if (packet -> interface -> shared_network) {
-			shared_network_reference
-				(&packet -> shared_network,
-				 packet -> interface -> shared_network, MDL);
-			return 1;
+			struct in_addr any_addr;
+			any_addr.s_addr = INADDR_ANY;
+
+			if (!packet -> packet_type && memcmp(&packet -> raw -> ciaddr, &any_addr, 4)) {
+				struct iaddr cip;
+				memcpy(cip.iabuf, &packet -> raw -> ciaddr, 4);
+				cip.len = 4;
+				if (!find_grouped_subnet(&subnet, packet->interface->shared_network, cip, MDL))
+					norelay = 2;
+			}
+
+			if (!norelay) {
+				shared_network_reference(&packet -> shared_network, packet -> interface -> shared_network, MDL);
+				return 1;
+			}
+		} else {
+			return 0;
 		}
-		return 0;
 	}
 
 	/* If there's an option indicating link connection, and it's valid,
@@ -5277,7 +5290,10 @@ int locate_network (packet)
 		data_string_forget (&data, MDL);
 	} else {
 		ia.len = 4;
-		memcpy (ia.iabuf, &packet -> raw -> giaddr, 4);
+		if (norelay)
+			memcpy (ia.iabuf, &packet->raw->ciaddr, 4);
+		else
+			memcpy (ia.iabuf, &packet->raw->giaddr, 4);
 	}
 
 	/* If we know the subnet on which the IP address lives, use it. */
@@ -5285,7 +5301,10 @@ int locate_network (packet)
 		shared_network_reference (&packet -> shared_network,
 					  subnet -> shared_network, MDL);
 		subnet_dereference (&subnet, MDL);
-		return 1;
+		if (norelay)
+			return norelay;
+		else
+			return 1;
 	}
 
 	/* Otherwise, fail. */
