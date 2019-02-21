@@ -215,7 +215,7 @@ static struct option dhcp_options[] = {
 	{ "name-service-search", "Sa",		&dhcp_universe, 117, 1 },
 #endif
 	{ "subnet-selection", "I",		&dhcp_universe, 118, 1 },
-	{ "domain-search", "Dc",		&dhcp_universe, 119, 1 },
+	{ "domain-search", "D",			&dhcp_universe, 119, 1 },
 	{ "vivco", "Evendor-class.",		&dhcp_universe, 124, 1 },
 	{ "vivso", "Evendor.",			&dhcp_universe, 125, 1 },
 #if 0
