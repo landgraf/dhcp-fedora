@@ -894,7 +894,7 @@ discover_interfaces(int state) {
 				if_register_send(tmp);
 			} else {
 				/* get_hw_addr() was called by register. */
-				get_hw_addr(tmp->name, &tmp->hw_address);
+				get_hw_addr(tmp);
 			}
 			break;
 #ifdef DHCPv6
@@ -907,7 +907,7 @@ discover_interfaces(int state) {
 				   so now we have to call it explicitly
 				   to not leave the hardware address unknown
 				   (some code expects it cannot be. */
-				get_hw_addr(tmp->name, &tmp->hw_address);
+				get_hw_addr(tmp);
 			} else {
 				if_register_linklocal6(tmp);
 			}
