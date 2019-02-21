@@ -801,9 +801,9 @@ discover_interfaces(int state) {
 
 		/* We must have a subnet declaration for each interface. */
 		if (!tmp->shared_network && (state == DISCOVER_SERVER)) {
-			log_error("%s", "");
+			log_info("%s", "");
 			if (local_family == AF_INET) {
-				log_error("No subnet declaration for %s (%s).",
+				log_info("No subnet declaration for %s (%s).",
 					  tmp->name, 
 					  (tmp->addresses == NULL) ?
 					   "no IPv4 addresses" :
@@ -818,26 +818,26 @@ discover_interfaces(int state) {
 				} else {
 					strcpy(abuf, "no IPv6 addresses");
 				}
-				log_error("No subnet6 declaration for %s (%s).",
+				log_info("No subnet6 declaration for %s (%s).",
 					  tmp->name,
 					  abuf);
 #endif /* DHCPv6 */
 			}
 			if (supports_multiple_interfaces(tmp)) {
-				log_error ("** Ignoring requests on %s.  %s",
+				log_info ("** Ignoring requests on %s.  %s",
 					   tmp -> name, "If this is not what");
-				log_error ("   you want, please write %s",
+				log_info ("   you want, please write %s",
 #ifdef DHCPv6
 				           (local_family != AF_INET) ?
 					   "a subnet6 declaration" :
 #endif
 					   "a subnet declaration");
-				log_error ("   in your dhcpd.conf file %s",
+				log_info ("   in your dhcpd.conf file %s",
 					   "for the network segment");
-				log_error ("   to %s %s %s",
+				log_info ("   to %s %s %s",
 					   "which interface",
 					   tmp -> name, "is attached. **");
-				log_error ("%s", "");
+				log_info ("%s", "");
 				goto next;
 			} else {
 				log_error ("You must write a %s",
