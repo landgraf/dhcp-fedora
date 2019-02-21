@@ -41,6 +41,10 @@
 #include <sys/wait.h>
 #include <limits.h>
 
+#ifdef HAVE_LIBCAP_NG
+#include <cap-ng.h>
+#endif
+
 /*
  * Defined in stdio.h when _GNU_SOURCE is set, but we don't want to define
  * that when building ISC code.
@@ -266,6 +270,9 @@ main(int argc, char **argv) {
 	int timeout_arg = 0;
 	char *arg_conf = NULL;
 	int arg_conf_len = 0;
+#ifdef HAVE_LIBCAP_NG
+	int keep_capabilities = 0;
+#endif
 
 	/* Initialize client globals. */
 	memset(&default_duid, 0, sizeof(default_duid));
@@ -665,6 +672,10 @@ main(int argc, char **argv) {
 
 			dhclient_request_options = argv[i];
 
+		} else if (!strcmp(argv[i], "-nc")) {
+#ifdef HAVE_LIBCAP_NG
+                  keep_capabilities = 1;
+#endif
 		} else if (argv[i][0] == '-') {
 			usage("Unknown command: %s", argv[i]);
 		} else if (interfaces_requested < 0) {
@@ -724,6 +735,19 @@ main(int argc, char **argv) {
 	if (!no_dhclient_script && (s = getenv("PATH_DHCLIENT_SCRIPT"))) {
 		path_dhclient_script = s;
 	}
+
+#ifdef HAVE_LIBCAP_NG
+	/* Drop capabilities */
+	if (!keep_capabilities) {
+		capng_clear(CAPNG_SELECT_CAPS);
+		capng_update(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
+				CAP_DAC_OVERRIDE); // Drop this someday
+		capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
+				CAP_NET_ADMIN, CAP_NET_RAW,
+				CAP_NET_BIND_SERVICE, CAP_SYS_ADMIN, -1);
+		capng_apply(CAPNG_SELECT_CAPS);
+	}
+#endif
 
 	/* Set up the initial dhcp option universe. */
 	initialize_common_option_spaces();

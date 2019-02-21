@@ -32,6 +32,11 @@
 #include <sys/time.h>
 #include <isc/file.h>
 
+#ifdef HAVE_LIBCAP_NG
+#  include <cap-ng.h>
+   int keep_capabilities = 0;
+#endif
+
 TIME default_lease_time = 43200; /* 12 hours... */
 TIME max_lease_time = 86400; /* 24 hours... */
 struct tree_cache *global_options[256];
@@ -591,6 +596,10 @@ main(int argc, char **argv) {
 				usage(use_noarg, argv[i-1]);
 			dhcrelay_sub_id = argv[i];
 #endif
+		} else if (!strcmp(argv[i], "-nc")) {
+#ifdef HAVE_LIBCAP_NG
+			keep_capabilities = 1;
+#endif
 		} else if (!strcmp(argv[i], "-pf")) {
 			if (++i == argc)
 				usage(use_noarg, argv[i-1]);
@@ -659,6 +668,17 @@ main(int argc, char **argv) {
 		}
 #endif
 	}
+
+#ifdef HAVE_LIBCAP_NG
+	/* Drop capabilities */
+	if (!keep_capabilities) {
+		capng_clear(CAPNG_SELECT_BOTH);
+		capng_updatev(CAPNG_ADD, CAPNG_EFFECTIVE|CAPNG_PERMITTED,
+				CAP_NET_RAW, CAP_NET_BIND_SERVICE, -1);
+		capng_apply(CAPNG_SELECT_BOTH);
+		log_info ("Dropped all unnecessary capabilities.");
+	}
+#endif
 
 	if (!quiet) {
 		log_info("%s %s", message, PACKAGE_VERSION);
@@ -814,6 +834,15 @@ main(int argc, char **argv) {
         /* install signal handlers */
 	signal(SIGINT, dhcp_signal_handler);   /* control-c */
 	signal(SIGTERM, dhcp_signal_handler);  /* kill */
+#endif
+
+#ifdef HAVE_LIBCAP_NG
+	/* Drop all capabilities */
+	if (!keep_capabilities) {
+		capng_clear(CAPNG_SELECT_BOTH);
+		capng_apply(CAPNG_SELECT_BOTH);
+		log_info ("Dropped all capabilities.");
+	}
 #endif
 
 	/* Start dispatching packets and timeouts... */
