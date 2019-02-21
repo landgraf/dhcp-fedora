@@ -31,7 +31,7 @@
 
 struct client_config top_level_config;
 
-#define NUM_DEFAULT_REQUESTED_OPTS	14
+#define NUM_DEFAULT_REQUESTED_OPTS	15
 /* There can be 2 extra requested options for DHCPv4-over-DHCPv6. */
 struct option *default_requested_options[NUM_DEFAULT_REQUESTED_OPTS + 2 + 1];
 
@@ -87,7 +87,11 @@ isc_result_t read_client_conf ()
 				dhcp_universe.code_hash, &code, 0, MDL);
 
 	/* 4 */
-	code = DHO_ROUTERS;
+	/* The Classless Static Routes option code MUST appear in the parameter
+     * request list prior to both the Router option code and the Static
+     * Routes option code, if present. (RFC3442)
+	 */
+	code = DHO_CLASSLESS_STATIC_ROUTES;
 	option_code_hash_lookup(&default_requested_options[3],
 				dhcp_universe.code_hash, &code, 0, MDL);
 
@@ -139,6 +143,11 @@ isc_result_t read_client_conf ()
 	/* 14 */
 	code = DHO_DOMAIN_SEARCH;
 	option_code_hash_lookup(&default_requested_options[13],
+				dhcp_universe.code_hash, &code, 0, MDL);
+
+	/* 15 */
+	code = DHO_ROUTERS;
+	option_code_hash_lookup(&default_requested_options[14],
 				dhcp_universe.code_hash, &code, 0, MDL);
 
 	for (code = 0 ; code < NUM_DEFAULT_REQUESTED_OPTS ; code++) {
