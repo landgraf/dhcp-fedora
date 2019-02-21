@@ -2962,6 +2962,7 @@ isc_result_t range2cidr(struct iaddrcidrnetlist **result,
 			const struct iaddr *lo, const struct iaddr *hi);
 isc_result_t free_iaddrcidrnetlist(struct iaddrcidrnetlist **result);
 const char *piaddr (struct iaddr);
+const char *pdestdesc (struct iaddr);
 char *piaddrmask(struct iaddr *, struct iaddr *);
 char *piaddrcidr(const struct iaddr *, unsigned int);
 u_int16_t validate_port(char *);
@@ -3180,6 +3181,7 @@ void parse_client_lease_declaration (struct parse *,
 int parse_option_decl (struct option_cache **, struct parse *);
 void parse_string_list (struct parse *, struct string_list **, int);
 int parse_ip_addr (struct parse *, struct iaddr *);
+int parse_destination_descriptor (struct parse *, struct iaddr *);
 int parse_ip_addr_with_subnet(struct parse *, struct iaddrmatch *);
 void parse_reject_statement (struct parse *, struct client_config *);
 
