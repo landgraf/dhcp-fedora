@@ -1154,7 +1154,7 @@ int new_lease_file (int test_mode)
 		     path_dhcpd_db, (int)t) >= sizeof newfname)
 		log_fatal("new_lease_file: lease file path too long");
 
-	db_fd = open (newfname, O_WRONLY | O_TRUNC | O_CREAT, 0664);
+	db_fd = open (newfname, O_WRONLY | O_TRUNC | O_CREAT | O_CLOEXEC, 0664);
 	if (db_fd < 0) {
 		log_error ("Can't create new lease file: %m");
 		return 0;
@@ -1175,7 +1175,7 @@ int new_lease_file (int test_mode)
 	}
 #endif /* PARANOIA */
 
-	if ((new_db_file = fdopen(db_fd, "w")) == NULL) {
+	if ((new_db_file = fdopen(db_fd, "we")) == NULL) {
 		log_error("Can't fdopen new lease file: %m");
 		close(db_fd);
 		goto fdfail;

@@ -300,11 +300,11 @@ main(int argc, char **argv) {
         /* Make sure that file descriptors 0 (stdin), 1, (stdout), and
            2 (stderr) are open. To do this, we assume that when we
            open a file the lowest available file descriptor is used. */
-        fd = open("/dev/null", O_RDWR);
+        fd = open("/dev/null", O_RDWR | O_CLOEXEC);
         if (fd == 0)
-                fd = open("/dev/null", O_RDWR);
+                fd = open("/dev/null", O_RDWR | O_CLOEXEC);
         if (fd == 1)
-                fd = open("/dev/null", O_RDWR);
+                fd = open("/dev/null", O_RDWR | O_CLOEXEC);
         if (fd == 2)
                 log_perror = 0; /* No sense logging to /dev/null. */
         else if (fd != -1)
@@ -975,7 +975,7 @@ main(int argc, char **argv) {
 	 * appropriate.
 	 */
 	if (no_pid_file == ISC_FALSE) {
-		i = open(path_dhcpd_pid, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+		i = open(path_dhcpd_pid, O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0644);
 		if (i >= 0) {
 			sprintf(pbuf, "%d\n", (int) getpid());
 			IGNORE_RET(write(i, pbuf, strlen(pbuf)));
@@ -1028,9 +1028,9 @@ main(int argc, char **argv) {
                 (void) close(2);
 
                 /* Reopen them on /dev/null. */
-                (void) open("/dev/null", O_RDWR);
-                (void) open("/dev/null", O_RDWR);
-                (void) open("/dev/null", O_RDWR);
+                (void) open("/dev/null", O_RDWR | O_CLOEXEC);
+                (void) open("/dev/null", O_RDWR | O_CLOEXEC);
+                (void) open("/dev/null", O_RDWR | O_CLOEXEC);
                 log_perror = 0; /* No sense logging to /dev/null. */
 
        		IGNORE_RET (chdir("/"));
