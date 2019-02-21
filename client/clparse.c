@@ -189,6 +189,7 @@ isc_result_t read_client_conf ()
 	/* Requested lease time, used by DHCPv6 (DHCPv4 uses the option cache)
 	 */
 	top_level_config.requested_lease = 7200;
+	top_level_config.bootp_broadcast_always = 0;
 
 	group_allocate (&top_level_config.on_receipt, MDL);
 	if (!top_level_config.on_receipt)
@@ -394,7 +395,8 @@ void read_client_leases ()
 	interface-declaration |
 	LEASE client-lease-statement |
 	ALIAS client-lease-statement |
-	KEY key-definition */
+	KEY key-definition |
+	BOOTP_BROADCAST_ALWAYS */
 
 void parse_client_statement (cfile, ip, config)
 	struct parse *cfile;
@@ -816,6 +818,12 @@ void parse_client_statement (cfile, ip, config)
 		skip_token(&val, (unsigned *)0, cfile);
 		parse_lease_id_format(cfile);
 		break;
+
+	      case BOOTP_BROADCAST_ALWAYS:
+		token = next_token(&val, (unsigned*)0, cfile);
+		config -> bootp_broadcast_always = 1;
+		parse_semi (cfile);
+		return;
 
 
 	      default:

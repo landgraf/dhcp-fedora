@@ -1269,6 +1269,9 @@ struct client_config {
 
 	int lease_id_format;		/* format for IDs in lease file,
 					   TOKEN_OCTAL or TOKEN_HEX */
+
+	int bootp_broadcast_always;	/* If nonzero, always set the BOOTP_BROADCAST
+					   flag in requests */
 };
 
 /* Per-interface state used in the dhcp client... */
