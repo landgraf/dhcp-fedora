@@ -1175,6 +1175,26 @@ main(int argc, char **argv) {
 		}
 	}
 
+	/* We create a backup seed before rediscovering interfaces in order to
+	   have a seed built using all of the available interfaces
+	   It's interesting if required interfaces doesn't let us defined
+	   a really unique seed due to a lack of valid HW addr later
+	   (this is the case with DHCP over IB)
+	   We only use the last device as using a sum could broke the
+	   uniqueness of the seed among multiple nodes
+	 */
+	unsigned backup_seed = 0;
+	for (ip = interfaces; ip; ip = ip -> next) {
+		int junk;
+		if ( ip -> hw_address.hlen <= sizeof seed )
+		  continue;
+		memcpy (&junk,
+			&ip -> hw_address.hbuf [ip -> hw_address.hlen -
+						sizeof seed], sizeof seed);
+		backup_seed = junk;
+	}
+
+
 	/* At this point, all the interfaces that the script thinks
 	   are relevant should be running, so now we once again call
 	   discover_interfaces(), and this time ask it to actually set
@@ -1189,14 +1209,36 @@ main(int argc, char **argv) {
 	   Not much entropy, but we're booting, so we're not likely to
 	   find anything better. */
 	seed = 0;
+	int seed_flag = 0;
 	for (ip = interfaces; ip; ip = ip->next) {
 		int junk;
+		if ( ip -> hw_address.hlen <= sizeof seed )
+		  continue;
 		memcpy(&junk,
 		       &ip->hw_address.hbuf[ip->hw_address.hlen -
 					    sizeof seed], sizeof seed);
 		seed += junk;
+		seed_flag = 1;
 	}
-	srandom(seed + cur_time + (unsigned)getpid());
+	if ( seed_flag == 0 ) {
+		if ( backup_seed != 0 ) {
+		  seed = backup_seed;
+		  log_info ("xid: rand init seed (0x%x) built using all"
+			    " available interfaces",seed);
+		}
+		else {
+		  seed = cur_time^((unsigned) gethostid()) ;
+		  log_info ("xid: warning: no netdev with useable HWADDR found"
+			    " for seed's uniqueness enforcement");
+		  log_info ("xid: rand init seed (0x%x) built using gethostid",
+			    seed);
+		}
+		/* we only use seed and no current time as a broadcast reply */
+		/* will certainly be used by the hwaddrless interface */
+		srandom(seed + ((unsigned)(cur_tv.tv_usec * 1000000)) + (unsigned)getpid());
+	}
+	else
+	        srandom(seed + ((unsigned)(cur_tv.tv_usec * 1000000)) + (unsigned)getpid());
 
 	/* Setup specific Infiniband options */
 	for (ip = interfaces; ip; ip = ip->next) {
@@ -1751,10 +1793,10 @@ void dhcpack (packet)
 #endif
 		return;
 	}
-
-	log_info ("DHCPACK of %s from %s",
-		  inet_ntoa(packet->raw->yiaddr),
-		  piaddr (packet->client_addr));
+	log_info ("DHCPACK of %s from %s (xid=0x%x)",
+                  inet_ntoa(packet->raw->yiaddr),
+                  piaddr (packet -> client_addr),
+                  ntohl(client -> xid));
 
 	lease = packet_to_lease (packet, client);
 	if (!lease) {
@@ -2683,7 +2725,7 @@ void dhcpnak (packet)
 		return;
 	}
 
-	log_info ("DHCPNAK from %s", piaddr (packet -> client_addr));
+	log_info ("DHCPNAK from %s (xid=0x%x)", piaddr (packet -> client_addr), ntohl(client -> xid));
 
 	if (!client -> active) {
 #if defined (DEBUG)
@@ -2816,10 +2858,10 @@ void send_discover (cpp)
 			  (long)(client -> interval));
 	} else
 #endif
-	log_info ("DHCPDISCOVER on %s to %s port %d interval %ld",
+	log_info ("DHCPDISCOVER on %s to %s port %d interval %ld (xid=0x%x)",
 	      client -> name ? client -> name : client -> interface -> name,
 	      inet_ntoa (sockaddr_broadcast.sin_addr),
-	      ntohs (sockaddr_broadcast.sin_port), (long)(client -> interval));
+	      ntohs (sockaddr_broadcast.sin_port), (long)(client -> interval), ntohl(client -> xid));
 
 	/* Send out a packet. */
 #if defined(DHCPv6) && defined(DHCP4o6)
@@ -3213,10 +3255,12 @@ void send_request (cpp)
 	}
 
 	strncpy(rip_buf, rip_str, sizeof(rip_buf)-1);
-	log_info ("DHCPREQUEST for %s on %s to %s port %d", rip_buf,
+	log_info ("DHCPREQUEST for %s on %s to %s port %d (xid=0x%x)",
+                  rip_buf,
 		  client->name ? client->name : client->interface->name,
 		  inet_ntoa(destination.sin_addr),
-		  ntohs (destination.sin_port));
+		  ntohs (destination.sin_port),
+                  ntohl(client -> xid));
 
 #if defined(DHCPv6) && defined(DHCP4o6)
 	if (dhcpv4_over_dhcpv6) {
@@ -3273,11 +3317,13 @@ void send_decline (cpp)
 		log_info ("DHCPDECLINE");
 	} else
 #endif
-	log_info ("DHCPDECLINE of %s on %s to %s port %d",
+	log_info ("DHCPDECLINE of %s on %s to %s port %d (xid=0x%x)",                  
 		  piaddr(client->requested_address),
 		  (client->name ? client->name : client->interface->name),
 		  inet_ntoa(sockaddr_broadcast.sin_addr),
-		  ntohs(sockaddr_broadcast.sin_port));
+		  ntohs(sockaddr_broadcast.sin_port),
+                  ntohl(client -> xid));
+
 
 	/* Send out a packet. */
 #if defined(DHCPv6) && defined(DHCP4o6)
@@ -3336,11 +3382,12 @@ void send_release (cpp)
 		log_info ("DHCPRELEASE");
 	} else
 #endif
-	log_info ("DHCPRELEASE of %s on %s to %s port %d",
+	log_info ("DHCPRELEASE of %s on %s to %s port %d (xid=0x%x)",
 		  piaddr(client->active->address),
 		  client->name ? client->name : client->interface->name,
 		  inet_ntoa (destination.sin_addr),
-		  ntohs (destination.sin_port));
+		  ntohs (destination.sin_port),
+                  ntohl(client -> xid));
 
 #if defined(DHCPv6) && defined(DHCP4o6)
 	if (dhcpv4_over_dhcpv6) {

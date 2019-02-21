@@ -93,6 +93,42 @@ const int dhcp_type_name_max = ((sizeof dhcp_type_names) / sizeof (char *));
 
 static TIME leaseTimeCheck(TIME calculated, TIME alternate);
 
+char *print_client_identifier_from_packet (packet)
+	struct packet *packet;
+{
+	struct option_cache *oc;
+	struct data_string client_identifier;
+	char *ci;
+
+	memset (&client_identifier, 0, sizeof client_identifier);
+
+	oc = lookup_option (&dhcp_universe, packet -> options,
+			DHO_DHCP_CLIENT_IDENTIFIER);
+	if (oc &&
+	    evaluate_option_cache (&client_identifier,
+				    packet, (struct lease *)0,
+				    (struct client_state *)0,
+				    packet -> options,
+				    (struct option_state *)0,
+				    &global_scope, oc, MDL)) {
+		ci = print_hw_addr (HTYPE_INFINIBAND, client_identifier.len, client_identifier.data);
+		data_string_forget (&client_identifier, MDL);
+		return ci;
+	} else
+		return "\"no client id\"";
+}
+
+char *print_hw_addr_or_client_id (packet)
+	struct packet *packet;
+{
+	if (packet -> raw -> htype == HTYPE_INFINIBAND)
+		return print_client_identifier_from_packet (packet);
+	else
+		return print_hw_addr (packet -> raw -> htype,
+				      packet -> raw -> hlen,
+				      packet -> raw -> chaddr);
+}
+
 void
 dhcp (struct packet *packet) {
 	int ms_nulltp = 0;
@@ -135,9 +171,7 @@ dhcp (struct packet *packet) {
 
 		log_info("%s from %s via %s: %s", s,
 			 (packet->raw->htype
-			  ? print_hw_addr(packet->raw->htype,
-					  packet->raw->hlen,
-					  packet->raw->chaddr)
+			  ? print_hw_addr_or_client_id(packet)
 			  : "<no identifier>"),
 			 packet->raw->giaddr.s_addr
 			 ? inet_ntoa(packet->raw->giaddr)
@@ -334,9 +368,7 @@ void dhcpdiscover (packet, ms_nulltp)
 #endif
 	snprintf (msgbuf, sizeof msgbuf, "DHCPDISCOVER from %s %s%s%svia %s",
 		 (packet -> raw -> htype
-		  ? print_hw_addr (packet -> raw -> htype,
-				   packet -> raw -> hlen,
-				   packet -> raw -> chaddr)
+		  ? print_hw_addr_or_client_id (packet)
 		  : (lease
 		     ? print_hex_1(lease->uid_len, lease->uid, 60)
 		     : "<no identifier>")),
@@ -548,9 +580,7 @@ void dhcprequest (packet, ms_nulltp, ip_lease)
 		 "DHCPREQUEST for %s%s from %s %s%s%svia %s",
 		 piaddr (cip), smbuf,
 		 (packet -> raw -> htype
-		  ? print_hw_addr (packet -> raw -> htype,
-				   packet -> raw -> hlen,
-				   packet -> raw -> chaddr)
+		  ? print_hw_addr_or_client_id(packet)
 		  : (lease
 		     ? print_hex_1(lease->uid_len, lease->uid, 60)
 		     : "<no identifier>")),
@@ -791,9 +821,7 @@ void dhcprelease (packet, ms_nulltp)
 	if ((oc = lookup_option (&dhcp_universe, packet -> options,
 				 DHO_DHCP_REQUESTED_ADDRESS))) {
 		log_info ("DHCPRELEASE from %s specified requested-address.",
-		      print_hw_addr (packet -> raw -> htype,
-				     packet -> raw -> hlen,
-				     packet -> raw -> chaddr));
+		      print_hw_addr_or_client_id(packet));
 	}
 
 	oc = lookup_option (&dhcp_universe, packet -> options,
@@ -885,9 +913,7 @@ void dhcprelease (packet, ms_nulltp)
 		 "DHCPRELEASE of %s from %s %s%s%svia %s (%sfound)",
 		 cstr,
 		 (packet -> raw -> htype
-		  ? print_hw_addr (packet -> raw -> htype,
-				   packet -> raw -> hlen,
-				   packet -> raw -> chaddr)
+		  ? print_hw_addr_or_client_id(packet)
 		  : (lease
 		     ? print_hex_1(lease->uid_len, lease->uid, 60)
 		     : "<no identifier>")),
@@ -992,9 +1018,7 @@ void dhcpdecline (packet, ms_nulltp)
 		 "DHCPDECLINE of %s from %s %s%s%svia %s",
 		 piaddr (cip),
 		 (packet -> raw -> htype
-		  ? print_hw_addr (packet -> raw -> htype,
-				   packet -> raw -> hlen,
-				   packet -> raw -> chaddr)
+		  ? print_hw_addr_or_client_id(packet)
 		  : (lease
 		     ? print_hex_1(lease->uid_len, lease->uid, 60)
 		     : "<no identifier>")),
@@ -1740,8 +1764,7 @@ void dhcpinform (packet, ms_nulltp)
 	/* Report what we're sending. */
 	snprintf(msgbuf, sizeof msgbuf, "DHCPACK to %s (%s) via", piaddr(cip),
 		 (packet->raw->htype && packet->raw->hlen) ?
-			print_hw_addr(packet->raw->htype, packet->raw->hlen,
-				      packet->raw->chaddr) :
+			print_hw_addr_or_client_id(packet) :
 			"<no client hardware address>");
 	log_info("%s %s", msgbuf, gip.len ? piaddr(gip) :
 					    packet->interface->name);
@@ -1926,9 +1949,7 @@ void nak_lease (packet, cip, network_group)
 #endif
 	log_info ("DHCPNAK on %s to %s via %s",
 	      piaddr (*cip),
-	      print_hw_addr (packet -> raw -> htype,
-			     packet -> raw -> hlen,
-			     packet -> raw -> chaddr),
+	      print_hw_addr_or_client_id(packet),
 	      packet -> raw -> giaddr.s_addr
 	      ? inet_ntoa (packet -> raw -> giaddr)
 	      : packet -> interface -> name);
@@ -4044,7 +4065,7 @@ void dhcp_reply (lease)
 		   ? (state -> offer == DHCPACK ? "DHCPACK" : "DHCPOFFER")
 		   : "BOOTREPLY"),
 		  piaddr (lease -> ip_addr),
-		  (lease -> hardware_addr.hlen
+		  (lease -> hardware_addr.hlen > 1
 		   ? print_hw_addr (lease -> hardware_addr.hbuf [0],
 				    lease -> hardware_addr.hlen - 1,
 				    &lease -> hardware_addr.hbuf [1])
@@ -4605,10 +4626,7 @@ int find_lease (struct lease **lp,
 			if (uid_lease) {
 			    if (uid_lease->binding_state == FTS_ACTIVE) {
 				log_error ("client %s has duplicate%s on %s",
-					   (print_hw_addr
-					    (packet -> raw -> htype,
-					     packet -> raw -> hlen,
-					     packet -> raw -> chaddr)),
+					   (print_hw_addr_or_client_id(packet)),
 					   " leases",
 					   (ip_lease -> subnet ->
 					    shared_network -> name));
@@ -4775,9 +4793,7 @@ int find_lease (struct lease **lp,
 			log_error("uid lease %s for client %s is duplicate "
 				  "on %s",
 				  piaddr(uid_lease->ip_addr),
-				  print_hw_addr(packet->raw->htype,
-						packet->raw->hlen,
-						packet->raw->chaddr),
+				  print_hw_addr_or_client_id(packet),
 				  uid_lease->subnet->shared_network->name);
 
 			if (!packet -> raw -> ciaddr.s_addr &&
