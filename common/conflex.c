@@ -832,6 +832,8 @@ intern(char *atom, enum dhcp_token dfv) {
 		if (!strcasecmp(atom+1, "ig-endian")) {
 			return TOKEN_BIG_ENDIAN;
 		}
+		if (!strcasecmp (atom + 1, "ootp-broadcast-always"))
+			return BOOTP_BROADCAST_ALWAYS;
 		break;
 	      case 'c':
 		if (!strcasecmp(atom + 1, "ase"))
