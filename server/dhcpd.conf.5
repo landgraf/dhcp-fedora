@@ -527,6 +527,9 @@ pool {
 };
 .fi
 .PP
+Dynamic BOOTP leases are not compatible with failover, and, as such,
+you need to disallow BOOTP in pools that you are using failover for.
+.PP
 The  server currently  does very  little  sanity checking,  so if  you
 configure it wrong, it will just  fail in odd ways.  I would recommend
 therefore that you either do  failover or don't do failover, but don't
@@ -541,9 +544,9 @@ primary server might look like this:
 failover peer "foo" {
   primary;
   address anthrax.rc.example.com;
-  port 519;
+  port 647;
   peer address trantor.rc.example.com;
-  peer port 520;
+  peer port 847;
   max-response-delay 60;
   max-unacked-updates 10;
   mclt 3600;
@@ -1323,7 +1326,7 @@ the zone containing PTR records - for ISC BIND, something like this:
 .PP
 .nf
 key DHCP_UPDATER {
-  algorithm HMAC-MD5.SIG-ALG.REG.INT;
+  algorithm hmac-md5;
   secret pRP5FapFoJ95JEL06sv4PQ==;
 };
 
@@ -1346,7 +1349,7 @@ dhcpd.conf file:
 .PP
 .nf
 key DHCP_UPDATER {
-  algorithm HMAC-MD5.SIG-ALG.REG.INT;
+  algorithm hmac-md5;
   secret pRP5FapFoJ95JEL06sv4PQ==;
 };
 
@@ -2912,7 +2915,8 @@ statement
 The \fInext-server\fR statement is used to specify the host address of
 the server from which the initial boot file (specified in the
 \fIfilename\fR statement) is to be loaded.  \fIServer-name\fR should
-be a numeric IP address or a domain name.
+be a numeric IP address or a domain name.  If no \fInext-server\fR statement
+applies to a given client, the address 0.0.0.0 is used.
 .RE
 .PP
 The
