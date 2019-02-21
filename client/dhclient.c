@@ -1447,6 +1447,9 @@ void run_stateless(int exit_mode, u_int16_t port)
 			data_string_forget(&default_duid, MDL);
 
 		form_duid(&default_duid, MDL);
+		if (form_duid(&default_duid, MDL) == ISC_R_SUCCESS &&
+		    duid_type == DUID_LLT)
+			write_duid(&default_duid);
 	}
 
 #ifdef DHCP4o6
