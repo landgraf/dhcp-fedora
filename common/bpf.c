@@ -237,11 +237,43 @@ int dhcp_bpf_relay_filter_len =
 	sizeof dhcp_bpf_relay_filter / sizeof (struct bpf_insn);
 #endif
 
+/* Packet filter program for DHCP over Infiniband.
+ *
+ * XXX
+ * Changes to the filter program may require changes to the constant offsets
+ * used in lpf_gen_filter_setup to patch the port in the BPF program!
+ * XXX
+ */
+struct bpf_insn dhcp_ib_bpf_filter [] = {
+	/* Packet filter for Infiniband */
+	/* Make sure it's a UDP packet... */
+	BPF_STMT(BPF_LD + BPF_B + BPF_ABS, 9),
+	BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, IPPROTO_UDP, 0, 6),
+
+	/* Make sure this isn't a fragment... */
+	BPF_STMT(BPF_LD + BPF_H + BPF_ABS, 6),
+	BPF_JUMP(BPF_JMP + BPF_JSET + BPF_K, 0x1fff, 4, 0),
+
+	/* Get the IP header length... */
+	BPF_STMT(BPF_LDX + BPF_B + BPF_MSH, 0),
+
+	/* Make sure it's to the right port... */
+	BPF_STMT(BPF_LD + BPF_H + BPF_IND, 2),
+	BPF_JUMP(BPF_JMP + BPF_JEQ + BPF_K, 67, 0, 1),
+
+	/* If we passed all the tests, ask for the whole packet. */
+	BPF_STMT(BPF_RET + BPF_K, (u_int)-1),
+
+	/* Otherwise, drop it. */
+	BPF_STMT(BPF_RET + BPF_K, 0),
+};
+
 #if defined (DEC_FDDI)
 struct bpf_insn *bpf_fddi_filter = NULL;
 #endif
 
 int dhcp_bpf_filter_len = sizeof dhcp_bpf_filter / sizeof (struct bpf_insn);
+int dhcp_ib_bpf_filter_len = sizeof dhcp_ib_bpf_filter / sizeof (struct bpf_insn);
 #if defined (HAVE_TR_SUPPORT)
 struct bpf_insn dhcp_bpf_tr_filter [] = {
         /* accept all token ring packets due to variable length header */

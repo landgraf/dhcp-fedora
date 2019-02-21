@@ -350,7 +350,7 @@ void if_register_send (info)
 	info->wfdesc = if_register_socket(info, AF_INET, 0, NULL);
 	/* If this is a normal IPv4 address, get the hardware address. */
 	if (strcmp(info->name, "fallback") != 0)
-		get_hw_addr(info->name, &info->hw_address);
+		get_hw_addr(info);
 #if defined (USE_SOCKET_FALLBACK)
 	/* Fallback only registers for send, but may need to receive as
 	   well. */
@@ -413,7 +413,7 @@ void if_register_receive (info)
 #endif /* IP_PKTINFO... */
 	/* If this is a normal IPv4 address, get the hardware address. */
 	if (strcmp(info->name, "fallback") != 0)
-		get_hw_addr(info->name, &info->hw_address);
+		get_hw_addr(info);
 
 	if (!quiet_interface_discovery)
 		log_info ("Listening on Socket/%s%s%s",
@@ -567,7 +567,7 @@ if_register6(struct interface_info *info, int do_multicast) {
 	if (req_multi)
 		if_register_multicast(info);
 
-	get_hw_addr(info->name, &info->hw_address);
+	get_hw_addr(info);
 
 	if (!quiet_interface_discovery) {
 		if (info->shared_network != NULL) {
@@ -623,7 +623,7 @@ if_register_linklocal6(struct interface_info *info) {
 	info->rfdesc = sock;
 	info->wfdesc = sock;
 
-	get_hw_addr(info->name, &info->hw_address);
+	get_hw_addr(info);
 
 	if (!quiet_interface_discovery) {
 		if (info->shared_network != NULL) {

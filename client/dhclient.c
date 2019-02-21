@@ -210,6 +210,8 @@ static const char use_v6command[] = "Command not used for DHCPv4: %s";
   
 #define DHCLIENT_USAGEH "{--version|--help|-h}"
 
+static void setup_ib_interface(struct interface_info *ip);
+
 static void
 usage(const char *sfmt, const char *sarg)
 {
@@ -1196,6 +1198,13 @@ main(int argc, char **argv) {
 	}
 	srandom(seed + cur_time + (unsigned)getpid());
 
+	/* Setup specific Infiniband options */
+	for (ip = interfaces; ip; ip = ip->next) {
+		if (ip->client &&
+		    (ip->hw_address.hbuf[0] == HTYPE_INFINIBAND)) {
+			setup_ib_interface(ip);
+		}
+	}
 
 	/*
 	 * Establish a default DUID.  We always do so for v6 and
@@ -1489,6 +1498,29 @@ int find_subnet (struct subnet **sp,
 		 struct iaddr addr, const char *file, int line)
 {
 	return 0;
+}
+
+static void setup_ib_interface(struct interface_info *ip)
+{
+	struct group *g;
+
+	/* Set the broadcast flag */
+	ip->client->config->bootp_broadcast_always = 1;
+
+	/*
+	 * Find out if a dhcp-client-identifier option was specified either
+	 * in the config file or on the command line
+	 */
+	for (g = ip->client->config->on_transmission; g != NULL; g = g->next) {
+		if ((g->statements != NULL) &&
+		    (strcmp(g->statements->data.option->option->name,
+			    "dhcp-client-identifier") == 0)) {
+			return;
+		}
+	}
+
+	/* No client ID specified */
+	log_fatal("dhcp-client-identifier must be specified for InfiniBand");
 }
 
 /* Individual States:

@@ -485,6 +485,9 @@ struct packet {
 
 #define HARDWARE_ADDR_LEN 20
 
+/* ioctl limits hardware addresses to 8 bytes */
+#define HARDWARE_ADDR_LEN_IOCTL	8
+
 struct hardware {
 	u_int8_t hlen;
 	u_int8_t hbuf[HARDWARE_ADDR_LEN + 1];
@@ -1375,6 +1378,7 @@ struct interface_info {
 	struct shared_network *shared_network;
 				/* Networks connected to this interface. */
 	struct hardware hw_address;	/* Its physical address. */
+	u_int8_t bcast_addr[20];	/* Infiniband broadcast address */
 	struct in_addr *addresses;	/* Addresses associated with this
 					 * interface.
 					 */
@@ -2644,7 +2648,7 @@ void print_dns_status (int, struct dhcp_ddns_cb *, isc_result_t);
 #endif
 const char *print_time(TIME);
 
-void get_hw_addr(const char *name, struct hardware *hw);
+void get_hw_addr(struct interface_info *info);
 char *buf_to_hex (const unsigned char *s, unsigned len,
                    const char *file, int line);
 char *format_lease_id(const unsigned char *s, unsigned len, int format,
