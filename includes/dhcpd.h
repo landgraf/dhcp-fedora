@@ -1545,7 +1545,7 @@ typedef unsigned char option_mask [16];
 #else /* !DEBUG */
 
 #ifndef _PATH_DHCPD_CONF
-#define _PATH_DHCPD_CONF	"/etc/dhcpd.conf"
+#define _PATH_DHCPD_CONF	"/etc/dhcp/dhcpd.conf"
 #endif /* DEBUG */
 
 #ifndef _PATH_DHCPD_DB
@@ -1567,11 +1567,11 @@ typedef unsigned char option_mask [16];
 #endif /* DEBUG */
 
 #ifndef _PATH_DHCLIENT_CONF
-#define _PATH_DHCLIENT_CONF	"/etc/dhclient.conf"
+#define _PATH_DHCLIENT_CONF	"/etc/dhcp/dhclient.conf"
 #endif
 
 #ifndef _PATH_DHCLIENT_SCRIPT
-#define _PATH_DHCLIENT_SCRIPT	"/sbin/dhclient-script"
+#define _PATH_DHCLIENT_SCRIPT	"/usr/sbin/dhclient-script"
 #endif
 
 #ifndef _PATH_DHCLIENT_PID
