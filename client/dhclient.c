@@ -3276,6 +3276,14 @@ void send_request (cpp)
 #endif
 	if (destination.sin_addr.s_addr != INADDR_BROADCAST &&
 	    fallback_interface) {
+#if defined(SO_BINDTODEVICE)
+		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
+			       SO_BINDTODEVICE, client->interface->name,
+			       strlen(client->interface->name)) < 0) {
+			log_error("%s:%d: Failed to bind fallback interface"
+				  " to %s: %m", MDL, client->interface->name);
+		}
+#endif
 		result = send_packet(fallback_interface, NULL, &client->packet,
 				     client->packet_length, from, &destination,
 				     NULL);
@@ -3285,6 +3293,13 @@ void send_request (cpp)
 				  client->packet_length,
 				  fallback_interface->name);
 		}
+#if defined(SO_BINDTODEVICE)
+		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
+			       SO_BINDTODEVICE, NULL, 0) < 0) {
+			log_fatal("%s:%d: Failed to unbind fallback interface:"
+				  " %m", MDL);
+		}
+#endif
         }
 	else {
 		/* Send out a packet. */
@@ -3402,6 +3417,14 @@ void send_release (cpp)
 	} else
 #endif
 	if (fallback_interface) {
+#if defined(SO_BINDTODEVICE)
+		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
+			       SO_BINDTODEVICE, client->interface->name,
+			       strlen(client->interface->name)) < 0) {
+			log_error("%s:%d: Failed to bind fallback interface"
+				  " to %s: %m", MDL, client->interface->name);
+		}
+#endif
 		result = send_packet(fallback_interface, NULL, &client->packet,
 				      client->packet_length, from, &destination,
 				      NULL);
@@ -3411,6 +3434,13 @@ void send_release (cpp)
 				  client->packet_length,
 				  fallback_interface->name);
 		}
+#if defined(SO_BINDTODEVICE)
+		if (setsockopt(fallback_interface -> wfdesc, SOL_SOCKET,
+			       SO_BINDTODEVICE, NULL, 0) < 0) {
+			log_fatal("%s:%d: Failed to unbind fallback interface:"
+				  " %m", MDL);
+		}
+#endif
         } else {
 		/* Send out a packet. */
 		result = send_packet(client->interface, NULL, &client->packet,
