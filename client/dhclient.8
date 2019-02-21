@@ -135,6 +135,9 @@ dhclient - Dynamic Host Configuration Protocol Client
 .B -w
 ]
 [
+.B -nc
+]
+[
 .B -B
 ]
 [
@@ -329,6 +332,32 @@ not to exit when it doesn't find any such interfaces.  The
 program can then be used to notify the client when a network interface
 has been added or removed, so that the client can attempt to configure an IP
 address on that interface.
+.TP
+.BI \-nc
+Do not drop capabilities.
+
+Normally, if
+.B dhclient
+was compiled with libcap-ng support,
+.B dhclient
+drops most capabilities immediately upon startup.  While more secure,
+this greatly restricts the additional actions that hooks in
+.B dhclient-script (8)
+can take.  (For example, any daemons that 
+.B dhclient-script (8)
+starts or restarts will inherit the restricted capabilities as well,
+which may interfere with their correct operation.)  Thus, the
+.BI \-nc
+option can be used to prevent
+.B dhclient
+from dropping capabilities.
+
+The
+.BI \-nc
+option is ignored if
+.B dhclient
+was not compiled with libcap-ng support.
+
 .TP
 .BI \-n
 Do not configure any interfaces.  This is most likely to be useful in

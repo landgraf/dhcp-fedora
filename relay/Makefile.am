@@ -6,7 +6,8 @@ dhcrelay_LDADD = ../common/libdhcp.@A@ ../omapip/libomapi.@A@ \
 		 @BINDLIBIRSDIR@/libirs.@A@ \
 		 @BINDLIBDNSDIR@/libdns.@A@ \
 		 @BINDLIBISCCFGDIR@/libisccfg.@A@ \
-		 @BINDLIBISCDIR@/libisc.@A@
+		 @BINDLIBISCDIR@/libisc.@A@ \
+		 $(CAPNG_LDADD)
 man_MANS = dhcrelay.8
 EXTRA_DIST = $(man_MANS)
 
