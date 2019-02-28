@@ -223,6 +223,10 @@ dhcp (struct packet *packet) {
 			oc = lookup_option (&dhcp_universe, packet -> options,
 					    DHO_DHCP_CLIENT_IDENTIFIER);
 			if (!oc)
+				oc = lookup_option (&dhcp_universe,
+						    packet -> options,
+						    DHO_PXE_CLIENT_ID);
+			if (!oc)
 				goto nolease;
 
 			memset (&data, 0, sizeof data);
@@ -820,6 +824,9 @@ void dhcprelease (packet, ms_nulltp)
 
 	oc = lookup_option (&dhcp_universe, packet -> options,
 			    DHO_DHCP_CLIENT_IDENTIFIER);
+	if (!oc)
+		oc = lookup_option (&dhcp_universe, packet -> options,
+				    DHO_PXE_CLIENT_ID);
 	memset (&data, 0, sizeof data);
 	if (oc &&
 	    evaluate_option_cache (&data, packet, (struct lease *)0,
@@ -1331,6 +1338,9 @@ void dhcpinform (packet, ms_nulltp)
          */
 	oc = lookup_option(&dhcp_universe, packet->options,
 			   DHO_DHCP_CLIENT_IDENTIFIER);
+	if (!oc)
+		oc = lookup_option (&dhcp_universe, packet -> options,
+				    DHO_PXE_CLIENT_ID);
 	memset(&d1, 0, sizeof(d1));
 	if (oc &&
 	    evaluate_option_cache(&d1, packet, NULL, NULL,
@@ -2441,6 +2451,9 @@ void ack_lease (packet, lease, offer, when, msg, ms_nulltp, hp)
 		   can be used. */
 		oc = lookup_option (&dhcp_universe, packet -> options,
 				    DHO_DHCP_CLIENT_IDENTIFIER);
+		if (!oc)
+			oc = lookup_option (&dhcp_universe, packet -> options,
+					    DHO_PXE_CLIENT_ID);
 		if (oc &&
 		    evaluate_option_cache (&d1, packet, lease,
 					   (struct client_state *)0,
@@ -3033,6 +3046,9 @@ void ack_lease (packet, lease, offer, when, msg, ms_nulltp, hp)
 		/* Record the uid, if given... */
 		oc = lookup_option (&dhcp_universe, packet -> options,
 				    DHO_DHCP_CLIENT_IDENTIFIER);
+		if (!oc)
+			oc = lookup_option (&dhcp_universe, packet -> options,
+					    DHO_PXE_CLIENT_ID);
 		if (oc &&
 		    evaluate_option_cache(&d1, packet, lease, NULL,
 					  packet->options, state->options,
@@ -4150,6 +4166,9 @@ int find_lease (struct lease **lp,
 	   specified unique client identifier. */
 	oc = lookup_option (&dhcp_universe, packet -> options,
 			    DHO_DHCP_CLIENT_IDENTIFIER);
+	if (!oc)
+		oc = lookup_option (&dhcp_universe, packet -> options,
+				    DHO_PXE_CLIENT_ID);
 	memset (&client_identifier, 0, sizeof client_identifier);
 	if (oc &&
 	    evaluate_option_cache (&client_identifier,

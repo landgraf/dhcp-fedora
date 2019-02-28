@@ -129,8 +129,9 @@ static int find_uid_statement (struct executable_statement *esp,
 	    esp -> data.option &&
 	    (esp -> data.option -> option -> universe ==
 	     &dhcp_universe) &&
-	    (esp -> data.option -> option -> code ==
-	     DHO_DHCP_CLIENT_IDENTIFIER)) {
+	    ((esp -> data.option -> option -> code ==
+						DHO_DHCP_CLIENT_IDENTIFIER) ||
+	     (esp -> data.option -> option -> code == DHO_PXE_CLIENT_ID))) {
 		if (condp) {
 			log_error ("dhcp client identifier may not be %s",
 				   "specified conditionally.");

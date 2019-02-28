@@ -196,8 +196,9 @@ static struct option dhcp_options[] = {
 	/* Defined by RFC 4578 */
 	{ "pxe-system-type", "Sa",		&dhcp_universe,  93, 1 },
 	{ "pxe-interface-id", "BBB",		&dhcp_universe,  94, 1 },
-	{ "pxe-client-id", "BX",		&dhcp_universe,  97, 1 },
 #endif
+	{ "pxe-client-id", "BX",		&dhcp_universe,  97, 1 },
+
 	{ "uap-servers", "t",			&dhcp_universe,  98, 1 },
 #if defined(RFC4776_OPTIONS)
         { "geoconf-civic", "X",                 &dhcp_universe, 99, 1 },
