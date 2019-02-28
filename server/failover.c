@@ -5988,6 +5988,9 @@ int load_balance_mine (struct packet *packet, dhcp_failover_state_t *state)
 
 	oc = lookup_option(&dhcp_universe, packet->options,
 			   DHO_DHCP_CLIENT_IDENTIFIER);
+	if (!oc)
+		oc = lookup_option(&dhcp_universe, packet -> options,
+				    DHO_PXE_CLIENT_ID);
 	memset(&ds, 0, sizeof ds);
 	if (oc &&
 	    evaluate_option_cache(&ds, packet, NULL, NULL,

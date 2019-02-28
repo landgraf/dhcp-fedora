@@ -4551,13 +4551,26 @@ int validate_packet(struct packet *packet)
 				"a future version of ISC DHCP will reject this");
 		}
 	} else {
-		/*
-		 * If hlen is 0 we don't have any identifier, we warn the user
-		 * but continue processing the packet as we can.
-		 */
-		if (packet->raw->hlen == 0) {
-			log_debug("Received DHCPv4 packet without client-id"
-				  " option and empty hlen field.");
+		oc = lookup_option (&dhcp_universe, packet->options,
+				    DHO_PXE_CLIENT_ID);
+		if (oc) {
+			/* Let's check if pxe-client-id is sane */
+			if ((oc->data.len < 2) ||
+			    (oc->data.data[0] == '\0' &&
+			     oc->data.len != 17)) {
+				log_debug("Dropped DHCPv4 packet with wrong "
+				    "(len == %d) pxe-client-id", oc->data.len);
+				return (0);
+			}
+		} else {
+			/*
+			 * If hlen is 0 we don't have any identifier, we warn the user
+			 * but continue processing the packet as we can.
+			 */
+			if (packet->raw->hlen == 0) {
+				log_debug("Received DHCPv4 packet without client-id"
+						" option and empty hlen field.");
+			}
 		}
 	}
 

@@ -1664,10 +1664,12 @@ should be a name identifying the host.  If a \fIhostname\fR option is
 not specified for the host, \fIhostname\fR is used.
 .PP
 \fIHost\fR declarations are matched to actual DHCP or BOOTP clients
-by matching the \fRdhcp-client-identifier\fR option specified in the
+by matching the \fIdhcp-client-identifier\fR or \fIpxe-client-id\fR
+options specified in the
 \fIhost\fR declaration to the one supplied by the client, or, if the
 \fIhost\fR declaration or the client does not provide a
-\fRdhcp-client-identifier\fR option, by matching the \fIhardware\fR
+\fIdhcp-client-identifier\fR or \fIpxe-client-id\fR options,
+by matching the \fIhardware\fR
 parameter in the \fIhost\fR declaration to the network hardware
 address supplied by the client.  BOOTP clients do not normally
 provide a \fIdhcp-client-identifier\fR, so the hardware address must
@@ -1679,7 +1681,8 @@ to identify hosts.
 .PP
 Please be aware that
 .B only
-the \fIdhcp-client-identifier\fR option and the hardware address can be
+the \fIdhcp-client-identifier\fR and \fIpxe-client-id\fR
+options and the hardware address can be
 used to match a host declaration, or the \fIhost-identifier option\fR
 parameter for DHCPv6 servers.  For example, it is not possible to
 match a host declaration to a \fIhost-name\fR option.  This is

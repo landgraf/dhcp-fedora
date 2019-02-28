@@ -276,7 +276,7 @@ dhcpleasequery(struct packet *packet, int ms_nulltp) {
 		 */
 
 		memset(&uid, 0, sizeof(uid));
-		if (get_option(&uid, 
+		i = get_option(&uid,
 			       &dhcp_universe,
 			       packet,
 			       NULL,
@@ -286,8 +286,20 @@ dhcpleasequery(struct packet *packet, int ms_nulltp) {
 			       packet->options, 
 			       &global_scope,
 			       DHO_DHCP_CLIENT_IDENTIFIER,
-			       MDL)) {
-
+			       MDL);
+		if (!i)
+			i = get_option(&uid,
+				       &dhcp_universe,
+				       packet,
+				       NULL,
+				       NULL,
+				       packet->options,
+				       NULL,
+				       packet->options,
+				       &global_scope,
+				       DHO_PXE_CLIENT_ID,
+				       MDL);
+		if (i) {
 			snprintf(dbg_info, 
 				 sizeof(dbg_info), 
 				 "client-id %s",
