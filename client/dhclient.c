@@ -942,6 +942,12 @@ main(int argc, char **argv) {
 
 	inaddr_any.s_addr = INADDR_ANY;
 
+	/* Discover all the network interfaces. */
+	discover_interfaces(DISCOVER_UNCONFIGURED);
+
+	/* Parse the dhclient.conf file. */
+	read_client_conf();
+
 	/* Stateless special case. */
 	if (stateless) {
 		if (release_mode || (wanted_ia_na > 0) ||
@@ -957,12 +963,6 @@ main(int argc, char **argv) {
 #endif
 		finish(0);
 	}
-
-	/* Discover all the network interfaces. */
-	discover_interfaces(DISCOVER_UNCONFIGURED);
-
-	/* Parse the dhclient.conf file. */
-	read_client_conf();
 
 	/* Parse any extra command line configuration arguments: */
 	if ((dhcp_client_identifier_arg != NULL) && (*dhcp_client_identifier_arg != '\0')) {
@@ -1418,20 +1418,30 @@ void run_stateless(int exit_mode, u_int16_t port)
 	IGNORE_UNUSED(port);
 #endif
 
-	/* Discover the network interface. */
-	discover_interfaces(DISCOVER_REQUESTED);
+	struct interface_info *ip;
 
 	if (!interfaces)
 		usage("No interfaces available for stateless command: %s", "-S");
 
-	/* Parse the dhclient.conf file. */
 #ifdef DHCP4o6
 	if (dhcpv4_over_dhcpv6) {
 		/* Mark we want to request IRT too! */
 		dhcpv4_over_dhcpv6++;
 	}
 #endif
-	read_client_conf();
+
+	for (ip = interfaces; ip; ip = ip->next) {
+		if ((interfaces_requested > 0) &&
+		    ((ip->flags & (INTERFACE_REQUESTED |
+				   INTERFACE_AUTOMATIC)) !=
+		     INTERFACE_REQUESTED))
+			continue;
+		script_init(ip->client, "PREINIT6", NULL);
+		script_go(ip->client);
+	}
+
+	/* Discover the network interface. */
+	discover_interfaces(DISCOVER_REQUESTED);
 
 	/* Parse the lease database. */
 	read_client_leases();
