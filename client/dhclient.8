@@ -552,6 +552,11 @@ Path to the network configuration script invoked by
 when it gets a lease.  If unspecified, the default
 .B CLIENTBINDIR/dhclient-script
 is used.  See \fBdhclient-script(8)\fR for a description of this file.
+.TP
+.BI \-B
+Always set the bootp broadcast flag in request packets, so that
+servers will always broadcast replies. This option is provided as
+an extension to enable dhclient to work on IBM s390 Linux guests.
 .PP
 .SH PORTS
 During operations the client may use multiple UDP ports
