@@ -5408,6 +5408,12 @@ isc_result_t dhcp_set_control_state (control_object_state_t oldstate,
 		  case server_awaken:
 		    state_reboot (client);
 		    break;
+
+                  case server_time_changed:
+                    if (client->active){
+                      state_reboot (client);
+                    }
+                    break;
 		}
 	    }
 	}
