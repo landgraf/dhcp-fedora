@@ -524,7 +524,8 @@ typedef enum {
 	server_running = 1,
 	server_shutdown = 2,
 	server_hibernate = 3,
-	server_awaken = 4
+	server_awaken = 4,
+        server_time_changed = 5
 } control_object_state_t;
 
 typedef struct {

@@ -118,7 +118,6 @@ dispatch(void)
 		 * signal. It will return ISC_R_RELOAD in that
 		 * case. That is a normal behavior.
 		 */
-
 		if (status == ISC_R_RELOAD) {
 			/*
 			 * dhcp_set_control_state() will do the job.
@@ -129,6 +128,16 @@ dispatch(void)
 			if (status == ISC_R_SUCCESS)
 				status = ISC_R_RELOAD;
 		}
+
+                
+                if (status == ISC_R_TIMESHIFTED){
+                  status = dhcp_set_control_state(server_time_changed,
+                                                  server_time_changed);
+                  status = ISC_R_RELOAD;
+                  log_info ("System time has been changed. Unable to use existing leases. Restarting");
+                  // do nothing, restart context
+                };
+
 	} while (status == ISC_R_RELOAD);
 
 	log_fatal ("Dispatch routine failed: %s -- exiting",

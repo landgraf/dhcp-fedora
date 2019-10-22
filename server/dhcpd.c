@@ -1767,6 +1767,12 @@ isc_result_t dhcp_set_control_state (control_object_state_t oldstate,
 {
 	struct timeval tv;
 
+        if (newstate == server_time_changed){
+          log_error ("System time has been changed. Leases information unreliable!");
+          return ISC_R_SUCCESS;
+        }
+
+                
 	if (newstate != server_shutdown)
 		return DHCP_R_INVALIDARG;
 	/* Re-entry. */
