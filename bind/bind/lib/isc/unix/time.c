@@ -452,3 +452,25 @@ isc_time_formatISO8601ms(const isc_time_t *t, char *buf, unsigned int len) {
 			 t->nanoseconds / NS_PER_MS);
 	}
 }
+
+
+#ifdef CLOCK_BOOTTIME
+isc_result_t
+isc_time_boottime(isc_time_t *t) {
+  struct timespec ts;
+  
+  char strbuf[ISC_STRERRORSIZE];
+
+  if (clock_gettime (CLOCK_BOOTTIME, &ts) != 0){
+    isc__strerror(errno, strbuf, sizeof(strbuf));
+    UNEXPECTED_ERROR(__FILE__, __LINE__, "%s", strbuf);
+    return (ISC_R_UNEXPECTED);    
+  }
+
+  t->seconds = ts.tv_sec;
+  t->nanoseconds = ts.tv_nsec;
+
+  return (ISC_R_SUCCESS);
+  
+};
+#endif

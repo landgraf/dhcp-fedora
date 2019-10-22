@@ -81,9 +81,9 @@
 #define ISC_R_UNSET			61	/*%< unset */
 #define ISC_R_MULTIPLE			62	/*%< multiple */
 #define ISC_R_WOULDBLOCK		63	/*%< would block */
-
+#define ISC_R_TIMESHIFTED               64      /*%< system time changed */
 /*% Not a result code: the number of results. */
-#define ISC_R_NRESULTS 			64
+#define ISC_R_NRESULTS 			66
 
 ISC_LANG_BEGINDECLS
 

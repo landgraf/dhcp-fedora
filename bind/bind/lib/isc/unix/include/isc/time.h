@@ -127,6 +127,26 @@ isc_time_isepoch(const isc_time_t *t);
  *\li	't' is a valid pointer.
  */
 
+#ifdef CLOCK_BOOTTIME
+isc_result_t
+isc_time_boottime(isc_time_t *t);
+/*%<
+ * Set 't' to monotonic time from previous boot
+ * it's not affected by system time change. It also
+ * includes the time system was suspended
+ *
+ * Requires:
+ *\li	't' is a valid pointer.
+ *
+ * Returns:
+ *
+ *\li	Success
+ *\li	Unexpected error
+ *		Getting the time from the system failed.
+ */
+#endif /* CLOCK_BOOTTIME */
+ 
+
 isc_result_t
 isc_time_now(isc_time_t *t);
 /*%<

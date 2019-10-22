@@ -438,15 +438,51 @@ isc__app_ctxonrun(isc_appctx_t *ctx0, isc_mem_t *mctx, isc_task_t *task,
 static isc_result_t
 evloop(isc__appctx_t *ctx) {
 	isc_result_t result;
+        isc_time_t now;
+#ifdef CLOCK_BOOTTIME
+        isc_time_t monotonic;
+        isc_uint64_t diff  = 0;
+#else
+        isc_time_t prev;
+        TIME_NOW(&prev);
+#endif
+
+
+
 
 	while (!ctx->want_shutdown) {
 		int n;
-		isc_time_t when, now;
+		isc_time_t when;
+                
 		struct timeval tv, *tvp;
 		isc_socketwait_t *swait;
 		isc_boolean_t readytasks;
 		isc_boolean_t call_timer_dispatch = ISC_FALSE;
 
+                isc_uint64_t us; 
+
+#ifdef CLOCK_BOOTTIME
+                // TBD macros for following three lines
+                TIME_NOW(&now);
+                TIME_MONOTONIC(&monotonic);
+                INSIST(now.seconds > monotonic.seconds)
+                us = isc_time_microdiff (&now, &monotonic);
+                if (us < diff){ 
+                  us = diff - us;
+                  if (us > 1000000){ // ignoring shifts less than one second
+                    return ISC_R_TIMESHIFTED;
+                  };
+                  diff = isc_time_microdiff (&now, &monotonic);
+                } else {
+                  diff = isc_time_microdiff (&now, &monotonic);
+                  // not implemented
+                }
+#else
+                TIME_NOW(&now);
+                if (isc_time_compare (&now, &prev) < 0)
+                  return ISC_R_TIMESHIFTED;
+                TIME_NOW(&prev);
+#endif                
 		/*
 		 * Check the reload (or suspend) case first for exiting the
 		 * loop as fast as possible in case:
@@ -471,9 +507,10 @@ evloop(isc__appctx_t *ctx) {
 			if (result != ISC_R_SUCCESS)
 				tvp = NULL;
 			else {
-				isc_uint64_t us;
+
 
 				TIME_NOW(&now);
+
 				us = isc_time_microdiff(&when, &now);
 				if (us == 0)
 					call_timer_dispatch = ISC_TRUE;
