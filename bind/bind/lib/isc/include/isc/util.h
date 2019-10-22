@@ -289,6 +289,10 @@ extern void mock_assert(const int result, const char* const expression,
  * Time
  */
 #define TIME_NOW(tp) 	RUNTIME_CHECK(isc_time_now((tp)) == ISC_R_SUCCESS)
+#ifdef CLOCK_BOOTTIME
+#define TIME_MONOTONIC(tp) 	RUNTIME_CHECK(isc_time_boottime((tp)) == ISC_R_SUCCESS)
+#endif
+
 
 /*%
  * Alignment

@@ -105,6 +105,7 @@ static const char *description[ISC_R_NRESULTS] = {
 	"disc full",				/*%< 67 */
 	"default",				/*%< 68 */
 	"IPv4 prefix",				/*%< 69 */
+        "time changed",                         /*%< 70 */
 };
 
 static const char *identifier[ISC_R_NRESULTS] = {
@@ -178,6 +179,7 @@ static const char *identifier[ISC_R_NRESULTS] = {
 	"ISC_R_DISCFULL",
 	"ISC_R_DEFAULT",
 	"ISC_R_IPV4PREFIX",
+        "ISC_R_TIMESHIFTED",
 };
 
 #define ISC_RESULT_RESULTSET			2
