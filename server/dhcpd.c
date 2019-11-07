@@ -60,6 +60,10 @@ gid_t set_gid = 0;
 struct class unknown_class;
 struct class known_class;
 
+#ifdef HAVE_LIBSYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 struct iaddr server_identifier;
 int server_identifier_matched;
 
@@ -1056,6 +1060,14 @@ main(int argc, char **argv) {
 
 	/* Log that we are about to start working */
 	log_info("Server starting service.");
+
+#ifdef HAVE_LIBSYSTEMD
+        /* We are ready to process incomming packets. Let's notify systemd */
+        sd_notifyf(0, "READY=1\n"
+                   "STATUS=Dispatching packets...\n"
+                   "MAINPID=%lu",
+                   (unsigned long) getpid());
+#endif
 
 	/*
 	 * Receive packets and dispatch them...

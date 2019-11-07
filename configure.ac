@@ -1014,6 +1014,17 @@ if test x$ldap = xyes || test x$ldapcrypto = xyes || test x$ldap_gssapi = xyes; 
     AC_SUBST(LDAP_CFLAGS, [$LDAP_CFLAGS])
 fi
 
+AC_ARG_WITH(systemd,
+        AC_HELP_STRING([--with-systemd],
+                       [enable sending status notifications to systemd daemon (default is no)]),
+        [systemd=$withval],
+        [systemd=no])
+
+if test x$systemd = xyes ; then
+   AC_CHECK_LIB(systemd, sd_notifyf, ,
+                AC_MSG_FAILURE([*** systemd library not present - do you need to install systemd-libs package?]))
+fi
+
 # Append selected warning levels to CFLAGS before substitution (but after
 # AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[],[]) & etc).
 CFLAGS="$CFLAGS $STD_CWARNINGS"

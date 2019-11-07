@@ -37,6 +37,10 @@
    int keep_capabilities = 0;
 #endif
 
+#ifdef HAVE_LIBSYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 TIME default_lease_time = 43200; /* 12 hours... */
 TIME max_lease_time = 86400; /* 24 hours... */
 struct tree_cache *global_options[256];
@@ -843,6 +847,14 @@ main(int argc, char **argv) {
 		capng_apply(CAPNG_SELECT_BOTH);
 		log_info ("Dropped all capabilities.");
 	}
+#endif
+
+#ifdef HAVE_LIBSYSTEMD
+        /* We are ready to process incomming packets. Let's notify systemd */
+        sd_notifyf(0, "READY=1\n"
+                   "STATUS=Dispatching packets...\n"
+                   "MAINPID=%lu",
+                   (unsigned long) getpid());
 #endif
 
 	/* Start dispatching packets and timeouts... */
