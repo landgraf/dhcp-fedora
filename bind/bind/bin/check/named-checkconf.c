@@ -1,18 +1,21 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2009-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: named-checkconf.c,v 1.56 2011/03/12 04:59:46 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -90,18 +93,18 @@ directory_callback(const char *clausename, const cfg_obj_t *obj, void *arg) {
 	return (ISC_R_SUCCESS);
 }
 
-static isc_boolean_t
+static bool
 get_maps(const cfg_obj_t **maps, const char *name, const cfg_obj_t **obj) {
 	int i;
 	for (i = 0;; i++) {
 		if (maps[i] == NULL)
-			return (ISC_FALSE);
+			return (false);
 		if (cfg_map_get(maps[i], name, obj) == ISC_R_SUCCESS)
-			return (ISC_TRUE);
+			return (true);
 	}
 }
 
-static isc_boolean_t
+static bool
 get_checknames(const cfg_obj_t **maps, const cfg_obj_t **obj) {
 	const cfg_listelt_t *element;
 	const cfg_obj_t *checknames;
@@ -112,14 +115,14 @@ get_checknames(const cfg_obj_t **maps, const cfg_obj_t **obj) {
 
 	for (i = 0;; i++) {
 		if (maps[i] == NULL)
-			return (ISC_FALSE);
+			return (false);
 		checknames = NULL;
 		result = cfg_map_get(maps[i], "check-names", &checknames);
 		if (result != ISC_R_SUCCESS)
 			continue;
 		if (checknames != NULL && !cfg_obj_islist(checknames)) {
 			*obj = checknames;
-			return (ISC_TRUE);
+			return (true);
 		}
 		for (element = cfg_list_first(checknames);
 		     element != NULL;
@@ -129,7 +132,7 @@ get_checknames(const cfg_obj_t **maps, const cfg_obj_t **obj) {
 			if (strcasecmp(cfg_obj_asstring(type), "master") != 0)
 				continue;
 			*obj = cfg_tuple_get(value, "mode");
-			return (ISC_TRUE);
+			return (true);
 		}
 	}
 }
@@ -262,8 +265,10 @@ configure_zone(const char *vclass, const char *view,
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options &= ~DNS_ZONEOPT_CHECKDUPRR;
 			zone_options &= ~DNS_ZONEOPT_CHECKDUPRRFAIL;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 		zone_options |= DNS_ZONEOPT_CHECKDUPRR;
 		zone_options &= ~DNS_ZONEOPT_CHECKDUPRRFAIL;
@@ -280,8 +285,10 @@ configure_zone(const char *vclass, const char *view,
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options &= ~DNS_ZONEOPT_CHECKMX;
 			zone_options &= ~DNS_ZONEOPT_CHECKMXFAIL;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 		zone_options |= DNS_ZONEOPT_CHECKMX;
 		zone_options &= ~DNS_ZONEOPT_CHECKMXFAIL;
@@ -307,8 +314,10 @@ configure_zone(const char *vclass, const char *view,
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options |= DNS_ZONEOPT_WARNMXCNAME;
 			zone_options |= DNS_ZONEOPT_IGNOREMXCNAME;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 		zone_options |= DNS_ZONEOPT_WARNMXCNAME;
 		zone_options &= ~DNS_ZONEOPT_IGNOREMXCNAME;
@@ -325,8 +334,10 @@ configure_zone(const char *vclass, const char *view,
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options |= DNS_ZONEOPT_WARNSRVCNAME;
 			zone_options |= DNS_ZONEOPT_IGNORESRVCNAME;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 		zone_options |= DNS_ZONEOPT_WARNSRVCNAME;
 		zone_options &= ~DNS_ZONEOPT_IGNORESRVCNAME;
@@ -346,8 +357,10 @@ configure_zone(const char *vclass, const char *view,
 			zone_options |= DNS_ZONEOPT_CHECKSPF;
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options &= ~DNS_ZONEOPT_CHECKSPF;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 		zone_options |= DNS_ZONEOPT_CHECKSPF;
 	}
@@ -363,8 +376,10 @@ configure_zone(const char *vclass, const char *view,
 		} else if (strcasecmp(cfg_obj_asstring(obj), "ignore") == 0) {
 			zone_options &= ~DNS_ZONEOPT_CHECKNAMES;
 			zone_options &= ~DNS_ZONEOPT_CHECKNAMESFAIL;
-		} else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	} else {
 	       zone_options |= DNS_ZONEOPT_CHECKNAMES;
 	       zone_options |= DNS_ZONEOPT_CHECKNAMESFAIL;
@@ -374,14 +389,16 @@ configure_zone(const char *vclass, const char *view,
 	fmtobj = NULL;
 	if (get_maps(maps, "masterfile-format", &fmtobj)) {
 		const char *masterformatstr = cfg_obj_asstring(fmtobj);
-		if (strcasecmp(masterformatstr, "text") == 0)
+		if (strcasecmp(masterformatstr, "text") == 0) {
 			masterformat = dns_masterformat_text;
-		else if (strcasecmp(masterformatstr, "raw") == 0)
+		} else if (strcasecmp(masterformatstr, "raw") == 0) {
 			masterformat = dns_masterformat_raw;
-		else if (strcasecmp(masterformatstr, "map") == 0)
+		} else if (strcasecmp(masterformatstr, "map") == 0) {
 			masterformat = dns_masterformat_map;
-		else
+		} else {
 			INSIST(0);
+			ISC_UNREACHABLE();
+		}
 	}
 
 	obj = NULL;
@@ -515,11 +532,11 @@ main(int argc, char **argv) {
 	isc_result_t result;
 	int exit_status = 0;
 	isc_entropy_t *ectx = NULL;
-	isc_boolean_t load_zones = ISC_FALSE;
-	isc_boolean_t print = ISC_FALSE;
+	bool load_zones = false;
+	bool print = false;
 	unsigned int flags = 0;
 
-	isc_commandline_errprint = ISC_FALSE;
+	isc_commandline_errprint = false;
 
 	/*
 	 * Process memory debugging argument first.
@@ -543,7 +560,7 @@ main(int argc, char **argv) {
 			break;
 		}
 	}
-	isc_commandline_reset = ISC_TRUE;
+	isc_commandline_reset = true;
 
 	RUNTIME_CHECK(isc_mem_create(0, 0, &mctx) == ISC_R_SUCCESS);
 
@@ -554,7 +571,7 @@ main(int argc, char **argv) {
 			break;
 
 		case 'j':
-			nomerge = ISC_FALSE;
+			nomerge = false;
 			break;
 
 		case 'm':
@@ -570,7 +587,7 @@ main(int argc, char **argv) {
 			break;
 
 		case 'p':
-			print = ISC_TRUE;
+			print = true;
 			break;
 
 		case 'v':
@@ -582,10 +599,10 @@ main(int argc, char **argv) {
 			break;
 
 		case 'z':
-			load_zones = ISC_TRUE;
-			docheckmx = ISC_FALSE;
-			docheckns = ISC_FALSE;
-			dochecksrv = ISC_FALSE;
+			load_zones = true;
+			docheckmx = false;
+			docheckns = false;
+			dochecksrv = false;
 			break;
 
 		case '?':

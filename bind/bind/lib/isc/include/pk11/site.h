@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2016, 2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* The documentation about this file is in README.site */
@@ -23,6 +26,9 @@
  *
  *\li PK11_<algorithm>_DISABLE:
  *	Same as SKIP, and disable support for the algorithm.
+ *
+ *\li PK11_PAD_HMAC_KEYS:
+ *	Extend HMAC keys shorter than digest length.
  */
 
 /* current implemented flags are:
@@ -38,6 +44,7 @@ PK11_SHA512_HMAC_REPLACE
 PK11_MD5_DISABLE
 PK11_DSA_DISABLE
 PK11_DH_DISABLE
+PK11_PAD_HMAC_KEYS
 */
 
 /*
@@ -53,6 +60,8 @@ PK11_DH_DISABLE
 #define PK11_CRYPTECH_FLAVOR 3
 /* AEP Keyper */
 #define PK11_AEP_FLAVOR 4
+/* Utimaco HSM */
+#define PK11_UTIMACO_FLAVOR 5
 
 /* Default is for Thales nCipher */
 #ifndef PK11_FLAVOR
@@ -66,17 +75,17 @@ PK11_DH_DISABLE
 #endif
 
 #if PK11_FLAVOR == PK11_SOFTHSMV1_FLAVOR
-#define PK11_DH_DISABLE
-#define PK11_DSA_DISABLE
+#define PK11_PAD_HMAC_KEYS
+#endif
+
+#if PK11_FLAVOR == PK11_SOFTHSMV2_FLAVOR
+/* SoftHSMv2 was updated to enforce minimal key sizes... argh! */
 #define PK11_MD5_HMAC_REPLACE
 #define PK11_SHA_1_HMAC_REPLACE
 #define PK11_SHA224_HMAC_REPLACE
 #define PK11_SHA256_HMAC_REPLACE
 #define PK11_SHA384_HMAC_REPLACE
 #define PK11_SHA512_HMAC_REPLACE
-#endif
-
-#if PK11_FLAVOR == PK11_SOFTHSMV2_FLAVOR
 #endif
 
 #if PK11_FLAVOR == PK11_CRYPTECH_FLAVOR

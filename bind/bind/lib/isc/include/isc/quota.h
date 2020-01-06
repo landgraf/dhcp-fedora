@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: quota.h,v 1.16 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_QUOTA_H
 #define ISC_QUOTA_H 1
@@ -98,11 +100,24 @@ isc_quota_attach(isc_quota_t *quota, isc_quota_t **p);
  * quota if successful (ISC_R_SUCCESS or ISC_R_SOFTQUOTA).
  */
 
+isc_result_t
+isc_quota_force(isc_quota_t *quota, isc_quota_t **p);
+/*%<
+ * Like isc_quota_attach, but will attach '*p' to the quota
+ * even if the hard quota has been exceeded.
+ */
+
 void
 isc_quota_detach(isc_quota_t **p);
 /*%<
  * Like isc_quota_release, and also detaches '*p' from the
  * quota.
+ */
+
+unsigned int
+isc_quota_getused(isc_quota_t *quota);
+/*%<
+ * Get the current usage of quota.
  */
 
 ISC_LANG_ENDDECLS

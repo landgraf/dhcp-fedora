@@ -1,4 +1,4 @@
-.\" Copyright (C) 2000-2011, 2013-2017 Internet Systems Consortium, Inc. ("ISC")
+.\" Copyright (C) 2000-2011, 2013-2019 Internet Systems Consortium, Inc. ("ISC")
 .\" 
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -39,7 +39,7 @@
 dig \- DNS lookup utility
 .SH "SYNOPSIS"
 .HP \w'\fBdig\fR\ 'u
-\fBdig\fR [@server] [\fB\-b\ \fR\fB\fIaddress\fR\fR] [\fB\-c\ \fR\fB\fIclass\fR\fR] [\fB\-f\ \fR\fB\fIfilename\fR\fR] [\fB\-k\ \fR\fB\fIfilename\fR\fR] [\fB\-m\fR] [\fB\-p\ \fR\fB\fIport#\fR\fR] [\fB\-q\ \fR\fB\fIname\fR\fR] [\fB\-t\ \fR\fB\fItype\fR\fR] [\fB\-v\fR] [\fB\-x\ \fR\fB\fIaddr\fR\fR] [\fB\-y\ \fR\fB\fI[hmac:]\fR\fIname:key\fR\fR] [\fB\-4\fR] [\fB\-6\fR] [name] [type] [class] [queryopt...]
+\fBdig\fR [@server] [\fB\-b\ \fR\fB\fIaddress\fR\fR] [\fB\-c\ \fR\fB\fIclass\fR\fR] [\fB\-f\ \fR\fB\fIfilename\fR\fR] [\fB\-k\ \fR\fB\fIfilename\fR\fR] [\fB\-m\fR] [\fB\-p\ \fR\fB\fIport#\fR\fR] [\fB\-q\ \fR\fB\fIname\fR\fR] [\fB\-t\ \fR\fB\fItype\fR\fR] [\fB\-v\fR] [\fB\-x\ \fR\fB\fIaddr\fR\fR] [\fB\-y\ \fR\fB\fI[hmac:]\fR\fIname:key\fR\fR] [[\fB\-4\fR] | [\fB\-6\fR]] [name] [type] [class] [queryopt...]
 .HP \w'\fBdig\fR\ 'u
 \fBdig\fR [\fB\-h\fR]
 .HP \w'\fBdig\fR\ 'u
@@ -47,7 +47,7 @@ dig \- DNS lookup utility
 .SH "DESCRIPTION"
 .PP
 \fBdig\fR
-(domain information groper) is a flexible tool for interrogating DNS name servers\&. It performs DNS lookups and displays the answers that are returned from the name server(s) that were queried\&. Most DNS administrators use
+is a flexible tool for interrogating DNS name servers\&. It performs DNS lookups and displays the answers that are returned from the name server(s) that were queried\&. Most DNS administrators use
 \fBdig\fR
 to troubleshoot DNS problems because of its flexibility, ease of use and clarity of output\&. Other lookup tools tend to have less functionality than
 \fBdig\fR\&.
@@ -74,7 +74,9 @@ will perform an NS query for "\&." (the root)\&.
 It is possible to set per\-user defaults for
 \fBdig\fR
 via
-${HOME}/\&.digrc\&. This file is read and any options in it are applied before the command line arguments\&.
+${HOME}/\&.digrc\&. This file is read and any options in it are applied before the command line arguments\&. The
+\fB\-r\fR
+option disables this feature, for scripts that need predictable behaviour\&.
 .PP
 The IN and CH class names overlap with the IN and CH top level domain names\&. Either use the
 \fB\-t\fR
@@ -176,7 +178,7 @@ using the command\-line interface\&.
 .PP
 \-i
 .RS 4
-Do reverse IPv6 lookups using the obsolete RFC1886 IP6\&.INT domain, which is no longer in use\&. Obsolete bit string label queries (RFC2874) are not attempted\&.
+Do reverse IPv6 lookups using the obsolete RFC 1886 IP6\&.INT domain, which is no longer in use\&. Obsolete bit string label queries (RFC 2874) are not attempted\&.
 .RE
 .PP
 \-k \fIkeyfile\fR
@@ -208,15 +210,28 @@ The domain name to query\&. This is useful to distinguish the
 from other arguments\&.
 .RE
 .PP
+\-r
+.RS 4
+Do not read options from
+${HOME}/\&.digrc\&. This is useful for scripts that need predictable behaviour\&.
+.RE
+.PP
 \-t \fItype\fR
 .RS 4
-The resource record type to query\&. It can be any valid query type which is supported in BIND 9\&. The default query type is "A", unless the
+The resource record type to query\&. It can be any valid query type\&. If it is a resource record type supported in BIND 9, it can be given by the type mnemonic (such as "NS" or "AAAA")\&. The default query type is "A", unless the
 \fB\-x\fR
 option is supplied to indicate a reverse lookup\&. A zone transfer can be requested by specifying a type of AXFR\&. When an incremental zone transfer (IXFR) is required, set the
 \fItype\fR
 to
 ixfr=N\&. The incremental zone transfer will contain the changes made to the zone since the serial number in the zone\*(Aqs SOA record was
 \fIN\fR\&.
+.sp
+All resource record types can be expressed as "TYPEnn", where "nn" is the number of the type\&. If the resource record type is not supported in BIND 9, the result will be displayed as described in RFC 3597\&.
+.RE
+.PP
+\-u
+.RS 4
+Print query times in microseconds instead of milliseconds\&.
 .RE
 .PP
 \-v
@@ -353,14 +368,20 @@ Display [do not display] the CLASS when printing the record\&.
 .PP
 \fB+[no]cmd\fR
 .RS 4
-Toggles the printing of the initial comment in the output identifying the version of
+Toggles the printing of the initial comment in the output, identifying the version of
 \fBdig\fR
-and the query options that have been applied\&. This comment is printed by default\&.
+and the query options that have been applied\&. This option always has global effect; it cannot be set globally and then overridden on a per\-lookup basis\&. The default is to print this comment\&.
 .RE
 .PP
 \fB+[no]comments\fR
 .RS 4
-Toggle the display of comment lines in the output\&. The default is to print comments\&.
+Toggles the display of some comment lines in the output, containing information about the packet header and OPT pseudosection, and the names of the response section\&. The default is to print these comments\&.
+.sp
+Other types of comments in the output are not affected by this option, but can be controlled using other command line switches\&. These include
+\fB+[no]cmd\fR,
+\fB+[no]question\fR,
+\fB+[no]stats\fR, and
+\fB+[no]rrcomments\fR\&.
 .RE
 .PP
 \fB+[no]cookie\fR\fB[=####]\fR
@@ -459,9 +480,18 @@ Show [or do not show] the IP address and port number that supplied the answer wh
 option is enabled\&. If short form answers are requested, the default is not to show the source address and port number of the server that provided the answer\&.
 .RE
 .PP
+\fB+[no]idnin\fR
+.RS 4
+Process [do not process] IDN domain names on input\&. This requires IDN SUPPORT to have been enabled at compile time\&.
+.sp
+The default is to process IDN input when standard output is a tty\&. The IDN processing on input is disabled when dig output is redirected to files, pipes, and other non\-tty file descriptors\&.
+.RE
+.PP
 \fB+[no]idnout\fR
 .RS 4
-Convert [do not convert] puny code on output\&. This requires IDN SUPPORT to have been enabled at compile time\&. The default is to convert output\&.
+Convert [do not convert] puny code on output\&. This requires IDN SUPPORT to have been enabled at compile time\&.
+.sp
+The default is to process puny code on output when standard output is a tty\&. The puny code processing on output is disabled when dig output is redirected to files, pipes, and other non\-tty file descriptors\&.
 .RE
 .PP
 \fB+[no]ignore\fR
@@ -530,12 +560,12 @@ Set [restore] the DNS message opcode to the specified value\&. The default value
 .PP
 \fB+[no]qr\fR
 .RS 4
-Print [do not print] the query as it is sent\&. By default, the query is not printed\&.
+Toggles the display of the query message as it is sent\&. By default, the query is not printed\&.
 .RE
 .PP
 \fB+[no]question\fR
 .RS 4
-Print [do not print] the question section of a query when an answer is returned\&. The default is to print the question section as a comment\&.
+Toggles the display of the question section of a query when an answer is returned\&. The default is to print the question section as a comment\&.
 .RE
 .PP
 \fB+[no]rdflag\fR
@@ -548,11 +578,11 @@ A synonym for
 .RS 4
 Toggle the setting of the RD (recursion desired) bit in the query\&. This bit is set by default, which means
 \fBdig\fR
-normally sends recursive queries\&. Recursion is automatically disabled when the
+normally sends recursive queries\&. Recursion is automatically disabled when using the
 \fI+nssearch\fR
-or
+option, and when using
 \fI+trace\fR
-query options are used\&.
+except for an initial recursive query to get the list of root servers\&.
 .RE
 .PP
 \fB+retry=T\fR
@@ -583,7 +613,7 @@ determines if the name will be treated as relative or not and hence whether a se
 .PP
 \fB+[no]short\fR
 .RS 4
-Provide a terse answer\&. The default is to print the answer in a verbose form\&.
+Provide a terse answer\&. The default is to print the answer in a verbose form\&. This option always has global effect; it cannot be set globally and then overridden on a per\-lookup basis\&.
 .RE
 .PP
 \fB+[no]showsearch\fR
@@ -613,7 +643,7 @@ causes fields not to be split at all\&. The default is 56 characters, or 44 char
 .PP
 \fB+[no]stats\fR
 .RS 4
-This query option toggles the printing of statistics: when the query was made, the size of the reply and so on\&. The default behavior is to print the query statistics\&.
+Toggles the printing of statistics: when the query was made, the size of the reply and so on\&. The default behavior is to print the query statistics as a comment after each lookup\&.
 .RE
 .PP
 \fB+[no]subnet=addr[/prefix\-length]\fR
@@ -763,11 +793,10 @@ If
 \fBdig\fR
 has been built with IDN (internationalized domain name) support, it can accept and display non\-ASCII domain names\&.
 \fBdig\fR
-appropriately converts character encoding of domain name before sending a request to DNS server or displaying a reply from the server\&. If you\*(Aqd like to turn off the IDN support for some reason, defines the
-\fBIDN_DISABLE\fR
-environment variable\&. The IDN support is disabled if the variable is set when
-\fBdig\fR
-runs\&.
+appropriately converts character encoding of domain name before sending a request to DNS server or displaying a reply from the server\&. If you\*(Aqd like to turn off the IDN support for some reason, use parameters
+\fI+noidnin\fR
+and
+\fI+noidnout\fR\&.
 .SH "FILES"
 .PP
 /etc/resolv\&.conf
@@ -779,7 +808,7 @@ ${HOME}/\&.digrc
 \fBhost\fR(1),
 \fBnamed\fR(8),
 \fBdnssec-keygen\fR(8),
-RFC1035\&.
+RFC 1035\&.
 .SH "BUGS"
 .PP
 There are probably too many query options\&.
@@ -788,5 +817,5 @@ There are probably too many query options\&.
 \fBInternet Systems Consortium, Inc\&.\fR
 .SH "COPYRIGHT"
 .br
-Copyright \(co 2000-2011, 2013-2017 Internet Systems Consortium, Inc. ("ISC")
+Copyright \(co 2000-2011, 2013-2019 Internet Systems Consortium, Inc. ("ISC")
 .br

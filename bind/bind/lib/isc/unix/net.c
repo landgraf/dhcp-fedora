@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 1999-2005, 2007, 2008, 2012-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #include <config.h>
 
 #include <sys/types.h>
 
-#if defined(HAVE_SYS_SYSCTL_H)
+#if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__)
 #if defined(HAVE_SYS_PARAM_H)
 #include <sys/param.h>
 #endif
@@ -21,6 +23,7 @@
 #include <sys/uio.h>
 
 #include <errno.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -492,7 +495,7 @@ make_nonblock(int fd) {
 	return (ISC_R_SUCCESS);
 }
 
-static isc_boolean_t
+static bool
 cmsgsend(int s, int level, int type, struct addrinfo *res) {
 	char strbuf[ISC_STRERRORSIZE];
 	struct sockaddr_storage ss;
@@ -513,7 +516,7 @@ cmsgsend(int s, int level, int type, struct addrinfo *res) {
 		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
 			      ISC_LOGMODULE_SOCKET, ISC_LOG_DEBUG(10),
 			      "bind: %s", strbuf);
-		return (ISC_FALSE);
+		return (false);
 	}
 
 	if (getsockname(s, (struct sockaddr *)&ss, &len) < 0) {
@@ -521,7 +524,7 @@ cmsgsend(int s, int level, int type, struct addrinfo *res) {
 		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
 			      ISC_LOGMODULE_SOCKET, ISC_LOG_DEBUG(10),
 			      "getsockname: %s", strbuf);
-		return (ISC_FALSE);
+		return (false);
 	}
 
 	iovec.iov_base = buf;
@@ -561,6 +564,7 @@ cmsgsend(int s, int level, int type, struct addrinfo *res) {
 #endif
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	if (sendmsg(s, &msg, 0) < 0) {
@@ -593,7 +597,7 @@ cmsgsend(int s, int level, int type, struct addrinfo *res) {
 					 "sendmsg() with %s=%02x %s: %s",
 					 typestr, dscp, msgstr, strbuf);
 		}
-		return (ISC_FALSE);
+		return (false);
 	}
 
 	/*
@@ -615,9 +619,9 @@ cmsgsend(int s, int level, int type, struct addrinfo *res) {
 	msg.msg_flags = 0;
 
 	if (recvmsg(s, &msg, 0) < 0)
-		return (ISC_FALSE);
+		return (false);
 
-	return (ISC_TRUE);
+	return (true);
 }
 #endif
 #endif

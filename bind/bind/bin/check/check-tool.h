@@ -1,17 +1,22 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2005, 2007, 2010, 2011, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: check-tool.h,v 1.18 2011/12/09 23:47:02 tbox Exp $ */
 
 #ifndef CHECK_TOOL_H
 #define CHECK_TOOL_H
 
 /*! \file */
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/stdio.h>
@@ -33,7 +38,7 @@ load_zone(isc_mem_t *mctx, const char *zonename, const char *filename,
 isc_result_t
 dump_zone(const char *zonename, dns_zone_t *zone, const char *filename,
 	  dns_masterformat_t fileformat, const dns_master_style_t *style,
-	  const isc_uint32_t rawversion);
+	  const uint32_t rawversion);
 
 #ifdef _WIN32
 void InitSockets(void);
@@ -42,10 +47,10 @@ void DestroySockets(void);
 
 extern int debug;
 extern const char *journal;
-extern isc_boolean_t nomerge;
-extern isc_boolean_t docheckmx;
-extern isc_boolean_t docheckns;
-extern isc_boolean_t dochecksrv;
+extern bool nomerge;
+extern bool docheckmx;
+extern bool docheckns;
+extern bool dochecksrv;
 extern unsigned int zone_options;
 extern unsigned int zone_options2;
 

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2001-2007, 2009-2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: control.h,v 1.38 2012/01/31 23:47:31 tbox Exp $ */
@@ -16,6 +19,7 @@
  * The name server command channel.
  */
 
+#include <stdbool.h>
 #include <isccc/types.h>
 
 #include <isccfg/aclconf.h>
@@ -98,7 +102,7 @@ ns_controls_shutdown(ns_controls_t *controls);
  */
 
 isc_result_t
-ns_control_docommand(isccc_sexpr_t *message, isc_boolean_t readonly,
+ns_control_docommand(isccc_sexpr_t *message, bool readonly,
 		     isc_buffer_t **text);
 
 #endif /* NAMED_CONTROL_H */

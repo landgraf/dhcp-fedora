@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 1999-2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: client.h,v 1.96 2012/01/31 23:47:31 tbox Exp $ */
 
 #ifndef NAMED_CLIENT_H
 #define NAMED_CLIENT_H 1
@@ -53,6 +54,9 @@
  *** Imports
  ***/
 
+#include <inttypes.h>
+#include <stdbool.h>
+
 #include <isc/buffer.h>
 #include <isc/magic.h>
 #include <isc/stdtime.h>
@@ -74,6 +78,16 @@
  *** Types
  ***/
 
+/*% reference-counted TCP connection object */
+typedef struct ns_tcpconn {
+	isc_refcount_t		clients;	/* Number of clients using
+						 * this connection. Conn can
+						 * be freed if goes to 0
+						 */
+	isc_quota_t		*tcpquota;
+	bool			pipelined;
+} ns_tcpconn_t;
+
 /*% nameserver client structure */
 struct ns_client {
 	unsigned int		magic;
@@ -88,7 +102,8 @@ struct ns_client {
 	int			nupdates;
 	int			nctls;
 	int			references;
-	isc_boolean_t		needshutdown; 	/*
+	bool			tcpactive;
+	bool			needshutdown; 	/*
 						 * Used by clienttest to get
 						 * the client to go from
 						 * inactive to free state
@@ -104,18 +119,18 @@ struct ns_client {
 	isc_socket_t *		tcpsocket;
 	unsigned char *		tcpbuf;
 	dns_tcpmsg_t		tcpmsg;
-	isc_boolean_t		tcpmsg_valid;
+	bool		tcpmsg_valid;
 	isc_timer_t *		timer;
 	isc_timer_t *		delaytimer;
-	isc_boolean_t 		timerset;
+	bool 		timerset;
 	dns_message_t *		message;
 	isc_socketevent_t *	sendevent;
 	isc_socketevent_t *	recvevent;
 	unsigned char *		recvbuf;
 	dns_rdataset_t *	opt;
-	isc_uint16_t		udpsize;
-	isc_uint16_t		extflags;
-	isc_int16_t		ednsversion;	/* -1 noedns */
+	uint16_t		udpsize;
+	uint16_t		extflags;
+	int16_t		ednsversion;	/* -1 noedns */
 	void			(*next)(ns_client_t *);
 	void			(*shutdown)(void *arg, isc_result_t result);
 	void 			*shutdown_arg;
@@ -124,20 +139,20 @@ struct ns_client {
 	isc_stdtime_t		now;
 	isc_time_t		tnow;
 	dns_name_t		signername;   /*%< [T]SIG key name */
-	dns_name_t *		signer;	      /*%< NULL if not valid sig */
-	isc_boolean_t		mortal;	      /*%< Die after handling request */
-	isc_boolean_t		pipelined;   /*%< TCP queries not in sequence */
-	isc_quota_t		*tcpquota;
+	dns_name_t		*signer;      /*%< NULL if not valid sig */
+	bool			mortal;	      /*%< Die after handling request */
+	ns_tcpconn_t		*tcpconn;
 	isc_quota_t		*recursionquota;
 	ns_interface_t		*interface;
 
 	isc_sockaddr_t		peeraddr;
-	isc_boolean_t		peeraddr_valid;
+	bool		peeraddr_valid;
 	isc_netaddr_t		destaddr;
+	isc_sockaddr_t		destsockaddr;
 
 	isc_netaddr_t		ecs_addr;	/*%< EDNS client subnet */
-	isc_uint8_t		ecs_addrlen;
-	isc_uint8_t		ecs_scope;
+	uint8_t			ecs_addrlen;
+	uint8_t			ecs_scope;
 
 	struct in6_pktinfo	pktinfo;
 	isc_dscp_t		dscp;
@@ -161,7 +176,9 @@ struct ns_client {
 	ISC_LINK(ns_client_t)	rlink;
 	ISC_QLINK(ns_client_t)	ilink;
 	unsigned char		cookie[8];
-	isc_uint32_t		expire;
+	uint32_t		expire;
+	unsigned char		*keytag;
+	uint16_t		keytag_len;
 };
 
 typedef ISC_QUEUE(ns_client_t) client_queue_t;
@@ -241,10 +258,10 @@ ns_client_next(ns_client_t *client, isc_result_t result);
  * return no response to the client.
  */
 
-isc_boolean_t
+bool
 ns_client_shuttingdown(ns_client_t *client);
 /*%
- * Return ISC_TRUE iff the client is currently shutting down.
+ * Return true iff the client is currently shutting down.
  */
 
 void
@@ -289,10 +306,10 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp);
 
 isc_result_t
 ns_clientmgr_createclients(ns_clientmgr_t *manager, unsigned int n,
-			   ns_interface_t *ifp, isc_boolean_t tcp);
+			   ns_interface_t *ifp, bool tcp);
 /*%
  * Create up to 'n' clients listening on interface 'ifp'.
- * If 'tcp' is ISC_TRUE, the clients will listen for TCP connections,
+ * If 'tcp' is true, the clients will listen for TCP connections,
  * otherwise for UDP requests.
  */
 
@@ -303,15 +320,22 @@ ns_client_getsockaddr(ns_client_t *client);
  * currently being processed.
  */
 
+isc_sockaddr_t *
+ns_client_getdestaddr(ns_client_t *client);
+/*%<
+ * Get the destination address (server) for the request that is
+ * currently being processed.
+ */
+
 isc_result_t
 ns_client_checkaclsilent(ns_client_t *client, isc_netaddr_t *netaddr,
-			 dns_acl_t *acl, isc_boolean_t default_allow);
+			 dns_acl_t *acl, bool default_allow);
 
 /*%
  * Convenience function for client request ACL checking.
  *
  * Check the current client request against 'acl'.  If 'acl'
- * is NULL, allow the request iff 'default_allow' is ISC_TRUE.
+ * is NULL, allow the request iff 'default_allow' is true.
  * If netaddr is NULL, check the ACL against client->peeraddr;
  * otherwise check it against netaddr.
  *
@@ -337,7 +361,7 @@ isc_result_t
 ns_client_checkacl(ns_client_t  *client,
 		   isc_sockaddr_t *sockaddr,
 		   const char *opname, dns_acl_t *acl,
-		   isc_boolean_t default_allow,
+		   bool default_allow,
 		   int log_level);
 /*%
  * Like ns_client_checkaclsilent, except the outcome of the check is
@@ -392,7 +416,7 @@ ns_client_qnamereplace(ns_client_t *client, dns_name_t *name);
  * Replace the qname.
  */
 
-isc_boolean_t
+bool
 ns_client_isself(dns_view_t *myview, dns_tsigkey_t *mykey,
 		 isc_sockaddr_t *srcaddr, isc_sockaddr_t *destaddr,
 		 dns_rdataclass_t rdclass, void *arg);

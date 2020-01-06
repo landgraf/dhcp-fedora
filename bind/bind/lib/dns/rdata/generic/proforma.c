@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: proforma.c,v 1.38 2009/12/04 22:06:37 tbox Exp $ */
 
 #ifndef RDATA_GENERIC_#_#_C
 #define RDATA_GENERIC_#_#_C
@@ -21,7 +23,7 @@ fromtext_#(ARGS_FROMTEXT) {
 	REQUIRE(rdclass == #);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	return (ISC_R_NOTIMPLEMENTED);
 }
@@ -84,7 +86,7 @@ fromstruct_#(ARGS_FROMSTRUCT) {
 
 	REQUIRE(type == dns_rdatatype_proforma.c#);
 	REQUIRE(rdclass == #);
-	REQUIRE(source != NULL);
+	REQUIRE(# != NULL);
 	REQUIRE(#->common.rdtype == dns_rdatatype_proforma.ctype);
 	REQUIRE(#->common.rdclass == rdclass);
 
@@ -105,7 +107,7 @@ static inline void
 freestruct_#(ARGS_FREESTRUCT) {
 	dns_rdata_#_t *# = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(# != NULL);
 	REQUIRE(#->common.rdtype == dns_rdatatype_proforma.c#);
 	REQUIRE(#->common.rdclass == #);
 
@@ -134,7 +136,7 @@ digest_#(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_#(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_proforma.c#);
@@ -145,10 +147,10 @@ checkowner_#(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_#(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_proforma.c#);
@@ -158,7 +160,7 @@ checknames_#(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2009, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: ratelimiter.h,v 1.23 2009/01/18 23:48:14 tbox Exp $ */
 
 #ifndef ISC_RATELIMITER_H
 #define ISC_RATELIMITER_H 1
@@ -24,6 +26,9 @@
 /***
  *** Imports.
  ***/
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/types.h>
@@ -52,14 +57,14 @@ isc_ratelimiter_setinterval(isc_ratelimiter_t *rl, isc_interval_t *interval);
  */
 
 void
-isc_ratelimiter_setpertic(isc_ratelimiter_t *rl, isc_uint32_t perint);
+isc_ratelimiter_setpertic(isc_ratelimiter_t *rl, uint32_t perint);
 /*%<
  * Set the number of events processed per interval timer tick.
  * If 'perint' is zero it is treated as 1.
  */
 
 void
-isc_ratelimiter_setpushpop(isc_ratelimiter_t *rl, isc_boolean_t pushpop);
+isc_ratelimiter_setpushpop(isc_ratelimiter_t *rl, bool pushpop);
 /*%<
  * Set / clear the ratelimiter to from push pop mode rather
  * first in - first out mode (default).

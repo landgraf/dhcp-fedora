@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/mem.h>
 #include <isc/random.h>
@@ -93,7 +97,7 @@ isc_taskpool_create(isc_taskmgr_t *tmgr, isc_mem_t *mctx,
 
 void
 isc_taskpool_gettask(isc_taskpool_t *pool, isc_task_t **targetp) {
-	isc_uint32_t i;
+	uint32_t i;
 	isc_random_get(&i);
 	isc_task_attach(pool->tasks[i % pool->ntasks], targetp);
 }
@@ -166,7 +170,7 @@ isc_taskpool_destroy(isc_taskpool_t **poolp) {
 }
 
 void
-isc_taskpool_setprivilege(isc_taskpool_t *pool, isc_boolean_t priv) {
+isc_taskpool_setprivilege(isc_taskpool_t *pool, bool priv) {
 	unsigned int i;
 
 	REQUIRE(pool != NULL);

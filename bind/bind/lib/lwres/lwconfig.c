@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000-2008, 2011, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
@@ -47,6 +50,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -577,27 +581,25 @@ lwres_conf_parseoption(lwres_context_t *ctx,  FILE *fp) {
 			confdata->resdebug = 1;
 		} else if (strcmp("no_tld_query", word) == 0) {
 			confdata->no_tld_query = 1;
-		} else if (strcmp("debug", word) == 0) {
-			confdata->resdebug = 1;
 		} else if (strncmp("ndots:", word, 6) == 0) {
 			ndots = strtol(word + 6, &p, 10);
 			if (*p != '\0') /* Bad string. */
 				return (LWRES_R_FAILURE);
 			if (ndots < 0 || ndots > 0xff) /* Out of range. */
 				return (LWRES_R_FAILURE);
-			confdata->ndots = (lwres_uint8_t)ndots;
+			confdata->ndots = (uint8_t)ndots;
 		} else if (strncmp("timeout:", word, 8) == 0) {
 			timeout = strtol(word + 8, &p, 10);
 			if (*p != '\0') /* Bad string. */
 				return (LWRES_R_FAILURE);
-			confdata->timeout = (lwres_int32_t)timeout;
+			confdata->timeout = (int32_t)timeout;
 		} else if (strncmp("attempts:", word, 9) == 0) {
 			attempts = strtol(word + 9, &p, 10);
 			if (*p != '\0') /* Bad string. */
 				return (LWRES_R_FAILURE);
 			if (attempts < 0) /* Out of range. */
 				return (LWRES_R_FAILURE);
-			confdata->attempts = (lwres_int32_t)attempts;
+			confdata->attempts = (int32_t)attempts;
 		}
 
 		if (delim == EOF || delim == '\n')

@@ -222,8 +222,7 @@ main (int argc, char **argv)
 
   isc_buffer_init (&buff, argzone, strlen (argzone));
   isc_buffer_add (&buff, strlen (argzone));
-  dns_fixedname_init (&fixedzone);
-  zone = dns_fixedname_name (&fixedzone);
+  zone = dns_fixedname_initname(&fixedzone);
   result = dns_name_fromtext (zone, &buff, dns_rootname, 0, NULL);
   isc_result_check (result, "dns_name_fromtext");
 
@@ -240,8 +239,7 @@ main (int argc, char **argv)
   result = dns_dbiterator_first (dbit);
   isc_result_check (result, "dns_dbiterator_first");
 
-  dns_fixedname_init (&fixedname);
-  name = dns_fixedname_name (&fixedname);
+  name = dns_fixedname_initname(&fixedname);
   dns_rdataset_init (&rdataset);
   dns_rdata_init (&rdata);
 
@@ -388,7 +386,7 @@ generate_ldap (dns_name_t * dnsname, dns_rdata_t * rdata, unsigned int ttl)
   isc_result_t result;
 
   isc_buffer_init (&buff, name, sizeof (name));
-  result = dns_name_totext (dnsname, ISC_TRUE, &buff);
+  result = dns_name_totext (dnsname, true, &buff);
   isc_result_check (result, "dns_name_totext");
   name[isc_buffer_usedlength (&buff)] = 0;
 
@@ -526,7 +524,7 @@ add_to_rr_list (char *dn, char *name, char *type,
       if (tmp->attrs[3]->mod_values == (char **)NULL)
 	 fatal("calloc");
 
-      sprintf (charttl, "%d", ttl);
+      sprintf (charttl, "%u", ttl);
       tmp->attrs[3]->mod_values[0] = strdup (charttl);
       tmp->attrs[3]->mod_values[1] = NULL;
 
@@ -689,7 +687,7 @@ build_dn_from_dc_list (char **dc_list, unsigned int ttl, int flag)
     if (flag == WI_SPEC)
     {
       if (x == (size - 2) && (strncmp (dc_list[x], "@", 1) == 0) && (ttl))
-	sprintf (tmp, "relativeDomainName=%s + dNSTTL=%d,", dc_list[x], ttl);
+	sprintf (tmp, "relativeDomainName=%s + dNSTTL=%u,", dc_list[x], ttl);
       else if (x == (size - 2))
 	      sprintf(tmp, "relativeDomainName=%s,",dc_list[x]);
       else

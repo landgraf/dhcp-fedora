@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*
  * This is a generic implementation of a two-lock concurrent queue.
@@ -19,8 +21,10 @@
 
 #ifndef ISC_QUEUE_H
 #define ISC_QUEUE_H 1
+
+#include <stdbool.h>
+
 #include <isc/assertions.h>
-#include <isc/boolean.h>
 #include <isc/mutex.h>
 
 #ifdef ISC_QUEUE_CHECKINIT
@@ -50,7 +54,7 @@
 		(queue).tail = (queue).head = NULL; \
 	} while (0)
 
-#define ISC_QUEUE_EMPTY(queue) ISC_TF((queue).head == NULL)
+#define ISC_QUEUE_EMPTY(queue) ((queue).head == NULL)
 
 #define ISC_QUEUE_DESTROY(queue) \
 	do { \
@@ -87,18 +91,18 @@
  */
 #define ISC_QUEUE_PUSH(queue, elt, link) \
 	do { \
-		isc_boolean_t headlocked = ISC_FALSE; \
+		bool headlocked = false; \
 		ISC_QLINK_INSIST(!ISC_QLINK_LINKED(elt, link)); \
 		if ((queue).head == NULL) { \
 			LOCK(&(queue).headlock); \
-			headlocked = ISC_TRUE; \
+			headlocked = true; \
 		} \
 		LOCK(&(queue).taillock); \
 		if ((queue).tail == NULL && !headlocked) { \
 			UNLOCK(&(queue).taillock); \
 			LOCK(&(queue).headlock); \
 			LOCK(&(queue).taillock); \
-			headlocked = ISC_TRUE; \
+			headlocked = true; \
 		} \
 		(elt)->link.prev = (queue).tail; \
 		(elt)->link.next = NULL; \

@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 1998-2001, 2004-2007, 2010-2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
 
 #ifndef ISC_UTIL_H
 #define ISC_UTIL_H 1
+
+#include <inttypes.h>
 
 /*! \file isc/util.h
  * NOTE:
@@ -68,7 +71,7 @@
  * Use this in translation units that would otherwise be empty, to
  * suppress compiler warnings.
  */
-#define EMPTY_TRANSLATION_UNIT static void isc__empty(void) { isc__empty(); }
+#define EMPTY_TRANSLATION_UNIT extern int isc__empty;
 
 /*%
  * We use macros instead of calling the routines directly because
@@ -105,7 +108,6 @@
 					      ISC_MSG_UNLOCKED, "UNLOCKED"), \
 			       (lp), __FILE__, __LINE__)); \
 	} while (0)
-#define ISLOCKED(lp) (1)
 #define DESTROYLOCK(lp) \
 	RUNTIME_CHECK(isc_mutex_destroy((lp)) == ISC_R_SUCCESS)
 
@@ -200,14 +202,51 @@
 /*%
  * Performance
  */
-#ifdef HAVE_BUILTIN_EXPECT
-#define ISC_LIKELY(x)            __builtin_expect(!!(x), 1)
-#define ISC_UNLIKELY(x)          __builtin_expect(!!(x), 0)
+#include <isc/likely.h>
+
+#ifdef HAVE_BUILTIN_UNREACHABLE
+#define ISC_UNREACHABLE() __builtin_unreachable();
 #else
-#define ISC_LIKELY(x)            (x)
-#define ISC_UNLIKELY(x)          (x)
+#define ISC_UNREACHABLE()
 #endif
 
+#if !defined(__has_feature)
+#define __has_feature(x) 0
+#endif
+
+/* GCC defines __SANITIZE_ADDRESS__, so reuse the macro for clang */
+#if __has_feature(address_sanitizer)
+#define __SANITIZE_ADDRESS__ 1
+#endif
+
+#ifdef UNIT_TESTING
+extern void mock_assert(const int result, const char* const expression,
+			const char * const file, const int line);
+/*
+ *	Allow clang to determine that the following code is not reached
+ *	by calling abort() if the condition fails.  The abort() will
+ *	never be executed as mock_assert() and _assert_true() longjmp
+ *	or exit if the condition is false.
+ */
+#define REQUIRE(expression)						\
+	((!(expression)) ?						\
+	(mock_assert(0, #expression, __FILE__, __LINE__), abort()) : (void)0)
+#define ENSURE(expression)						\
+	((!(int)(expression)) ?						\
+	(mock_assert(0, #expression, __FILE__, __LINE__), abort()) : (void)0)
+#define INSIST(expression)						\
+	((!(expression)) ?						\
+	(mock_assert(0, #expression, __FILE__, __LINE__), abort()) : (void)0)
+#define INVARIANT(expression)						\
+	((!(expression)) ?						\
+	(mock_assert(0, #expression, __FILE__, __LINE__), abort()) : (void)0)
+#define _assert_true(c, e, f, l) \
+	((c) ? (void)0 : (_assert_true(0, e, f, l), abort()))
+#define _assert_int_equal(a, b, f, l) \
+	(((a) == (b)) ? (void)0 : (_assert_int_equal(a, b, f, l), abort()))
+#define _assert_int_not_equal(a, b, f, l) \
+	(((a) != (b)) ? (void)0 : (_assert_int_not_equal(a, b, f, l), abort()))
+#else /* UNIT_TESTING */
 /*
  * Assertions
  */
@@ -222,6 +261,8 @@
 /*% Invariant Assertion */
 #define INVARIANT(e)			ISC_INVARIANT(e)
 
+#endif /* UNIT_TESTING */
+
 /*
  * Errors
  */
@@ -231,8 +272,18 @@
 #define UNEXPECTED_ERROR		isc_error_unexpected
 /*% Fatal Error */
 #define FATAL_ERROR			isc_error_fatal
+
+#ifdef UNIT_TESTING
+
+#define RUNTIME_CHECK(expression)					\
+	mock_assert((int)(expression), #expression, __FILE__, __LINE__)
+
+#else /* UNIT_TESTING */
+
 /*% Runtime Check */
 #define RUNTIME_CHECK(cond)		ISC_ERROR_RUNTIMECHECK(cond)
+
+#endif /* UNIT_TESTING */
 
 /*%
  * Time
@@ -240,12 +291,17 @@
 #define TIME_NOW(tp) 	RUNTIME_CHECK(isc_time_now((tp)) == ISC_R_SUCCESS)
 
 /*%
- * Misc.
+ * Alignment
  */
 #ifdef __GNUC__
-#define ISC_DEPRECATED			__attribute__((deprecated))
+#define ISC_ALIGN(x, a) (((x) + (a) - 1) & ~((typeof(x))(a) - 1))
 #else
-#define ISC_DEPRECATED			/* none */
-#endif /* __GNUC __ */
+#define ISC_ALIGN(x, a) (((x) + (a) - 1) & ~((uintmax_t)(a) - 1))
+#endif
+
+/*%
+ * Misc
+ */
+#include <isc/deprecated.h>
 
 #endif /* ISC_UTIL_H */

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2001, 2004, 2005, 2007, 2009-2011, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: keydelete.c,v 1.18 2011/01/11 23:47:13 tbox Exp $ */
 
 #include <config.h>
 
@@ -225,7 +227,7 @@ main(int argc, char **argv) {
 #ifndef PK11_MD5_DISABLE
 	result = dns_tsigkey_createfromkey(dst_key_name(dstkey),
 					   DNS_TSIG_HMACMD5_NAME,
-					   dstkey, ISC_TRUE, NULL, 0, 0,
+					   dstkey, true, NULL, 0, 0,
 					   mctx, ring, &tsigkey);
 	dst_key_free(&dstkey);
 	CHECK("dns_tsigkey_createfromkey", result);

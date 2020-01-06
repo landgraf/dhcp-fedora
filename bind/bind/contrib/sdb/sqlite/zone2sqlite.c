@@ -103,7 +103,7 @@ addrdata(dns_name_t *name, dns_ttl_t ttl, dns_rdata_t *rdata)
     int res;
     
     isc_buffer_init(&b, namearray, sizeof(namearray) - 1);
-    result = dns_name_totext(name, ISC_TRUE, &b);
+    result = dns_name_totext(name, true, &b);
     check_result(result, "dns_name_totext");
     namearray[isc_buffer_usedlength(&b)] = 0;
     
@@ -174,8 +174,7 @@ main(int argc, char *argv[])
     
     isc_buffer_init(&b, porigin, strlen(porigin));
     isc_buffer_add(&b, strlen(porigin));
-    dns_fixedname_init(&forigin);
-    origin = dns_fixedname_name(&forigin);
+    origin = dns_fixedname_initname(&forigin);
     result = dns_name_fromtext(origin, &b, dns_rootname, 0, NULL);
     check_result(result, "dns_name_fromtext");
     
@@ -239,8 +238,7 @@ main(int argc, char *argv[])
     result = dns_dbiterator_first(dbiter);
     check_result(result, "dns_dbiterator_first");
     
-    dns_fixedname_init(&fname);
-    name = dns_fixedname_name(&fname);
+    name = dns_fixedname_initname(&fname);
     dns_rdataset_init(&rdataset);
     dns_rdata_init(&rdata);
     

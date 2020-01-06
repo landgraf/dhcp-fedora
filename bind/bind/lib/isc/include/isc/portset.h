@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2008, 2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: portset.h,v 1.6 2009/06/25 05:28:34 marka Exp $ */
 
 /*! \file isc/portset.h
  * \brief Transport Protocol Port Manipulation Module
@@ -26,6 +28,8 @@
 /***
  ***	Imports
  ***/
+
+#include <stdbool.h>
 
 #include <isc/net.h>
 
@@ -60,7 +64,7 @@ isc_portset_destroy(isc_mem_t *mctx, isc_portset_t **portsetp);
  *\li	'*portsetp' to be a valid set.
  */
 
-isc_boolean_t
+bool
 isc_portset_isset(isc_portset_t *portset, in_port_t port);
 /*%<
  * Test whether the given port is stored in the portset.
@@ -69,7 +73,7 @@ isc_portset_isset(isc_portset_t *portset, in_port_t port);
  *\li	'portset' to be a valid set.
  *
  * Returns
- * \li	#ISC_TRUE if the port is found, ISC_FALSE otherwise.
+ * \li	#true if the port is found, false otherwise.
  */
 
 unsigned int

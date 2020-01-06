@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 2003-2007, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: portlist.c,v 1.13 2007/06/19 23:47:16 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/magic.h>
@@ -32,7 +36,7 @@
 
 typedef struct dns_element {
 	in_port_t	port;
-	isc_uint16_t	flags;
+	uint16_t	flags;
 } dns_element_t;
 
 struct dns_portlist {
@@ -202,10 +206,10 @@ dns_portlist_remove(dns_portlist_t *portlist, int af, in_port_t port) {
 	UNLOCK(&portlist->lock);
 }
 
-isc_boolean_t
+bool
 dns_portlist_match(dns_portlist_t *portlist, int af, in_port_t port) {
 	dns_element_t *el;
-	isc_boolean_t result = ISC_FALSE;
+	bool result = false;
 
 	REQUIRE(DNS_VALID_PORTLIST(portlist));
 	REQUIRE(af == AF_INET || af == AF_INET6);
@@ -214,9 +218,9 @@ dns_portlist_match(dns_portlist_t *portlist, int af, in_port_t port) {
 		el = find_port(portlist->list, portlist->active, port);
 		if (el != NULL) {
 			if (af == AF_INET && (el->flags & DNS_PL_INET) != 0)
-				result = ISC_TRUE;
+				result = true;
 			if (af == AF_INET6 && (el->flags & DNS_PL_INET6) != 0)
-				result = ISC_TRUE;
+				result = true;
 		}
 	}
 	UNLOCK(&portlist->lock);

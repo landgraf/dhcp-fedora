@@ -1,24 +1,32 @@
 /*
- * Copyright (C) 2014, 2015, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <isc/app.h>
 #include <isc/base64.h>
+#include <isc/commandline.h>
 #include <isc/entropy.h>
 #include <isc/hash.h>
 #include <isc/log.h>
 #include <isc/mem.h>
 #include <isc/net.h>
+#include <isc/parseint.h>
+#include <isc/platform.h>
 #include <isc/print.h>
 #include <isc/sockaddr.h>
 #include <isc/socket.h>
@@ -55,7 +63,7 @@
 
 static isc_mem_t *mctx;
 static dns_requestmgr_t *requestmgr;
-static isc_boolean_t have_src = ISC_FALSE;
+static bool have_src = false;
 static isc_sockaddr_t srcaddr;
 static isc_sockaddr_t dstaddr;
 static int onfly;
@@ -210,11 +218,37 @@ main(int argc, char *argv[]) {
 	unsigned int attrs, attrmask;
 	dns_dispatch_t *dispatchv4;
 	dns_view_t *view;
+	uint16_t port = PORT;
+	int c;
 
-	UNUSED(argv);
+	isc_commandline_errprint = false;
+	while ((c = isc_commandline_parse(argc, argv, "p:")) != -1) {
+		switch (c) {
+		case 'p':
+			result = isc_parse_uint16(&port,
+						  isc_commandline_argument, 10);
+			if (result != ISC_R_SUCCESS) {
+				fprintf(stderr, "bad port '%s'\n",
+					isc_commandline_argument);
+				exit(1);
+			}
+			break;
+		case '?':
+			fprintf(stderr, "%s: invalid argument '%c'",
+				argv[0], c);
+			break;
+		default:
+			break;
+		}
+	}
 
-	if (argc > 1)
-		have_src = ISC_TRUE;
+	argc -= isc_commandline_index;
+	argv += isc_commandline_index;
+	POST(argv);
+
+	if (argc > 0) {
+		have_src = true;
+	}
 
 	RUNCHECK(isc_app_start());
 
@@ -230,7 +264,7 @@ main(int argc, char *argv[]) {
 	result = ISC_R_FAILURE;
 	if (inet_pton(AF_INET, "10.53.0.4", &inaddr) != 1)
 		CHECK("inet_pton", result);
-	isc_sockaddr_fromin(&dstaddr, &inaddr, PORT);
+	isc_sockaddr_fromin(&dstaddr, &inaddr, port);
 
 	mctx = NULL;
 	RUNCHECK(isc_mem_create(0, 0, &mctx));
@@ -309,4 +343,3 @@ main(int argc, char *argv[]) {
 
 	return (0);
 }
-

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004-2007, 2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: fsaccess.h,v 1.16 2009/01/17 23:47:43 tbox Exp $ */
 
 #ifndef ISC_FSACCESS_H
 #define ISC_FSACCESS_H 1
@@ -121,6 +123,8 @@
  * 	solve this problem.
  */
 
+#include <inttypes.h>
+
 #include <isc/lang.h>
 #include <isc/types.h>
 
@@ -145,7 +149,7 @@
 
 /*%
  * Adding any permission bits beyond 0x200 would mean typedef'ing
- * isc_fsaccess_t as isc_uint64_t, and redefining this value to
+ * isc_fsaccess_t as uint64_t, and redefining this value to
  * reflect the new range of permission types, Probably to 21 for
  * maximum flexibility.  The number of bits has to accommodate all of
  * the permission types, and three full sets of them have to fit

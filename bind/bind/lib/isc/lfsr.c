@@ -1,18 +1,21 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: lfsr.c,v 1.20 2007/06/19 23:47:17 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
 #include <stddef.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include <isc/assertions.h>
@@ -22,8 +25,8 @@
 #define VALID_LFSR(x)	(x != NULL)
 
 void
-isc_lfsr_init(isc_lfsr_t *lfsr, isc_uint32_t state, unsigned int bits,
-	      isc_uint32_t tap, unsigned int count,
+isc_lfsr_init(isc_lfsr_t *lfsr, uint32_t state, unsigned int bits,
+	      uint32_t tap, unsigned int count,
 	      isc_lfsrreseed_t reseed, void *arg)
 {
 	REQUIRE(VALID_LFSR(lfsr));
@@ -46,7 +49,7 @@ isc_lfsr_init(isc_lfsr_t *lfsr, isc_uint32_t state, unsigned int bits,
 /*!
  * Return the next state of the lfsr.
  */
-static inline isc_uint32_t
+static inline uint32_t
 lfsr_generate(isc_lfsr_t *lfsr)
 {
 
@@ -105,7 +108,7 @@ isc_lfsr_generate(isc_lfsr_t *lfsr, void *data, unsigned int count)
 	}
 }
 
-static inline isc_uint32_t
+static inline uint32_t
 lfsr_skipgenerate(isc_lfsr_t *lfsr, unsigned int skip)
 {
 	while (skip--)
@@ -132,11 +135,11 @@ isc_lfsr_skip(isc_lfsr_t *lfsr, unsigned int skip)
  * Skip states in lfsr1 and lfsr2 using the other's current state.
  * Return the final state of lfsr1 ^ lfsr2.
  */
-isc_uint32_t
+uint32_t
 isc_lfsr_generate32(isc_lfsr_t *lfsr1, isc_lfsr_t *lfsr2)
 {
-	isc_uint32_t state1, state2;
-	isc_uint32_t skip1, skip2;
+	uint32_t state1, state2;
+	uint32_t skip1, skip2;
 
 	REQUIRE(VALID_LFSR(lfsr1));
 	REQUIRE(VALID_LFSR(lfsr2));

@@ -1,12 +1,17 @@
 /*
- * Copyright (C) 2009-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include "config.h"
+
+#include <stdbool.h>
 
 #include <isc/result.h>
 #include <isc/util.h>
@@ -183,7 +188,7 @@ destroy_ecdb(dns_ecdb_t **ecdbp) {
 static void
 detach(dns_db_t **dbp) {
 	dns_ecdb_t *ecdb;
-	isc_boolean_t need_destroy = ISC_FALSE;
+	bool need_destroy = false;
 
 	REQUIRE(dbp != NULL);
 	ecdb = (dns_ecdb_t *)*dbp;
@@ -192,7 +197,7 @@ detach(dns_db_t **dbp) {
 	LOCK(&ecdb->lock);
 	ecdb->references--;
 	if (ecdb->references == 0 && ISC_LIST_EMPTY(ecdb->nodes))
-		need_destroy = ISC_TRUE;
+		need_destroy = true;
 	UNLOCK(&ecdb->lock);
 
 	if (need_destroy)
@@ -223,7 +228,7 @@ static void
 destroynode(dns_ecdbnode_t *node) {
 	isc_mem_t *mctx;
 	dns_ecdb_t *ecdb = node->ecdb;
-	isc_boolean_t need_destroydb = ISC_FALSE;
+	bool need_destroydb = false;
 	rdatasetheader_t *header;
 
 	mctx = ecdb->common.mctx;
@@ -231,7 +236,7 @@ destroynode(dns_ecdbnode_t *node) {
 	LOCK(&ecdb->lock);
 	ISC_LIST_UNLINK(ecdb->nodes, node, link);
 	if (ecdb->references == 0 && ISC_LIST_EMPTY(ecdb->nodes))
-		need_destroydb = ISC_TRUE;
+		need_destroydb = true;
 	UNLOCK(&ecdb->lock);
 
 	dns_name_free(&node->name, mctx);
@@ -259,7 +264,7 @@ static void
 detachnode(dns_db_t *db, dns_dbnode_t **nodep) {
 	dns_ecdb_t *ecdb = (dns_ecdb_t *)db;
 	dns_ecdbnode_t *node;
-	isc_boolean_t need_destroy = ISC_FALSE;
+	bool need_destroy = false;
 
 	REQUIRE(VALID_ECDB(ecdb));
 	REQUIRE(nodep != NULL);
@@ -272,7 +277,7 @@ detachnode(dns_db_t *db, dns_dbnode_t **nodep) {
 	INSIST(node->references > 0);
 	node->references--;
 	if (node->references == 0)
-		need_destroy = ISC_TRUE;
+		need_destroy = true;
 	UNLOCK(&node->lock);
 
 	if (need_destroy)
@@ -326,7 +331,7 @@ findzonecut(dns_db_t *db, dns_name_t *name,
 }
 
 static isc_result_t
-findnode(dns_db_t *db, dns_name_t *name, isc_boolean_t create,
+findnode(dns_db_t *db, dns_name_t *name, bool create,
 	 dns_dbnode_t **nodep)
 {
 	dns_ecdb_t *ecdb = (dns_ecdb_t *)db;
@@ -339,7 +344,7 @@ findnode(dns_db_t *db, dns_name_t *name, isc_boolean_t create,
 
 	UNUSED(name);
 
-	if (create != ISC_TRUE)	{
+	if (create != true)	{
 		/* an 'ephemeral' node is never reused. */
 		return (ISC_R_NOTFOUND);
 	}
@@ -719,7 +724,7 @@ rdataset_current(dns_rdataset_t *rdataset, dns_rdata_t *rdata) {
 	raw += 2;
 #endif
 	if (rdataset->type == dns_rdatatype_rrsig) {
-		if (*raw & DNS_RDATASLAB_OFFLINE)
+		if ((*raw & DNS_RDATASLAB_OFFLINE) != 0)
 			flags |= DNS_RDATA_OFFLINE;
 		length--;
 		raw++;
@@ -780,6 +785,7 @@ rdatasetiter_destroy(dns_rdatasetiter_t **iteratorp) {
 	REQUIRE(DNS_RDATASETITER_VALID(*iteratorp));
 
 	u.rdatasetiterator = *iteratorp;
+	*iteratorp = NULL;
 
 	mctx = u.ecdbiterator->common.db->mctx;
 	u.ecdbiterator->common.magic = 0;
@@ -788,34 +794,34 @@ rdatasetiter_destroy(dns_rdatasetiter_t **iteratorp) {
 			  &u.ecdbiterator->common.node);
 	isc_mem_put(mctx, u.ecdbiterator,
 		    sizeof(ecdb_rdatasetiter_t));
-
-	*iteratorp = NULL;
 }
 
 static isc_result_t
 rdatasetiter_first(dns_rdatasetiter_t *iterator) {
+	REQUIRE(DNS_RDATASETITER_VALID(iterator));
+
 	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
 	dns_ecdbnode_t *ecdbnode = (dns_ecdbnode_t *)iterator->node;
 
-	REQUIRE(DNS_RDATASETITER_VALID(iterator));
-
-	if (ISC_LIST_EMPTY(ecdbnode->rdatasets))
+	if (ISC_LIST_EMPTY(ecdbnode->rdatasets)) {
 		return (ISC_R_NOMORE);
+	}
 	ecdbiterator->current = ISC_LIST_HEAD(ecdbnode->rdatasets);
 	return (ISC_R_SUCCESS);
 }
 
 static isc_result_t
 rdatasetiter_next(dns_rdatasetiter_t *iterator) {
-	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
-
 	REQUIRE(DNS_RDATASETITER_VALID(iterator));
 
+	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
+
 	ecdbiterator->current = ISC_LIST_NEXT(ecdbiterator->current, link);
-	if (ecdbiterator->current == NULL)
+	if (ecdbiterator->current == NULL) {
 		return (ISC_R_NOMORE);
-	else
+	} else {
 		return (ISC_R_SUCCESS);
+	}
 }
 
 static void

@@ -1,10 +1,13 @@
 #!/bin/sh
 #
-# Copyright (C) 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=..
 . $SYSTEMTESTTOP/conf.sh
@@ -24,14 +27,14 @@ matchall () {
     done
 }
 
-echo "I:checking for DNSSEC key coverage issues"
+echo_i "checking for DNSSEC key coverage issues"
 ret=0
 for dir in [0-9][0-9]-*; do
         ret=0
-        echo "I:$dir"
-        args= warn= error= ok= retcode= match=
+        echo_i "$dir"
+        args= warn= error= ok= retcode= match= zones=
         . $dir/expect
-        $COVERAGE $args -K $dir example.com > coverage.$n 2>&1
+        $COVERAGE $args -K $dir ${zones:-example.com} > coverage.$n 2>&1
 
         # check that return code matches expectations
         found=$?
@@ -67,10 +70,16 @@ for dir in [0-9][0-9]-*; do
             ret=1
         fi
 
+        found=`grep Traceback coverage.$n | wc -l`
+        if [ $found -ne 0 ]; then
+            echo "python exception detected"
+            ret=1
+        fi
+
         n=`expr $n + 1`
-        if [ $ret != 0 ]; then echo "I:failed"; fi
+        if [ $ret != 0 ]; then echo_i "failed"; fi
         status=`expr $status + $ret`
 done
 
-echo "I:exit status: $status"
+echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1

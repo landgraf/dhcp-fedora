@@ -1,15 +1,21 @@
 /*
- * Copyright (C) 2000-2002, 2004-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef DST_DST_H
 #define DST_DST_H 1
 
 /*! \file dst/dst.h */
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/stdtime.h>
@@ -53,6 +59,8 @@ typedef struct dst_context 	dst_context_t;
 #define DST_ALG_ECCGOST		12
 #define DST_ALG_ECDSA256	13
 #define DST_ALG_ECDSA384	14
+#define DST_ALG_ED25519		15
+#define DST_ALG_ED448		16
 #define DST_ALG_HMACMD5		157
 #define DST_ALG_GSSAPI		160
 #define DST_ALG_HMACSHA1	161	/* XXXMPA */
@@ -62,8 +70,7 @@ typedef struct dst_context 	dst_context_t;
 #define DST_ALG_HMACSHA512	165	/* XXXMPA */
 #define DST_ALG_INDIRECT	252
 #define DST_ALG_PRIVATE		254
-#define DST_ALG_EXPAND		255
-#define DST_MAX_ALGS		255
+#define DST_MAX_ALGS		256
 
 /*% A buffer of this size is large enough to hold any key */
 #define DST_KEY_MAXSIZE		1280
@@ -152,24 +159,24 @@ dst_lib_destroy(void);
  * Releases all resources allocated by DST.
  */
 
-isc_boolean_t
+bool
 dst_algorithm_supported(unsigned int alg);
 /*%<
  * Checks that a given algorithm is supported by DST.
  *
  * Returns:
- * \li	ISC_TRUE
- * \li	ISC_FALSE
+ * \li	true
+ * \li	false
  */
 
-isc_boolean_t
+bool
 dst_ds_digest_supported(unsigned int digest_type);
 /*%<
  * Checks that a given digest algorithm is supported by DST.
  *
  * Returns:
- * \li	ISC_TRUE
- * \li	ISC_FALSE
+ * \li	true
+ * \li	false
  */
 
 isc_result_t
@@ -181,12 +188,12 @@ dst_context_create2(dst_key_t *key, isc_mem_t *mctx,
 
 isc_result_t
 dst_context_create3(dst_key_t *key, isc_mem_t *mctx,
-		    isc_logcategory_t *category, isc_boolean_t useforsigning,
+		    isc_logcategory_t *category, bool useforsigning,
 		    dst_context_t **dctxp);
 
 isc_result_t
 dst_context_create4(dst_key_t *key, isc_mem_t *mctx,
-		    isc_logcategory_t *category, isc_boolean_t useforsigning,
+		    isc_logcategory_t *category, bool useforsigning,
 		    int maxbits, dst_context_t **dctxp);
 /*%<
  * Creates a context to be used for a sign or verify operation.
@@ -599,7 +606,7 @@ dst_key_generate2(dns_name_t *name, unsigned int alg,
  *\li	If successful, *keyp will contain a valid key.
  */
 
-isc_boolean_t
+bool
 dst_key_compare(const dst_key_t *key1, const dst_key_t *key2);
 /*%<
  * Compares two DST keys.  Returns true if they match, false otherwise.
@@ -612,13 +619,13 @@ dst_key_compare(const dst_key_t *key1, const dst_key_t *key2);
  *\li	"key2" is a valid key.
  *
  * Returns:
- *\li 	ISC_TRUE
- * \li	ISC_FALSE
+ *\li 	true
+ * \li	false
  */
 
-isc_boolean_t
+bool
 dst_key_pubcompare(const dst_key_t *key1, const dst_key_t *key2,
-		   isc_boolean_t match_revoked_key);
+		   bool match_revoked_key);
 /*%<
  * Compares only the public portions of two DST keys.  Returns true
  * if they match, false otherwise.  This allows us, for example, to
@@ -633,11 +640,11 @@ dst_key_pubcompare(const dst_key_t *key1, const dst_key_t *key2,
  *\li	"key2" is a valid key.
  *
  * Returns:
- *\li 	ISC_TRUE
- * \li	ISC_FALSE
+ *\li 	true
+ * \li	false
  */
 
-isc_boolean_t
+bool
 dst_key_paramcompare(const dst_key_t *key1, const dst_key_t *key2);
 /*%<
  * Compares the parameters of two DST keys.  This is used to determine if
@@ -648,8 +655,8 @@ dst_key_paramcompare(const dst_key_t *key1, const dst_key_t *key2);
  *\li	"key2" is a valid key.
  *
  * Returns:
- *\li 	ISC_TRUE
- * \li	ISC_FALSE
+ *\li 	true
+ * \li	false
  */
 
 void
@@ -695,7 +702,7 @@ dst_key_proto(const dst_key_t *key);
 unsigned int
 dst_key_alg(const dst_key_t *key);
 
-isc_uint32_t
+uint32_t
 dst_key_flags(const dst_key_t *key);
 
 dns_keytag_t
@@ -707,13 +714,13 @@ dst_key_rid(const dst_key_t *key);
 dns_rdataclass_t
 dst_key_class(const dst_key_t *key);
 
-isc_boolean_t
+bool
 dst_key_isprivate(const dst_key_t *key);
 
-isc_boolean_t
+bool
 dst_key_iszonekey(const dst_key_t *key);
 
-isc_boolean_t
+bool
 dst_key_isnullkey(const dst_key_t *key);
 
 isc_result_t
@@ -767,9 +774,9 @@ dst_key_secretsize(const dst_key_t *key, unsigned int *n);
  *\li	"n" stores the size of a generated shared secret
  */
 
-isc_uint16_t
+uint16_t
 dst_region_computeid(const isc_region_t *source, unsigned int alg);
-isc_uint16_t
+uint16_t
 dst_region_computerid(const isc_region_t *source, unsigned int alg);
 /*%<
  * Computes the (revoked) key id of the key stored in the provided
@@ -782,7 +789,7 @@ dst_region_computerid(const isc_region_t *source, unsigned int alg);
  *\li 	the key id
  */
 
-isc_uint16_t
+uint16_t
 dst_key_getbits(const dst_key_t *key);
 /*%<
  * Get the number of digest bits required (0 == MAX).
@@ -792,7 +799,7 @@ dst_key_getbits(const dst_key_t *key);
  */
 
 void
-dst_key_setbits(dst_key_t *key, isc_uint16_t bits);
+dst_key_setbits(dst_key_t *key, uint16_t bits);
 /*%<
  * Set the number of digest bits required (0 == MAX).
  *
@@ -821,7 +828,7 @@ dst_key_getttl(const dst_key_t *key);
  */
 
 isc_result_t
-dst_key_setflags(dst_key_t *key, isc_uint32_t flags);
+dst_key_setflags(dst_key_t *key, uint32_t flags);
 /*
  * Set the key flags, and recompute the key ID.
  *
@@ -830,7 +837,7 @@ dst_key_setflags(dst_key_t *key, isc_uint32_t flags);
  */
 
 isc_result_t
-dst_key_getnum(const dst_key_t *key, int type, isc_uint32_t *valuep);
+dst_key_getnum(const dst_key_t *key, int type, uint32_t *valuep);
 /*%<
  * Get a member of the numeric metadata array and place it in '*valuep'.
  *
@@ -841,7 +848,7 @@ dst_key_getnum(const dst_key_t *key, int type, isc_uint32_t *valuep);
  */
 
 void
-dst_key_setnum(dst_key_t *key, int type, isc_uint32_t value);
+dst_key_setnum(dst_key_t *key, int type, uint32_t value);
 /*%<
  * Set a member of the numeric metadata array.
  *
@@ -959,7 +966,7 @@ dst_key_restore(dns_name_t *name, unsigned int alg, unsigned int flags,
 		unsigned int protocol, dns_rdataclass_t rdclass,
 		isc_mem_t *mctx, const char *keystr, dst_key_t **keyp);
 
-isc_boolean_t
+bool
 dst_key_inactive(const dst_key_t *key);
 /*%<
  * Determines if the private key is missing due the key being deemed inactive.
@@ -969,7 +976,7 @@ dst_key_inactive(const dst_key_t *key);
  */
 
 void
-dst_key_setinactive(dst_key_t *key, isc_boolean_t inactive);
+dst_key_setinactive(dst_key_t *key, bool inactive);
 /*%<
  * Set key inactive state.
  *
@@ -978,9 +985,9 @@ dst_key_setinactive(dst_key_t *key, isc_boolean_t inactive);
  */
 
 void
-dst_key_setexternal(dst_key_t *key, isc_boolean_t value);
+dst_key_setexternal(dst_key_t *key, bool value);
 
-isc_boolean_t
+bool
 dst_key_isexternal(dst_key_t *key);
 
 ISC_LANG_ENDDECLS

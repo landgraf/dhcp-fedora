@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: platform.h.in,v 1.21 2007/06/19 23:47:23 tbox Exp $ */
@@ -80,11 +83,6 @@
  * If this system need a modern sprintf() that returns (int) not (char*).
  */
 @LWRES_PLATFORM_NEEDSPRINTF@
-
-/*
- * The printf format string modifier to use with lwres_uint64_t values.
- */
-@LWRES_PLATFORM_QUADFORMAT@
 
 /*! \brief
  * Define if this system needs strtoul.

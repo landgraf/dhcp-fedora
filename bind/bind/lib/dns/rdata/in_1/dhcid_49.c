@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2006, 2007, 2009, 2011, 2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /* RFC 4701 */
 
@@ -27,20 +29,21 @@ fromtext_in_dhcid(ARGS_FROMTEXT) {
 	UNUSED(options);
 	UNUSED(callbacks);
 
-	return (isc_base64_tobuffer(lexer, target, -1));
+	return (isc_base64_tobuffer(lexer, target, -2));
 }
 
 static inline isc_result_t
 totext_in_dhcid(ARGS_TOTEXT) {
-	isc_region_t sr;
-	char buf[sizeof(" ; 64000 255 64000")];
-	size_t n;
+	isc_region_t sr, sr2;
+	/* " ; 64000 255 64000" */
+	char buf[5 + 3*11 + 1];
 
 	REQUIRE(rdata->type == dns_rdatatype_dhcid);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
 	REQUIRE(rdata->length != 0);
 
 	dns_rdata_toregion(rdata, &sr);
+	sr2 = sr;
 
 	if ((tctx->flags & DNS_STYLEFLAG_MULTILINE) != 0)
 		RETERR(str_totext("( " /*)*/, target));
@@ -52,10 +55,9 @@ totext_in_dhcid(ARGS_TOTEXT) {
 	if ((tctx->flags & DNS_STYLEFLAG_MULTILINE) != 0) {
 		RETERR(str_totext(/* ( */ " )", target));
 		if (rdata->length > 2) {
-			n = snprintf(buf, sizeof(buf), " ; %u %u %u",
-				     sr.base[0] * 256 + sr.base[1],
-				     sr.base[2], rdata->length - 3);
-			INSIST(n < sizeof(buf));
+			snprintf(buf, sizeof(buf), " ; %u %u %u",
+				 sr2.base[0] * 256U + sr2.base[1],
+				 sr2.base[2], rdata->length - 3U);
 			RETERR(str_totext(buf, target));
 		}
 	}
@@ -119,7 +121,7 @@ fromstruct_in_dhcid(ARGS_FROMSTRUCT) {
 
 	REQUIRE(type == dns_rdatatype_dhcid);
 	REQUIRE(rdclass == dns_rdataclass_in);
-	REQUIRE(source != NULL);
+	REQUIRE(dhcid != NULL);
 	REQUIRE(dhcid->common.rdtype == type);
 	REQUIRE(dhcid->common.rdclass == rdclass);
 	REQUIRE(dhcid->length != 0);
@@ -137,7 +139,7 @@ tostruct_in_dhcid(ARGS_TOSTRUCT) {
 
 	REQUIRE(rdata->type == dns_rdatatype_dhcid);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-	REQUIRE(target != NULL);
+	REQUIRE(dhcid != NULL);
 	REQUIRE(rdata->length != 0);
 
 	dhcid->common.rdclass = rdata->rdclass;
@@ -194,7 +196,7 @@ digest_in_dhcid(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_in_dhcid(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_dhcid);
@@ -205,10 +207,10 @@ checkowner_in_dhcid(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_in_dhcid(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_dhcid);
@@ -218,7 +220,7 @@ checknames_in_dhcid(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

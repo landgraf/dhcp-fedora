@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: a_1.h,v 1.5 2007/06/19 23:47:17 tbox Exp $ */
 
 /* by Bjorn.Victor@it.uu.se, 2005-05-07 */
 /* Based on generic/mx_15.h */
@@ -14,7 +16,7 @@
 #ifndef CH_3_A_1_H
 #define CH_3_A_1_H 1
 
-typedef isc_uint16_t ch_addr_t;
+typedef uint16_t ch_addr_t;
 
 typedef struct dns_rdata_ch_a {
 	dns_rdatacommon_t	common;

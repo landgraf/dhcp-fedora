@@ -1,4 +1,4 @@
-.\" Copyright (C) 2000, 2001, 2004, 2005, 2007, 2013-2017 Internet Systems Consortium, Inc. ("ISC")
+.\" Copyright (C) 2000, 2001, 2004, 2005, 2007, 2013-2019 Internet Systems Consortium, Inc. ("ISC")
 .\" 
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -310,7 +310,7 @@ See also
 \fBrndc trace\fR\&.
 .RE
 .PP
-\fBnta \fR\fB[( \-d | \-f | \-r | \-l \fIduration\fR)]\fR\fB \fR\fB\fIdomain\fR\fR\fB \fR\fB[\fIview\fR]\fR\fB \fR
+\fBnta \fR\fB[( \-class \fIclass\fR | \-dump | \-force | \-remove | \-lifetime \fIduration\fR)]\fR\fB \fR\fB\fIdomain\fR\fR\fB \fR\fB[\fIview\fR]\fR\fB \fR
 .RS 4
 Sets a DNSSEC negative trust anchor (NTA) for
 \fBdomain\fR, with a lifetime of
@@ -342,7 +342,7 @@ option\&. TTL\-style suffixes can be used to specify the lifetime in seconds, mi
 to zero is equivalent to
 \fB\-remove\fR\&.
 .sp
-If
+If the
 \fB\-dump\fR
 is used, any other arguments are ignored, and a list of existing NTAs is printed (note that this may include NTAs that are expired but have not yet been cleaned up)\&.
 .sp
@@ -354,14 +354,19 @@ option in the Administrator Reference Manual for details)\&. If data can be vali
 \fB\-force\fR
 overrides this behavior and forces an NTA to persist for its entire lifetime, regardless of whether data could be validated if the NTA were not present\&.
 .sp
+The view class can be specified with
+\fB\-class\fR\&. The default is class
+\fBIN\fR, which is the only class for which DNSSEC is currently supported\&.
+.sp
 All of these options can be shortened, i\&.e\&., to
 \fB\-l\fR,
 \fB\-r\fR,
-\fB\-d\fR, and
-\fB\-f\fR\&.
+\fB\-d\fR,
+\fB\-f\fR, and
+\fB\-c\fR\&.
 .RE
 .PP
-\fBquerylog\fR [on|off]
+\fBquerylog\fR [ on | off ]
 .RS 4
 Enable or disable query logging\&. (For backward compatibility, this command can also be used without an argument to toggle query logging on and off\&.)
 .sp
@@ -579,10 +584,10 @@ Delete a given TKEY\-negotiated key from the server\&. (This does not apply to s
 .RS 4
 List the names of all TSIG keys currently configured for use by
 \fBnamed\fR
-in each view\&. The list both statically configured keys and dynamic TKEY\-negotiated keys\&.
+in each view\&. The list includes both statically configured keys and dynamic TKEY\-negotiated keys\&.
 .RE
 .PP
-\fBvalidation ( on | off | check ) \fR\fB[\fIview \&.\&.\&.\fR]\fR\fB \fR
+\fBvalidation ( on | off | status ) \fR\fB[\fIview \&.\&.\&.\fR]\fR\fB \fR
 .RS 4
 Enable, disable, or check the current status of DNSSEC validation\&. Note
 \fBdnssec\-enable\fR
@@ -620,5 +625,5 @@ BIND 9 Administrator Reference Manual\&.
 \fBInternet Systems Consortium, Inc\&.\fR
 .SH "COPYRIGHT"
 .br
-Copyright \(co 2000, 2001, 2004, 2005, 2007, 2013-2017 Internet Systems Consortium, Inc. ("ISC")
+Copyright \(co 2000, 2001, 2004, 2005, 2007, 2013-2019 Internet Systems Consortium, Inc. ("ISC")
 .br

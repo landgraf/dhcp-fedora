@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -30,8 +33,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 /*
  * pkcs11-hmacmd5
  *
@@ -52,6 +53,7 @@
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -105,7 +107,7 @@ main(int argc, char *argv[]) {
 	char *lib_name = NULL;
 	char *pin = NULL;
 	int error = 0;
-	isc_boolean_t logon = ISC_TRUE;
+	bool logon = true;
 	int c, errflg = 0;
 	char *key = NULL;
 	size_t sum = 0;
@@ -121,7 +123,7 @@ main(int argc, char *argv[]) {
 			op_type = OP_ANY;
 			break;
 		case 'n':
-			logon = ISC_FALSE;
+			logon = false;
 			break;
 		case 'p':
 			pin = isc_commandline_argument;
@@ -216,7 +218,7 @@ main(int argc, char *argv[]) {
 	if (logon && pin == NULL)
 		pin = getpassphrase("Enter Pin: ");
 
-	result = pk11_get_session(&pctx, op_type, ISC_FALSE, ISC_FALSE, logon,
+	result = pk11_get_session(&pctx, op_type, false, false, logon,
 				  (const char *) pin, slot);
 	if ((result != ISC_R_SUCCESS) &&
 	    (result != PK11_R_NORANDOMSERVICE) &&

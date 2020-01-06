@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_LP_107_C
@@ -28,13 +31,13 @@ fromtext_lp(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
@@ -48,7 +51,7 @@ totext_lp(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 	char buf[sizeof("64000")];
 	unsigned short num;
 
@@ -61,7 +64,7 @@ totext_lp(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u", num);
+	snprintf(buf, sizeof(buf), "%u", num);
 	RETERR(str_totext(buf, target));
 
 	RETERR(str_totext(" ", target));
@@ -127,7 +130,7 @@ fromstruct_lp(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_lp);
-	REQUIRE(source != NULL);
+	REQUIRE(lp != NULL);
 	REQUIRE(lp->common.rdtype == type);
 	REQUIRE(lp->common.rdclass == rdclass);
 
@@ -146,7 +149,7 @@ tostruct_lp(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_lp);
-	REQUIRE(target != NULL);
+	REQUIRE(lp != NULL);
 	REQUIRE(rdata->length != 0);
 
 	lp->common.rdclass = rdata->rdclass;
@@ -168,7 +171,7 @@ static inline void
 freestruct_lp(ARGS_FREESTRUCT) {
 	dns_rdata_lp_t *lp = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(lp != NULL);
 	REQUIRE(lp->common.rdtype == dns_rdatatype_lp);
 
 	if (lp->mctx == NULL)
@@ -208,7 +211,7 @@ digest_lp(ARGS_DIGEST) {
 	return ((digest)(arg, &region));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_lp(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_lp);
@@ -218,10 +221,10 @@ checkowner_lp(ARGS_CHECKOWNER) {
 	UNUSED(name);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_lp(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_lp);
@@ -229,7 +232,7 @@ checknames_lp(ARGS_CHECKNAMES) {
 	UNUSED(bad);
 	UNUSED(owner);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

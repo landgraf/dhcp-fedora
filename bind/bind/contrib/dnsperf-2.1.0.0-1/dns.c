@@ -34,6 +34,7 @@
 
 #include <ctype.h>
 #include <time.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -259,8 +260,7 @@ perf_dns_parsetsigkey(const char *arg, isc_mem_t *mctx)
 
 	/* Name */
 
-	dns_fixedname_init(&tsigkey->fname);
-	tsigkey->name = dns_fixedname_name(&tsigkey->fname);
+	tsigkey->name = dns_fixedname_initname(&tsigkey->fname);
 	result = name_fromstring(tsigkey->name, dns_rootname, name, namelen,
 				 NULL, "TSIG key");
 	if (result != ISC_R_SUCCESS) {
@@ -422,7 +422,7 @@ add_tsig(isc_buffer_t *packet, perf_dnstsigkey_t *tsigkey)
 	unsigned int rdlen, totallen;
 	unsigned char tmpdata[512];
 	isc_buffer_t tmp;
-	isc_uint32_t now;
+	uint32_t now;
 	unsigned char digest[ISC_SHA256_DIGESTLENGTH];
 
 	hmac_init(tsigkey, &hmac);
@@ -537,7 +537,7 @@ static isc_result_t
 read_update_line(perf_dnsctx_t *ctx, const isc_textregion_t *line, char *str,
 		 dns_name_t *zname, int want_ttl, int need_type,
 		 int want_rdata, int need_rdata, dns_name_t *name,
-		 isc_uint32_t *ttlp, dns_rdatatype_t *typep,
+		 uint32_t *ttlp, dns_rdatatype_t *typep,
 		 dns_rdata_t *rdata, isc_buffer_t *rdatabuf)
 {
 	char *curr_str;
@@ -648,11 +648,11 @@ build_update(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 	int prereqs = 0;
 	dns_fixedname_t fzname, foname;
 	dns_name_t *zname, *oname;
-	isc_uint32_t ttl;
+	uint32_t ttl;
 	dns_rdatatype_t rdtype;
 	dns_rdataclass_t rdclass;
 	dns_rdata_t rdata;
-	isc_uint16_t rdlen;
+	uint16_t rdlen;
 	isc_result_t result;
 
 	/* Reset compression context */
@@ -663,12 +663,10 @@ build_update(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 
 	/* Initialize */
 
-	dns_fixedname_init(&foname);
-	oname = dns_fixedname_name(&foname);
+	oname = dns_fixedname_initname(&foname);
 
 	/* Parse zone name */
-	dns_fixedname_init(&fzname);
-	zname = dns_fixedname_name(&fzname);
+	zname = dns_fixedname_initname(&fzname);
 	result = name_fromstring(zname, dns_rootname,
 				 input.base, strlen(input.base),
 				 NULL, "zone");
@@ -804,7 +802,7 @@ build_update(perf_dnsctx_t *ctx, const isc_textregion_t *record,
 
 isc_result_t
 perf_dns_buildrequest(perf_dnsctx_t *ctx, const isc_textregion_t *record,
-		      isc_uint16_t qid,
+		      uint16_t qid,
 		      isc_boolean_t edns, isc_boolean_t dnssec,
 		      perf_dnstsigkey_t *tsigkey, isc_buffer_t *msg)
 {

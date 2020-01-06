@@ -1,16 +1,17 @@
 /*
- * Copyright (C) 1997-2002, 2004, 2006, 2007, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_LIST_H
 #define ISC_LIST_H 1
-#include <isc/boolean.h>
 #include <isc/assertions.h>
 
 #ifdef ISC_LIST_CHECKINIT
@@ -35,7 +36,7 @@
 
 #define ISC_LIST_HEAD(list) ((list).head)
 #define ISC_LIST_TAIL(list) ((list).tail)
-#define ISC_LIST_EMPTY(list) ISC_TF((list).head == NULL)
+#define ISC_LIST_EMPTY(list) ((list).head == NULL)
 
 #define __ISC_LIST_PREPENDUNSAFE(list, elt, link) \
 	do { \

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2007, 2009, 2011, 2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
-
-/* Reviewed: Thu Mar 16 13:57:50 PST 2000 by explorer */
 
 #ifndef RDATA_GENERIC_NULL_10_C
 #define RDATA_GENERIC_NULL_10_C
@@ -81,7 +80,7 @@ fromstruct_null(ARGS_FROMSTRUCT) {
 	dns_rdata_null_t *null = source;
 
 	REQUIRE(type == dns_rdatatype_null);
-	REQUIRE(source != NULL);
+	REQUIRE(null != NULL);
 	REQUIRE(null->common.rdtype == type);
 	REQUIRE(null->common.rdclass == rdclass);
 	REQUIRE(null->data != NULL || null->length == 0);
@@ -98,7 +97,7 @@ tostruct_null(ARGS_TOSTRUCT) {
 	isc_region_t r;
 
 	REQUIRE(rdata->type == dns_rdatatype_null);
-	REQUIRE(target != NULL);
+	REQUIRE(null != NULL);
 
 	null->common.rdclass = rdata->rdclass;
 	null->common.rdtype = rdata->type;
@@ -118,7 +117,7 @@ static inline void
 freestruct_null(ARGS_FREESTRUCT) {
 	dns_rdata_null_t *null = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(null != NULL);
 	REQUIRE(null->common.rdtype == dns_rdatatype_null);
 
 	if (null->mctx == NULL)
@@ -151,7 +150,7 @@ digest_null(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_null(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_null);
@@ -161,10 +160,10 @@ checkowner_null(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_null(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_null);
@@ -173,7 +172,7 @@ checknames_null(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

@@ -1,9 +1,12 @@
 <!--
- - Copyright (C) 2017  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  -
  - This Source Code Form is subject to the terms of the Mozilla Public
  - License, v. 2.0. If a copy of the MPL was not distributed with this
  - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ -
+ - See the COPYRIGHT file distributed with this work for additional
+ - information regarding copyright ownership.
 -->
 # BIND 9
 
@@ -14,6 +17,8 @@
 1. [Contributing to BIND](#contrib)
 1. [BIND 9.11 features](#features)
 1. [Building BIND](#build)
+1. [macOS](#macos)
+1. [Dependencies](#dependencies)
 1. [Compile-time options](#opts)
 1. [Automated testing](#testing)
 1. [Documentation](#doc)
@@ -43,7 +48,9 @@ versions 4 and 8.  Internet Systems Consortium
 corporation dedicated to providing software and services in support of the
 Internet infrastructure, developed BIND 9 and is responsible for its
 ongoing maintenance and improvement.  BIND is open source software
-licenced under the terms of the Mozilla Public License, version 2.0.
+licensed under the terms of ISC License for all versions up to and
+including BIND 9.10, and the Mozilla Public License version 2.0 for all
+subsequent versions.
 
 For a summary of features introduced in past major releases of BIND,
 see the file [HISTORY](HISTORY.md).
@@ -52,26 +59,31 @@ For a detailed list of changes made throughout the history of BIND 9, see
 the file [CHANGES](CHANGES). See [below](#changes) for details on the
 CHANGES file format.
 
-For up-to-date release notes and errata, see
-[http://www.isc.org/software/bind9/releasenotes](http://www.isc.org/software/bind9/releasenotes)
+For up-to-date versions and release notes, see
+[https://www.isc.org/download/](https://www.isc.org/download/).
 
 ### <a name="help"/> Reporting bugs and getting help
 
-Please report assertion failure errors and suspected security issues to
+To report non-security-sensitive bugs or request new features, you may
+open an Issue in the BIND 9 project on the
+[ISC GitLab server](https://gitlab.isc.org) at
+[https://gitlab.isc.org/isc-projects/bind9](https://gitlab.isc.org/isc-projects/bind9).
+
+Please note that, unless you explicitly mark the newly created Issue as
+"confidential", it will be publicly readable.  Please do not include any
+information in bug reports that you consider to be confidential unless
+the issue has been marked as such.  In particular, if submitting the
+contents of your configuration file in a non-confidential Issue, it is
+advisable to obscure key secrets: this can be done automatically by
+using `named-checkconf -px`.
+
+If the bug you are reporting is a potential security issue, such as an
+assertion failure or other crash in `named`, please do *NOT* use GitLab to
+report it. Instead, please send mail to
 [security-officer@isc.org](mailto:security-officer@isc.org).
 
-General bug reports can be sent to
-[bind9-bugs@isc.org](mailto:bind9-bugs@isc.org).
-
-Feature requests can be sent to
-[bind-suggest@isc.org](mailto:bind-suggest@isc.org).
-
-Please note that, while ISC's ticketing system is not currently publicly
-readable, this may change in the future.  Please do not include information
-in bug reports that you consider to be confidential. For example, when
-sending the contents of your configuration file, it is advisable to obscure
-key secrets; this can be done automatically by using `named-checkconf
--px`.
+For a general overview of ISC security policies, read the Knowledge Base
+article at [https://kb.isc.org/docs/aa-00861](https://kb.isc.org/docs/aa-00861).
 
 Professional support and training for BIND are available from
 ISC at [https://www.isc.org/support](https://www.isc.org/support).
@@ -85,21 +97,28 @@ may also want to join the __BIND Workers__ mailing list, at
 
 ### <a name="contrib"/> Contributing to BIND
 
-A public git repository for BIND is maintained at
-[http://www.isc.org/git/](http://www.isc.org/git/), and also on Github
-at [https://github.com/isc-projects](https://github.com/isc-projects).
+ISC maintains a public git repository for BIND; details can be found
+at [http://www.isc.org/git/](http://www.isc.org/git/).
 
 Information for BIND contributors can be found in the following files:
 - General information: [doc/dev/contrib.md](doc/dev/contrib.md)
 - BIND 9 code style: [doc/dev/style.md](doc/dev/style.md)
 - BIND architecture and developer guide: [doc/dev/dev.md](doc/dev/dev.md)
 
-Patches for BIND may be submitted either as Github pull requests
-or via email.  When submitting a patch via email, please prepend the
-subject header with "`[PATCH]`" so it will be easier for us to find. 
-If your patch introduces a new feature in BIND, please submit it to
-[bind-suggest@isc.org](mailto:bind-suggest@isc.org); if it fixes a bug,
-please submit it to [bind9-bugs@isc.org](mailto:bind9-bugs@isc.org).
+Patches for BIND may be submitted as
+[merge requests](https://gitlab.isc.org/isc-projects/bind9/merge_requests)
+in the [ISC GitLab server](https://gitlab.isc.org) at
+at [https://gitlab.isc.org/isc-projects/bind9/merge_requests](https://gitlab.isc.org/isc-projects/bind9/merge_requests).
+
+By default, external contributors don't have ability to fork BIND in the
+GitLab server, but if you wish to contribute code to BIND, you may request
+permission to do so. Thereafter, you can create git branches and directly
+submit requests that they be reviewed and merged.
+
+If you prefer, you may also submit code by opening a
+[GitLab Issue](https://gitlab.isc.org/isc-projects/bind9/issues) and
+including your patch as an attachment, preferably generated by
+`git format-patch`.
 
 ### <a name="features"/> BIND 9.11 features
 
@@ -130,7 +149,7 @@ releases.  New features include:
       `fetches-per-server`, this value is not self-tuning.)
     * New stats counters have been added to count queries spilled due to
       these quotas.
-* Added a new `dnssec-keymgr` key mainenance utility, which can generate or
+* Added a new `dnssec-keymgr` key maintenance utility, which can generate or
   update keys as needed to ensure that a zone's keys match a defined DNSSEC
   policy.
 * The experimental "SIT" feature in BIND 9.10 has been renamed "COOKIE" and
@@ -241,16 +260,82 @@ disclosed in CVE-2017-3140, CVE-2017-3141, CVE-2017-3142 and CVE-2017-3143.
 It also addresses several bugs related to the use of an LMDB database to
 store data related to zones added via `rndc addzone` or catalog zones.
 
+#### BIND 9.11.3
+
+BIND 9.11.3 is a maintenance release, and addresses the security flaw
+disclosed in CVE-2017-3145.
+
+#### BIND 9.11.4
+
+BIND 9.11.4 is a maintenance release, and addresses the security flaw
+disclosed in CVE-2018-5738. It also introduces "root key sentinel" support,
+enabling validating resolvers to indicate via a special query which trust
+anchors are configured for the root zone.
+
+#### BIND 9.11.5
+
+BIND 9.11.5 is a maintenance release, and also addresses CVE-2018-5741
+by correcting faulty documentation and introducing the following new
+feature:
+
+* New `krb5-selfsub` and `ms-selfsub` rule types for `update-policy`
+  statements allow updating of subdomains based on a Kerberos or
+  Active Directory machine principal.
+
+#### BIND 9.11.6
+
+BIND 9.11.6 is a maintenance release, and also addresses the security
+flaws disclosed in CVE-2018-5743, CVE-2018-5745, CVE-2018-5744,
+and CVE-2019-6465.
+
+#### BIND 9.11.7
+
+BIND 9.11.7 is a maintenance release, and also addresses the security
+flaw disclosed in CVE-2018-5743.
+
+#### BIND 9.11.8
+
+BIND 9.11.8 is a maintenance release, and also addresses the security
+flaw disclosed in CVE-2019-6471.
+
+#### BIND 9.11.9
+
+BIND 9.11.9 is a maintenance release, and also adds support for
+the new MaxMind GeoIP2 geolocation API when built with
+`configure --with-geoip2`.
+
+#### BIND 9.11.10
+
+BIND 9.11.10 is a maintenance release.
+
+#### BIND 9.11.11
+
+BIND 9.11.11 is a maintenance release.
+
+#### BIND 9.11.12
+
+BIND 9.11.12 is a maintenance release.
+
+#### BIND 9.11.13
+
+BIND 9.11.13 is a maintenance release, and also addresses the security
+vulnerability disclosed in CVE-2019-6477.
+
+#### BIND 9.11.14
+
+BIND 9.11.14 is a maintenance release.
+
 ### <a name="build"/> Building BIND
 
-BIND requires a UNIX or Linux system with an ANSI C compiler, basic POSIX
-support, and a 64-bit integer type. Successful builds have been observed on
-many versions of Linux and UNIX, including RedHat, Fedora, Debian, Ubuntu,
-SuSE, Slackware, FreeBSD, NetBSD, OpenBSD, Mac OS X, Solaris, HP-UX, AIX,
-SCO OpenServer, and OpenWRT. 
+Minimally, BIND requires a UNIX or Linux system with an ANSI C compiler,
+basic POSIX support, and a 64-bit integer type. Successful builds have been
+observed on many versions of Linux and UNIX, including RHEL/CentOS, Fedora,
+Debian, Ubuntu, SLES, openSUSE, Slackware, Alpine, FreeBSD, NetBSD,
+OpenBSD, macOS, Solaris, OpenIndiana, OmniOS CE, HP-UX, and OpenWRT.
 
-BIND is also available for Windows XP, 2003, 2008, and higher.  See
-`win32utils/readme1st.txt` for details on building for Windows systems.
+BIND is also available for Windows Server 2008 and higher.  See
+`win32utils/build.txt` for details on building for Windows
+systems.
 
 To build on a UNIX or Linux system, use:
 
@@ -271,10 +356,32 @@ affect compilation:
 |`STD_CDEFINES`|Any additional preprocessor symbols you want defined.  Defaults to empty string. For a list of possible settings, see the file [OPTIONS](OPTIONS.md).|
 |`LDFLAGS`|Linker flags. Defaults to empty string.|
 |`BUILD_CC`|Needed when cross-compiling: the native C compiler to use when building for the target system.|
-|`BUILD_CFLAGS`|Optional, used for cross-compiling|
-|`BUILD_CPPFLAGS`||
-|`BUILD_LDFLAGS`||
-|`BUILD_LIBS`||
+|`BUILD_CFLAGS`|`CFLAGS` for the target system during cross-compiling.|
+|`BUILD_CPPFLAGS`|`CPPFLAGS` for the target system during cross-compiling.|
+|`BUILD_LDFLAGS`|`LDFLAGS` for the target system during cross-compiling.|
+|`BUILD_LIBS`|`LIBS` for the target system during cross-compiling.|
+
+On platforms where neither C11 Atomic operations library nor custom ISC atomic
+operations are available, updating the statistics counters is not locked due to
+performance reasons and therefore the counters might be inaccurate.  Anybody
+building BIND 9 is strongly advised to use a modern C11 compiler with C11 Atomic
+operations library support.
+
+#### <a name="macos"> macOS
+
+Building on macOS assumes that the "Command Tools for Xcode" is installed.
+This can be downloaded from [https://developer.apple.com/download/more/](https://developer.apple.com/download/more/)
+or if you have Xcode already installed you can run `xcode-select --install`.
+
+### <a name="dependencies"/> Dependencies
+
+Portions of BIND that are written in Python, including
+`dnssec-keymgr`, `dnssec-coverage`, `dnssec-checkds`, and some of the
+system tests, require the `argparse`, `ply` and `distutils.core` modules
+to be available.
+`argparse` is a standard module as of Python 2.7 and Python 3.2.
+`ply` is available from [https://pypi.python.org/pypi/ply](https://pypi.python.org/pypi/ply).
+`distutils.core` is required for installation.
 
 #### <a name="opts"/> Compile-time options
 
@@ -293,50 +400,48 @@ specify a user with the -u option when running `named`.)
 To build shared libraries, specify `--with-libtool` on the `configure`
 command line.
 
-Certain compiled-in constants and default settings can be increased to
-values better suited to large servers with abundant memory resources (e.g,
-64-bit servers with 12G or more of memory) by specifying
-`--with-tuning=large` on the `configure` command line. This can improve
-performance on big servers, but will consume more memory and may degrade
-performance on smaller systems.
-
 For the server to support DNSSEC, you need to build it with crypto support.
 To use OpenSSL, you should have OpenSSL 1.0.2e or newer installed.  If the
 OpenSSL library is installed in a nonstandard location, specify the prefix
-using "--with-openssl=/prefix" on the configure command line. To use a
+using `--with-openssl=<PREFIX>` on the configure command line. To use a
 PKCS#11 hardware service module for cryptographic operations, specify the
-path to the PKCS#11 provider library using "--with-pkcs11=/prefix", and
+path to the PKCS#11 provider library using `--with-pkcs11=<PREFIX>`, and
 configure BIND with "--enable-native-pkcs11".
 
 To support the HTTP statistics channel, the server must be linked with at
-least one of the following: libxml2
-[http://xmlsoft.org](http://xmlsoft.org) or json-c
-[https://github.com/json-c](https://github.com/json-c).  If these are
-installed at a nonstandard location, specify the prefix using
-`--with-libxml2=/prefix` or `--with-libjson=/prefix`.
+least one of the following libraries: `libxml2`
+[http://xmlsoft.org](http://xmlsoft.org) or `json-c`
+[https://github.com/json-c/json-c](https://github.com/json-c/json-c).
+If these are installed at a nonstandard location, then:
+
+* for `libxml2`, specify the prefix using `--with-libxml2=/prefix`,
+* for `json-c`, adjust `PKG_CONFIG_PATH`.
 
 To support compression on the HTTP statistics channel, the server must be
-linked against libzlib.  If this is installed in a nonstandard location,
+linked against `libzlib`.  If this is installed in a nonstandard location,
 specify the prefix using `--with-zlib=/prefix`.
 
 To support storing configuration data for runtime-added zones in an LMDB
 database, the server must be linked with liblmdb. If this is installed in a
-nonstandard location, specify the prefix using "with-lmdb=/prefix".
+nonstandard location, specify the prefix using `with-lmdb=/prefix`.
 
 To support GeoIP location-based ACLs, the server must be linked with
 libGeoIP. This is not turned on by default; BIND must be configured with
 "--with-geoip". If the library is installed in a nonstandard location, use
 specify the prefix using "--with-geoip=/prefix".
 
-For DNSTAP packet logging, you must have libfstrm
+For DNSTAP packet logging, you must have installed `libfstrm`
 [https://github.com/farsightsec/fstrm](https://github.com/farsightsec/fstrm)
-and libprotobuf-c
+and `libprotobuf-c`
 [https://developers.google.com/protocol-buffers](https://developers.google.com/protocol-buffers),
-and BIND must be configured with "--enable-dnstap".
+and BIND must be configured with `--enable-dnstap`.
 
-Python requires the 'argparse' and 'ply' modules to be available.
-'argparse' is a standard module as of Python 2.7 and Python 3.2.
-'ply' is available from [https://pypi.python.org/pypi/ply](https://pypi.python.org/pypi/ply).
+Certain compiled-in constants and default settings can be increased to
+values better suited to large servers with abundant memory resources (e.g,
+64-bit servers with 12G or more of memory) by specifying
+`--with-tuning=large` on the `configure` command line. This can improve
+performance on big servers, but will consume more memory and may degrade
+performance on smaller systems.
 
 On some platforms it is necessary to explicitly request large file support
 to handle files bigger than 2GB.  This can be done by using
@@ -350,6 +455,10 @@ reduce memory footprint.
 If your operating system has integrated support for IPv6, it will be used
 automatically.  If you have installed KAME IPv6 separately, use
 `--with-kame[=PATH]` to specify its location.
+
+The `--enable-querytrace` option causes `named` to log every step of
+processing every query. This should only be enabled when debugging, because
+it has a significant negative impact on query performance.
 
 `make install` will install `named` and the various BIND 9 libraries.  By
 default, installation is into /usr/local, but this can be changed with the
@@ -368,22 +477,24 @@ localstatedir defaults to `$prefix/var`.
 A system test suite can be run with `make test`.  The system tests require
 you to configure a set of virtual IP addresses on your system (this allows
 multiple servers to run locally and communicate with one another).  These
-IP addresses can be configured by by running the script
+IP addresses can be configured by running the command
 `bin/tests/system/ifconfig.sh up` as root.
 
-Some tests require Perl and the Net::DNS and/or IO::Socket::INET6 modules,
+Some tests require Perl and the `Net::DNS` and/or `IO::Socket::INET6` modules,
 and will be skipped if these are not available. Some tests require Python
-and the 'dnspython' module and will be skipped if these are not available.
+and the `dnspython` module and will be skipped if these are not available.
 See bin/tests/system/README for further details.
 
-Unit tests are implemented using Automated Testing Framework (ATF).
-To run them, use `configure --with-atf`, then run `make test` or
-`make unit`.
+Unit tests are implemented using the [CMocka unit testing framework](https://cmocka.org/).
+To build them, use `configure --with-cmocka`. Execution of tests is done
+by the [Kyua test execution engine](https://github.com/jmmv/kyua); if the
+`kyua` command is available, then unit tests can be run via `make test`
+or `make unit`.
 
 ### <a name="doc"/> Documentation
 
 The *BIND 9 Administrator Reference Manual* is included with the source
-distribution, in DocBook XML, HTML and PDF format, in the `doc/arm`
+distribution, in DocBook XML, HTML, and PDF format, in the `doc/arm`
 directory.
 
 Some of the programs in the BIND 9 distribution have man pages in their
@@ -425,6 +536,25 @@ In general, [func] and [experimental] tags will only appear in new-feature
 releases (i.e., those with version numbers ending in zero).  Some new
 functionality may be backported to older releases on a case-by-case basis.
 All other change types may be applied to all currently-supported releases.
+
+#### Bug report identifiers
+
+Most notes in the CHANGES file include a reference to a bug report or
+issue number. Prior to 2018, these were usually of the form `[RT #NNN]`
+and referred to entries in the "bind9-bugs" RT database, which was not open
+to the public. More recent entries use the form `[GL #NNN]` or, less often,
+`[GL !NNN]`, which, respectively, refer to issues or merge requests in the
+GitLab database. Most of these are publicly readable, unless they include
+information which is confidential or security sensitive.
+
+To look up a GitLab issue by its number, use the URL
+[https://gitlab.isc.org/isc-projects/bind9/issues/NNN](https://gitlab.isc.org/isc-projects/bind9/issues).
+To look up a merge request, use
+[https://gitlab.isc.org/isc-projects/bind9/merge_requests/NNN](https://gitlab.isc.org/isc-projects/bind9/merge_requests).
+
+In rare cases, an issue or merge request number may be followed with the
+letter "P". This indicates that the information is in the private ISC
+GitLab instance, which is not visible to the public.
 
 ### <a name="ack"/> Acknowledgments
 

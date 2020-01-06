@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 
@@ -130,7 +133,7 @@ load_library(isc_mem_t *mctx, const char *filename, const char *instname,
 		      instname, filename);
 
 	flags = RTLD_NOW|RTLD_LOCAL;
-#ifdef RTLD_DEEPBIND
+#if defined(RTLD_DEEPBIND) && !__SANITIZE_ADDRESS__
 	flags |= RTLD_DEEPBIND;
 #endif
 
@@ -382,7 +385,7 @@ cleanup:
 }
 
 void
-dns_dyndb_cleanup(isc_boolean_t exiting) {
+dns_dyndb_cleanup(bool exiting) {
 	dyndb_implementation_t *elem;
 	dyndb_implementation_t *prev;
 
@@ -403,7 +406,7 @@ dns_dyndb_cleanup(isc_boolean_t exiting) {
 	}
 	UNLOCK(&dyndb_lock);
 
-	if (exiting == ISC_TRUE)
+	if (exiting == true)
 		isc_mutex_destroy(&dyndb_lock);
 }
 

@@ -43,7 +43,7 @@
  * Create a key in the keystore of an HSM
  *
  * The calculation of key tag is left to the script
- * that converts the key into a DNSKEY RR and inserts 
+ * that converts the key into a DNSKEY RR and inserts
  * it into a zone file.
  *
  * usage:
@@ -73,6 +73,7 @@
 #define WANT_DH_PRIMES
 #define WANT_ECC_CURVES
 #include <pk11/constants.h>
+#include <pkcs11/eddsa.h>
 
 #if !(defined(HAVE_GETPASSPHRASE) || (defined (__SVR4) && defined (__sun)))
 #define getpassphrase(x)	getpass(x)
@@ -82,13 +83,14 @@
 static CK_BBOOL truevalue = TRUE;
 static CK_BBOOL falsevalue = FALSE;
 
-/* Key class: RSA, ECC, DSA, DH, or unknown */
+/* Key class: RSA, ECC, ECX, DSA, DH, or unknown */
 typedef enum {
 	key_unknown,
 	key_rsa,
 	key_dsa,
 	key_dh,
-	key_ecc
+	key_ecc,
+	key_ecx
 } key_class_t;
 
 /*
@@ -136,7 +138,7 @@ static CK_ATTRIBUTE rsa_template[] = {
 };
 
 /*
- * Public key template for ECC keys
+ * Public key template for ECC/ECX keys
  */
 #define ECC_LABEL 0
 #define ECC_VERIFY 1
@@ -247,6 +249,9 @@ keyclass_fromtext(const char *name) {
 	else if (strncasecmp(name, "ecc", 3) == 0 ||
 		 strncasecmp(name, "ecdsa", 5) == 0)
 		return (key_ecc);
+	else if (strncasecmp(name, "ecx", 3) == 0 ||
+		 strncasecmp(name, "ed", 2) == 0)
+		return (key_ecx);
 	else
 		return (key_unknown);
 }
@@ -368,10 +373,12 @@ main(int argc, char *argv[]) {
 	switch (keyclass) {
 	case key_rsa:
 		op_type = OP_RSA;
-		if (expsize == 0)
+		if (expsize == 0) {
 			expsize = 3;
-		if (bits == 0)
+		}
+		if (bits == 0) {
 			usage();
+		}
 
 		mech.mechanism = CKM_RSA_PKCS_KEY_PAIR_GEN;
 		mech.pParameter = NULL;
@@ -384,9 +391,9 @@ main(int argc, char *argv[]) {
 		/* Set public exponent to F4 or F5 */
 		exponent[0] = 0x01;
 		exponent[1] = 0x00;
-		if (expsize == 3)
+		if (expsize == 3) {
 			exponent[2] = 0x01;
-		else {
+		} else {
 			exponent[2] = 0x00;
 			exponent[3] = 0x00;
 			exponent[4] = 0x01;
@@ -398,10 +405,15 @@ main(int argc, char *argv[]) {
 		public_template[RSA_PUBLIC_EXPONENT].ulValueLen = expsize;
 		break;
 	case key_ecc:
+#if !defined(HAVE_PKCS11_ECDSA)
+		fprintf(stderr,
+			"prime256v1 and secp3841r1 are not supported\n");
+		usage();
+#else
 		op_type = OP_EC;
-		if (bits == 0)
+		if (bits == 0) {
 			bits = 256;
-		else if (bits != 256 && bits != 384) {
+		} else if (bits != 256 && bits != 384) {
 			fprintf(stderr, "ECC keys only support bit sizes of "
 					"256 and 384\n");
 			exit(2);
@@ -424,8 +436,52 @@ main(int argc, char *argv[]) {
 			public_template[4].ulValueLen =
 				sizeof(pk11_ecc_secp384r1);
 		}
+#endif
+		break;
+	case key_ecx:
+#if !defined(CKM_EDDSA_KEY_PAIR_GEN)
+		fprintf(stderr, "CKM_EDDSA_KEY_PAIR_GEN is not defined\n");
+		usage();
+#else
+		op_type = OP_EC;
+		if (bits == 0) {
+			bits = 256;
+		} else if (bits != 256 && bits != 456) {
+			fprintf(stderr, "ECX keys only support bit sizes of "
+					"256 and 456\n");
+			exit(2);
+		}
+
+		mech.mechanism = CKM_EDDSA_KEY_PAIR_GEN;
+		mech.pParameter = NULL;
+		mech.ulParameterLen = 0;
+
+		public_template = ecc_template;
+		public_attrcnt = ECC_ATTRS;
+		id_offset = ECC_ID;
+
+		if (bits == 256) {
+#if HAVE_PKCS11_ED25519
+			public_template[4].pValue = pk11_ecc_ed25519;
+			public_template[4].ulValueLen =
+				sizeof(pk11_ecc_ed25519);
+#else
+			fprintf(stderr, "Ed25519 is not supported\n");
+			usage();
+#endif
+		} else {
+#if HAVE_PKCS11_ED448
+			public_template[4].pValue = pk11_ecc_ed448;
+			public_template[4].ulValueLen =
+				sizeof(pk11_ecc_ed448);
+#else
+			fprintf(stderr, "Ed449 is not supported\n");
+			usage();
+#endif
+		}
 
 		break;
+#endif /* !defined(CKM_EDDSA_KEY_PAIR_GEN) */
 	case key_dsa:
 		op_type = OP_DSA;
 		if (bits == 0)
@@ -489,7 +545,7 @@ main(int argc, char *argv[]) {
 	case key_unknown:
 		usage();
 	}
-	
+
 	search_template[0].pValue = label;
 	search_template[0].ulValueLen = strlen((char *)label);
 	public_template[0].pValue = label;
@@ -521,14 +577,15 @@ main(int argc, char *argv[]) {
 	pk11_result_register();
 
 	/* Initialize the CRYPTOKI library */
-	if (lib_name != NULL)
+	if (lib_name != NULL) {
 		pk11_set_lib_name(lib_name);
+	}
 
 	if (pin == NULL)
 		pin = getpassphrase("Enter Pin: ");
 
-	result = pk11_get_session(&pctx, op_type, ISC_FALSE, ISC_TRUE,
-				  ISC_TRUE, (const char *) pin, slot);
+	result = pk11_get_session(&pctx, op_type, false, true,
+				  true, (const char *) pin, slot);
 	if (result == PK11_R_NORANDOMSERVICE ||
 	    result == PK11_R_NODIGESTSERVICE ||
 	    result == PK11_R_NOAESSERVICE) {
@@ -546,7 +603,7 @@ main(int argc, char *argv[]) {
 	hSession = pctx.session;
 
 	/* check if a key with the same id already exists */
-	rv = pkcs_C_FindObjectsInit(hSession, search_template, 1); 
+	rv = pkcs_C_FindObjectsInit(hSession, search_template, 1);
 	if (rv != CKR_OK) {
 		fprintf(stderr, "C_FindObjectsInit: Error = 0x%.8lX\n", rv);
 		error = 1;
@@ -570,7 +627,7 @@ main(int argc, char *argv[]) {
 		private_template[5].pValue = &truevalue;
 	}
 
-	if (keyclass == key_rsa || keyclass == key_ecc)
+	if (keyclass == key_rsa || keyclass == key_ecc || keyclass == key_ecx)
 		goto generate_keys;
 
 	/*
@@ -619,8 +676,18 @@ main(int argc, char *argv[]) {
 	}
 
 	/* Allocate space for parameter attributes */
-	for (i = 0; i < param_attrcnt; i++)
+	for (i = 0; i < param_attrcnt; i++) {
+		param_template[i].pValue = NULL;
+	}
+
+	for (i = 0; i < param_attrcnt; i++) {
 		param_template[i].pValue = malloc(param_template[i].ulValueLen);
+		if (param_template[i].pValue == NULL) {
+			fprintf(stderr, "malloc failed\n");
+			error = 1;
+			goto exit_params;
+		}
+	}
 
 	rv = pkcs_C_GetAttributeValue(hSession, domainparams,
 				 dsa_param_template, DSA_PARAM_ATTRS);
@@ -666,18 +733,23 @@ main(int argc, char *argv[]) {
 			       public_template, public_attrcnt,
 			       private_template, private_attrcnt,
 			       &publickey, &privatekey);
-	
+
 	if (rv != CKR_OK) {
 		fprintf(stderr, "C_GenerateKeyPair: Error = 0x%.8lX\n", rv);
 		error = 1;
-	 } else if (!quiet)
+	} else if (!quiet) {
 		printf("Key pair generation complete.\n");
-	
+	}
+
  exit_params:
 	/* Free parameter attributes */
-	if (keyclass == key_dsa || keyclass == key_dh)
-		for (i = 0; i < param_attrcnt; i++)
-			free(param_template[i].pValue);
+	if (keyclass == key_dsa || keyclass == key_dh) {
+		for (i = 0; i < param_attrcnt; i++) {
+			if (param_template[i].pValue != NULL) {
+				free(param_template[i].pValue);
+			}
+		}
+	}
 
  exit_domain:
 	/* Destroy domain parameters */

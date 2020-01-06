@@ -1,21 +1,26 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2009, 2011, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: tsigconf.c,v 1.35 2011/01/11 23:47:12 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
+#include <inttypes.h>
+
 #include <isc/base64.h>
 #include <isc/buffer.h>
 #include <isc/mem.h>
 #include <isc/string.h>
+#include <isc/util.h>
 
 #include <isccfg/cfg.h>
 
@@ -40,7 +45,7 @@ add_initial_keys(const cfg_obj_t *list, dns_tsig_keyring_t *ring,
 	int secretlen = 0;
 	isc_result_t ret;
 	isc_stdtime_t now;
-	isc_uint16_t bits;
+	uint16_t bits;
 
 	for (element = cfg_list_first(list);
 	     element != NULL;
@@ -105,7 +110,7 @@ add_initial_keys(const cfg_obj_t *list, dns_tsig_keyring_t *ring,
 
 		isc_stdtime_get(&now);
 		ret = dns_tsigkey_create(&keyname, alg, secret, secretlen,
-					 ISC_FALSE, NULL, now, now,
+					 false, NULL, now, now,
 					 mctx, ring, &tsigkey);
 		isc_mem_put(mctx, secret, secretalloc);
 		secret = NULL;

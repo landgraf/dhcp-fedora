@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004-2007, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,10 +23,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: util.h,v 1.11 2007/08/28 07:20:43 tbox Exp $ */
 
 #ifndef ISCCC_UTIL_H
 #define ISCCC_UTIL_H 1
+
+#include <inttypes.h>
 
 #include <isc/util.h>
 
@@ -66,14 +70,14 @@
 
 #define GET64(v, w) \
 	do { \
-		v = (isc_uint64_t)w[0] << 56; \
-		v |= (isc_uint64_t)w[1] << 48; \
-		v |= (isc_uint64_t)w[2] << 40; \
-		v |= (isc_uint64_t)w[3] << 32; \
-		v |= (isc_uint64_t)w[4] << 24; \
-		v |= (isc_uint64_t)w[5] << 16; \
-		v |= (isc_uint64_t)w[6] << 8; \
-		v |= (isc_uint64_t)w[7]; \
+		v = (uint64_t)w[0] << 56; \
+		v |= (uint64_t)w[1] << 48; \
+		v |= (uint64_t)w[2] << 40; \
+		v |= (uint64_t)w[3] << 32; \
+		v |= (uint64_t)w[4] << 24; \
+		v |= (uint64_t)w[5] << 16; \
+		v |= (uint64_t)w[6] << 8; \
+		v |= (uint64_t)w[7]; \
 		w += 8; \
 	} while (0)
 

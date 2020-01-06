@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwpacket.c,v 1.18 2007/06/19 23:47:22 tbox Exp $ */
@@ -50,6 +53,7 @@
 #include <config.h>
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -61,7 +65,7 @@
 
 /*% Length of Packet */
 #define LWPACKET_LENGTH \
-	(sizeof(lwres_uint16_t) * 4 + sizeof(lwres_uint32_t) * 5)
+	(sizeof(uint16_t) * 4 + sizeof(uint32_t) * 5)
 
 /*% transfers the contents of lightweight resolver packet structure lwres_lwpacket_t *pkt in network byte order to the lightweight resolver buffer, *b. */
 
@@ -90,7 +94,7 @@ lwres_lwpacket_renderheader(lwres_buffer_t *b, lwres_lwpacket_t *pkt) {
 
 lwres_result_t
 lwres_lwpacket_parseheader(lwres_buffer_t *b, lwres_lwpacket_t *pkt) {
-	lwres_uint32_t space;
+	uint32_t space;
 
 	REQUIRE(b != NULL);
 	REQUIRE(pkt != NULL);

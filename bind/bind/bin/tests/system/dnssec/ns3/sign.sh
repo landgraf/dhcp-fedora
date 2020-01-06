@@ -1,21 +1,66 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2000-2002, 2004, 2006-2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
+
+echo_i "ns3/sign.sh"
+
+infile=key.db.in
+for tld in managed trusted
+do
+	# A secure zone to test.
+	zone=secure.${tld}
+	zonefile=${zone}.db
+
+	keyname1=`$KEYGEN -f KSK -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+	cat $infile $keyname1.key > $zonefile
+	$SIGNER -z -P -3 - -o $zone -r $RANDFILE -O full -f ${zonefile}.signed $zonefile > /dev/null 2>&1
+	DSFILE=dsset-`echo ${zone} |sed -e "s/\.$//g"`$TP
+	$DSFROMKEY -A -f ${zonefile}.signed $zone > $DSFILE
+
+	# Zone to test trust anchor with unsupported algorithm.
+	zone=unsupported.${tld}
+	zonefile=${zone}.db
+
+	keyname2=`$KEYGEN -f KSK -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+	cat $infile $keyname2.key > $zonefile
+	$SIGNER -z -P -3 - -o $zone -r $RANDFILE -O full -f ${zonefile}.tmp $zonefile > /dev/null 2>&1
+	awk '$4 == "DNSKEY" { $7 = 255 } $4 == "RRSIG" { $6 = 255 } { print }' ${zonefile}.tmp > ${zonefile}.signed
+	DSFILE=dsset-`echo ${zone} |sed -e "s/\.$//g"`$TP
+	$DSFROMKEY -A -f ${zonefile}.signed $zone > $DSFILE
+
+	# Make trusted-keys and managed keys conf sections for ns8.
+	mv ${keyname2}.key ${keyname2}.tmp
+	awk '$1 == "unsupported.'"${tld}"'." { $6 = 255 } { print }' ${keyname2}.tmp > ${keyname2}.key
+
+	case $tld in
+	"managed")
+		keyfile_to_managed_keys $keyname1 $keyname2 > ../ns8/managed.conf
+		;;
+	"trusted")
+		keyfile_to_trusted_keys $keyname1 $keyname2 > ../ns8/trusted.conf
+		;;
+	esac
+done
+
+echo_i "ns3/sign.sh: example zones"
 
 zone=secure.example.
 infile=secure.example.db.in
 zonefile=secure.example.db
 
-cnameandkey=`$KEYGEN -T KEY -q -r $RANDFILE -a RSASHA1 -b 768 -n host cnameandkey.$zone`
-dnameandkey=`$KEYGEN -T KEY -q -r $RANDFILE -a RSASHA1 -b 768 -n host dnameandkey.$zone`
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
+cnameandkey=`$KEYGEN -T KEY -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n host cnameandkey.$zone`
+dnameandkey=`$KEYGEN -T KEY -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n host dnameandkey.$zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $cnameandkey.key $dnameandkey.key $keyname.key >$zonefile
 
@@ -25,7 +70,7 @@ zone=bogus.example.
 infile=bogus.example.db.in
 zonefile=bogus.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -35,8 +80,8 @@ zone=dynamic.example.
 infile=dynamic.example.db.in
 zonefile=dynamic.example.db
 
-keyname1=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
-keyname2=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 1024 -n zone -f KSK $zone`
+keyname1=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+keyname2=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b 1024 -n zone -f KSK $zone`
 
 cat $infile $keyname1.key $keyname2.key >$zonefile
 
@@ -46,7 +91,7 @@ zone=keyless.example.
 infile=generic.example.db.in
 zonefile=keyless.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -66,7 +111,7 @@ zone=secure.nsec3.example.
 infile=secure.nsec3.example.db.in
 zonefile=secure.nsec3.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -79,7 +124,7 @@ zone=nsec3.nsec3.example.
 infile=nsec3.nsec3.example.db.in
 zonefile=nsec3.nsec3.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -92,7 +137,7 @@ zone=optout.nsec3.example.
 infile=optout.nsec3.example.db.in
 zonefile=optout.nsec3.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -105,7 +150,7 @@ zone=nsec3.example.
 infile=nsec3.example.db.in
 zonefile=nsec3.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -118,7 +163,7 @@ zone=secure.optout.example.
 infile=secure.optout.example.db.in
 zonefile=secure.optout.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -131,7 +176,7 @@ zone=nsec3.optout.example.
 infile=nsec3.optout.example.db.in
 zonefile=nsec3.optout.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -144,7 +189,7 @@ zone=optout.optout.example.
 infile=optout.optout.example.db.in
 zonefile=optout.optout.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -157,7 +202,7 @@ zone=optout.example.
 infile=optout.example.db.in
 zonefile=optout.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS  -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -170,7 +215,7 @@ zone=nsec3-unknown.example.
 infile=nsec3-unknown.example.db.in
 zonefile=nsec3-unknown.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -183,40 +228,74 @@ zone=optout-unknown.example.
 infile=optout-unknown.example.db.in
 zonefile=optout-unknown.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
 $SIGNER -P -3 - -U -A -r $RANDFILE -o $zone $zonefile > /dev/null 2>&1
 
 #
-# A zone with a unknown DNSKEY algorithm.
+# A zone that is signed with an unknown DNSKEY algorithm.
 # Algorithm 7 is replaced by 100 in the zone and dsset.
 #
-zone=dnskey-unknown.example.
+zone=dnskey-unknown.example
 infile=dnskey-unknown.example.db.in
 zonefile=dnskey-unknown.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
 $SIGNER -P -3 - -r $RANDFILE -o $zone -O full -f ${zonefile}.tmp $zonefile > /dev/null 2>&1
 
-awk '$4 == "DNSKEY" { $7 = 100; print } $4 == "RRSIG" { $6 = 100; print } { print }' ${zonefile}.tmp > ${zonefile}.signed
+awk '$4 == "DNSKEY" { $7 = 100 } $4 == "RRSIG" { $6 = 100 } { print }' ${zonefile}.tmp > ${zonefile}.signed
 
-DSFILE=dsset-`echo ${zone} |sed -e "s/\.$//g"`$TP
+DSFILE=dsset-${zone}${TP}
 $DSFROMKEY -A -f ${zonefile}.signed $zone > $DSFILE
+
+#
+# A zone that is signed with an unsupported DNSKEY algorithm (3).
+# Algorithm 7 is replaced by 255 in the zone and dsset.
+#
+zone=dnskey-unsupported.example
+infile=dnskey-unsupported.example.db.in
+zonefile=dnskey-unsupported.example.db
+
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+
+cat $infile $keyname.key > $zonefile
+
+$SIGNER -P -3 - -r $RANDFILE -o $zone -O full -f ${zonefile}.tmp $zonefile > /dev/null 2>&1
+
+awk '$4 == "DNSKEY" { $7 = 255 } $4 == "RRSIG" { $6 = 255 } { print }' ${zonefile}.tmp > ${zonefile}.signed
+
+DSFILE="dsset-${zone}${TP}"
+$DSFROMKEY -A -f ${zonefile}.signed $zone > $DSFILE
+
+#
+# A zone with a published unsupported DNSKEY algorithm (Reserved).
+# Different from above because this key is not intended for signing.
+#
+zone=dnskey-unsupported-2.example
+infile=dnskey-unsupported-2.example.db.in
+zonefile=dnskey-unsupported-2.example.db
+
+ksk=`$KEYGEN -f KSK -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+zsk=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
+
+cat $infile $ksk.key $zsk.key unsupported-algorithm.key > $zonefile
+
+$SIGNER -P -3 - -r $RANDFILE -o $zone -f ${zonefile}.signed $zonefile > /dev/null 2>&1
 
 #
 # A zone with a unknown DNSKEY algorithm + unknown NSEC3 hash algorithm (-U).
 # Algorithm 7 is replaced by 100 in the zone and dsset.
 #
-zone=dnskey-nsec3-unknown.example.
+zone=dnskey-nsec3-unknown.example
 infile=dnskey-nsec3-unknown.example.db.in
 zonefile=dnskey-nsec3-unknown.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -224,7 +303,7 @@ $SIGNER -P -3 - -r $RANDFILE -o $zone -U -O full -f ${zonefile}.tmp $zonefile > 
 
 awk '$4 == "DNSKEY" { $7 = 100; print } $4 == "RRSIG" { $6 = 100; print } { print }' ${zonefile}.tmp > ${zonefile}.signed
 
-DSFILE=dsset-`echo ${zone} |sed -e "s/\.$//g"`$TP
+DSFILE=dsset-${zone}${TP}
 $DSFROMKEY -A -f ${zonefile}.signed $zone > $DSFILE
 
 #
@@ -234,7 +313,7 @@ zone=multiple.example.
 infile=multiple.example.db.in
 zonefile=multiple.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -257,7 +336,7 @@ zone=rsasha256.example.
 infile=rsasha256.example.db.in
 zonefile=rsasha256.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 1024 -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -349,7 +428,7 @@ $SIGNER -P -3 - -r $RANDFILE -o $zone $zonefile > /dev/null 2>&1
 zone=secure.below-cname.example.
 infile=secure.below-cname.example.db.in
 zonefile=secure.below-cname.example.db
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 cat $infile $keyname.key >$zonefile
 $SIGNER -P -r $RANDFILE -o $zone $zonefile > /dev/null 2>&1
 
@@ -362,7 +441,7 @@ zonefile=ttlpatch.example.db
 signedfile=ttlpatch.example.db.signed
 patchedfile=ttlpatch.example.db.patched
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 cat $infile $keyname.key >$zonefile
 
 $SIGNER -P -r $RANDFILE -f $signedfile -o $zone $zonefile > /dev/null 2>&1
@@ -377,7 +456,7 @@ infile=split-dnssec.example.db.in
 zonefile=split-dnssec.example.db
 signedfile=split-dnssec.example.db.signed
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 cat $infile $keyname.key >$zonefile
 echo '$INCLUDE "'"$signedfile"'"' >> $zonefile
 : > $signedfile
@@ -391,13 +470,13 @@ infile=split-smart.example.db.in
 zonefile=split-smart.example.db
 signedfile=split-smart.example.db.signed
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 cp $infile $zonefile
 echo '$INCLUDE "'"$signedfile"'"' >> $zonefile
 : > $signedfile
 $SIGNER -P -S -r $RANDFILE -D -o $zone $zonefile > /dev/null 2>&1
 
-# 
+#
 # Zone with signatures about to expire, but no private key to replace them
 #
 zone="expiring.example."
@@ -422,8 +501,8 @@ signedfile="upper.example.db.signed"
 kskname=`$KEYGEN -q -r $RANDFILE $zone`
 zskname=`$KEYGEN -q -r $RANDFILE -f KSK $zone`
 cp $infile $zonefile
-$SIGNER -P -S -r $RANDFILE -o $zone -f $lower $zonefile > /dev/null 2>&1
-$CHECKZONE -D upper.example $lower 2>&- | \
+$SIGNER -P -S -r $RANDFILE -o $zone -f $lower $zonefile > /dev/null 2>/dev/null
+$CHECKZONE -D upper.example $lower 2>/dev/null | \
 	sed '/RRSIG/s/ upper.example. / UPPER.EXAMPLE. /' > $signedfile
 
 #
@@ -452,7 +531,7 @@ zskname=`$KEYGEN -q -r $RANDFILE -f KSK $zone`
 cp $infile $zonefile
 $SIGNER -S -r $RANDFILE -e now+1mi -o $zone $zonefile > /dev/null 2>&1
 # preserve a normalized copy of the NS RRSIG for comparison later
-$CHECKZONE -D nosign.example nosign.example.db.signed 2>&- | \
+$CHECKZONE -D nosign.example nosign.example.db.signed 2>/dev/null | \
         awk '$4 == "RRSIG" && $5 == "NS" {$2 = ""; print}' | \
         sed 's/[ 	][ 	]*/ /g'> ../nosign.before
 
@@ -495,7 +574,7 @@ zone=badds.example.
 infile=bogus.example.db.in
 zonefile=badds.example.db
 
-keyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone $zone`
 
 cat $infile $keyname.key >$zonefile
 
@@ -540,3 +619,29 @@ zsk1=`$KEYGEN -q -r $RANDFILE -3 $zone`
 cat $infile ${ksk1}.key ${ksk2}.key ${zsk1}.key >$zonefile
 
 $SIGNER -P -r $RANDFILE -o $zone $zonefile > /dev/null 2>&1
+
+#
+# Check that NSEC3 are correctly signed and returned from below a DNAME
+#
+zone=dname-at-apex-nsec3.example
+infile=dname-at-apex-nsec3.example.db.in
+zonefile=dname-at-apex-nsec3.example.db
+kskname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -3fk $zone`
+zskname=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -3 $zone`
+cat $infile $kskname.key $zskname.key >$zonefile
+$SIGNER -P -r $RANDFILE -3 - -o $zone $zonefile > /dev/null 2>&1
+
+#
+# A NSEC zone with occuded data at the delegation
+#
+zone=occluded.example
+infile=occluded.example.db.in
+zonefile=occluded.example.db
+kskname=`"$KEYGEN" -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -fk "$zone"`
+zskname=`"$KEYGEN" -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS "$zone"`
+dnskeyname=`"$KEYGEN" -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -fk "delegation.$zone"`
+keyname=`"$KEYGEN" -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n ENTITY -T KEY "delegation.$zone"`
+$DSFROMKEY "$dnskeyname.key" > "dsset-delegation.${zone}$TP"
+cat "$infile" "${kskname}.key" "${zskname}.key" "${keyname}.key" \
+    "${dnskeyname}.key" "dsset-delegation.${zone}$TP" >"$zonefile"
+"$SIGNER" -P -r $RANDFILE -o "$zone" "$zonefile" > /dev/null 2>&1

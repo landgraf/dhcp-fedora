@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* http://www.watson.org/~weiler/INI1999-19.pdf */
@@ -81,6 +84,7 @@ tostruct_ta(ARGS_TOSTRUCT) {
 	dns_rdata_ds_t *ds = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_ta);
+	REQUIRE(ds != NULL);
 
 	/*
 	 * Checked by generic_tostruct_ds().
@@ -129,7 +133,7 @@ digest_ta(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_ta(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_ta);
@@ -139,10 +143,10 @@ checkowner_ta(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_ta(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_ta);
@@ -151,7 +155,7 @@ checknames_ta(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

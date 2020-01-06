@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2002, 2004, 2005, 2007, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: order.c,v 1.10 2007/06/19 23:47:16 tbox Exp $ */
@@ -11,6 +14,8 @@
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/magic.h>
 #include <isc/mem.h>
@@ -97,7 +102,7 @@ dns_order_add(dns_order_t *order, dns_name_t *name,
 	return (ISC_R_SUCCESS);
 }
 
-static inline isc_boolean_t
+static inline bool
 match(dns_name_t *name1, dns_name_t *name2) {
 
 	if (dns_name_iswildcard(name2))

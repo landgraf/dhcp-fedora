@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2009, 2011-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
 
 /*! \file */
 
@@ -89,12 +90,14 @@
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <isc/netaddr.h>
 #include <isc/print.h>
 #include <isc/sockaddr.h>
+#include <isc/string.h>
 #include <isc/util.h>
 
 #include <dns/byaddr.h>
@@ -193,8 +196,9 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
-	proto = (flags & NI_DGRAM) ? "udp" : "tcp";
+	proto = ((flags & NI_DGRAM) != 0) ? "udp" : "tcp";
 
 	if (serv == NULL || servlen == 0U) {
 		/*
@@ -205,11 +209,11 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 		snprintf(numserv, sizeof(numserv), "%d", ntohs(port));
 		if ((strlen(numserv) + 1) > servlen)
 			ERR(EAI_OVERFLOW);
-		strcpy(serv, numserv);
+		strlcpy(serv, numserv, servlen);
 	} else {
 		if ((strlen(sp->s_name) + 1) > servlen)
 			ERR(EAI_OVERFLOW);
-		strcpy(serv, sp->s_name);
+		strlcpy(serv, sp->s_name, servlen);
 	}
 
 #if 0
@@ -266,14 +270,14 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 #endif
 		if (strlen(numaddr) + 1 > hostlen)
 			ERR(EAI_OVERFLOW);
-		strcpy(host, numaddr);
+		strlcpy(host, numaddr, hostlen);
 	} else {
 		isc_netaddr_t netaddr;
 		dns_fixedname_t ptrfname;
 		dns_name_t *ptrname;
 		irs_context_t *irsctx = NULL;
 		dns_client_t *client;
-		isc_boolean_t found = ISC_FALSE;
+		bool found = false;
 		dns_namelist_t answerlist;
 		dns_rdataset_t *rdataset;
 		isc_region_t hostregion;
@@ -288,8 +292,7 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 
 		/* Make query name */
 		isc_netaddr_fromsockaddr(&netaddr, (const isc_sockaddr_t *)sa);
-		dns_fixedname_init(&ptrfname);
-		ptrname = dns_fixedname_name(&ptrfname);
+		ptrname = dns_fixedname_initname(&ptrfname);
 		iresult = dns_byaddr_createptrname2(&netaddr, 0, ptrname);
 		if (iresult != ISC_R_SUCCESS)
 			ERR(EAI_FAIL);
@@ -320,8 +323,13 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 		case DNS_R_NOVALIDKEY:
 		case DNS_R_NOVALIDDS:
 		case DNS_R_NOVALIDSIG:
-			ERR(EAI_INSECUREDATA);
-			break;
+			/*
+			 * Don't use ERR as GCC 7 wants to raise a
+			 * warning with ERR about possible falling
+			 * through which is impossible.
+			 */
+			result = EAI_INSECUREDATA;
+			goto cleanup;
 		default:
 			ERR(EAI_FAIL);
 		}
@@ -353,7 +361,7 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 							sizeof(hoststr));
 					iresult =
 						dns_name_totext(&rdata_ptr.ptr,
-								ISC_TRUE, &b);
+								true, &b);
 					dns_rdata_freestruct(&rdata_ptr);
 					if (iresult == ISC_R_SUCCESS) {
 						/*
@@ -362,7 +370,7 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 						 * getnameinfo() can return
 						 * at most one hostname.
 						 */
-						found = ISC_TRUE;
+						found = true;
 						isc_buffer_usedregion(
 							&b, &hostregion);
 						goto ptrfound;
@@ -392,7 +400,7 @@ getnameinfo(const struct sockaddr *sa, IRS_GETNAMEINFO_SOCKLEN_T salen,
 				ERR(EAI_SYSTEM);
 			if ((strlen(numaddr) + 1) > hostlen)
 				ERR(EAI_OVERFLOW);
-			strcpy(host, numaddr);
+			strlcpy(host, numaddr, hostlen);
 		}
 	}
 	result = SUCCESS;

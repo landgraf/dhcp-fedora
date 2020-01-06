@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: gpos_27.c,v 1.43 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 16:48:45 PST 2000 by brister */
 
 /* RFC1712 */
 
@@ -33,7 +32,7 @@ fromtext_gpos(ARGS_FROMTEXT) {
 	for (i = 0; i < 3; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_qstring,
-					      ISC_FALSE));
+					      false));
 		RETTOK(txt_fromtext(&token.value.as_textregion, target));
 	}
 	return (ISC_R_SUCCESS);
@@ -52,7 +51,7 @@ totext_gpos(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 
 	for (i = 0; i < 3; i++) {
-		RETERR(txt_totext(&region, ISC_TRUE, target));
+		RETERR(txt_totext(&region, true, target));
 		if (i != 2)
 			RETERR(str_totext(" ", target));
 	}
@@ -108,7 +107,7 @@ fromstruct_gpos(ARGS_FROMSTRUCT) {
 	dns_rdata_gpos_t *gpos = source;
 
 	REQUIRE(type == dns_rdatatype_gpos);
-	REQUIRE(source != NULL);
+	REQUIRE(gpos != NULL);
 	REQUIRE(gpos->common.rdtype == type);
 	REQUIRE(gpos->common.rdclass == rdclass);
 
@@ -129,7 +128,7 @@ tostruct_gpos(ARGS_TOSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(rdata->type == dns_rdatatype_gpos);
-	REQUIRE(target != NULL);
+	REQUIRE(gpos != NULL);
 	REQUIRE(rdata->length != 0);
 
 	gpos->common.rdclass = rdata->rdclass;
@@ -178,7 +177,7 @@ static inline void
 freestruct_gpos(ARGS_FREESTRUCT) {
 	dns_rdata_gpos_t *gpos = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(gpos != NULL);
 	REQUIRE(gpos->common.rdtype == dns_rdatatype_gpos);
 
 	if (gpos->mctx == NULL)
@@ -215,7 +214,7 @@ digest_gpos(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_gpos(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_gpos);
@@ -225,10 +224,10 @@ checkowner_gpos(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_gpos(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_gpos);
@@ -237,7 +236,7 @@ checknames_gpos(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

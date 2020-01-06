@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2009, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: cache.h,v 1.32 2011/08/02 23:47:52 tbox Exp $ */
 
 #ifndef DNS_CACHE_H
 #define DNS_CACHE_H 1
@@ -39,6 +41,8 @@
 /***
  ***	Imports
  ***/
+
+#include <stdbool.h>
 
 #include <isc/json.h>
 #include <isc/lang.h>
@@ -268,7 +272,7 @@ dns_cache_flush(dns_cache_t *cache);
 
 isc_result_t
 dns_cache_flushnode(dns_cache_t *cache, dns_name_t *name,
-		    isc_boolean_t tree);
+		    bool tree);
 /*
  * Flush a given name from the cache.  If 'tree' is true, then
  * also flush all names under 'name'.
@@ -287,7 +291,7 @@ isc_result_t
 dns_cache_flushname(dns_cache_t *cache, dns_name_t *name);
 /*
  * Flush a given name from the cache.  Equivalent to
- * dns_cache_flushpartial(cache, name, ISC_FALSE).
+ * dns_cache_flushpartial(cache, name, false).
  *
  * Requires:
  *\li	'cache' to be valid.

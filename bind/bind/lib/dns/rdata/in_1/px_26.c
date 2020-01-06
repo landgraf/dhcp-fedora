@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2001, 2003-2005, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: px_26.c,v 1.45 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Mon Mar 20 10:44:27 PST 2000 */
 
 /* RFC2163 */
 
@@ -37,7 +36,7 @@ fromtext_in_px(ARGS_FROMTEXT) {
 	 * Preference.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -46,7 +45,7 @@ fromtext_in_px(ARGS_FROMTEXT) {
 	 * MAP822.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
@@ -55,7 +54,7 @@ fromtext_in_px(ARGS_FROMTEXT) {
 	 * MAPX400.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
@@ -67,7 +66,7 @@ totext_in_px(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 	char buf[sizeof("64000")];
 	unsigned short num;
 
@@ -84,7 +83,7 @@ totext_in_px(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u", num);
+	snprintf(buf, sizeof(buf), "%u", num);
 	RETERR(str_totext(buf, target));
 	RETERR(str_totext(" ", target));
 
@@ -225,7 +224,7 @@ fromstruct_in_px(ARGS_FROMSTRUCT) {
 
 	REQUIRE(type == dns_rdatatype_px);
 	REQUIRE(rdclass == dns_rdataclass_in);
-	REQUIRE(source != NULL);
+	REQUIRE(px != NULL);
 	REQUIRE(px->common.rdtype == type);
 	REQUIRE(px->common.rdclass == rdclass);
 
@@ -248,7 +247,7 @@ tostruct_in_px(ARGS_TOSTRUCT) {
 
 	REQUIRE(rdata->type == dns_rdatatype_px);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-	REQUIRE(target != NULL);
+	REQUIRE(px != NULL);
 	REQUIRE(rdata->length != 0);
 
 	px->common.rdclass = rdata->rdclass;
@@ -284,7 +283,7 @@ static inline void
 freestruct_in_px(ARGS_FREESTRUCT) {
 	dns_rdata_in_px_t *px = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(px != NULL);
 	REQUIRE(px->common.rdclass == dns_rdataclass_in);
 	REQUIRE(px->common.rdtype == dns_rdatatype_px);
 
@@ -336,7 +335,7 @@ digest_in_px(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_in_px(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_px);
@@ -347,10 +346,10 @@ checkowner_in_px(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_in_px(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_px);
@@ -360,7 +359,7 @@ checknames_in_px(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

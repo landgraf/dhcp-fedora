@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 1999-2005, 2007, 2009, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: getipnode.c,v 1.47 2009/09/01 23:47:45 tbox Exp $ */
 
 /*! \file */
 
@@ -123,6 +124,7 @@
 #include <lwres/netdb.h>	/* XXX #include <netdb.h> */
 
 #include "assert_p.h"
+#include "unreachable_p.h"
 
 #ifndef INADDRSZ
 #define INADDRSZ 4
@@ -238,6 +240,7 @@ lwres_getipnodebyname(const char *name, int af, int flags, int *error_num) {
 			char *deconst_name;
 		} u;
 
+		/* cppcheck-suppress unreadVariable */
 		u.const_name = name;
 		if (v4 == 1 && af == AF_INET6) {
 			strcpy(mappedname, "::ffff:");
@@ -367,6 +370,7 @@ lwres_getipnodebyaddr(const void *src, size_t len, int af, int *error_num) {
 	 * with our own, cleanly discarding the const is the easiest
 	 * thing to do.
 	 */
+	/* cppcheck-suppress unreadVariable */
 	u.konst = src;
 
 	/*
@@ -380,11 +384,12 @@ lwres_getipnodebyaddr(const void *src, size_t len, int af, int *error_num) {
 		if (af == AF_INET6)
 			cp += 12;
 		n = lwres_context_create(&lwrctx, NULL, NULL, NULL, 0);
-		if (n == LWRES_R_SUCCESS)
+		if (n == LWRES_R_SUCCESS) {
 			(void) lwres_conf_parse(lwrctx, lwres_resolv_conf);
-		if (n == LWRES_R_SUCCESS)
+
 			n = lwres_getnamebyaddr(lwrctx, LWRES_ADDRTYPE_V4,
 						INADDRSZ, cp, &by);
+		}
 		if (n != LWRES_R_SUCCESS) {
 			lwres_conf_clear(lwrctx);
 			lwres_context_destroy(&lwrctx);
@@ -424,11 +429,11 @@ lwres_getipnodebyaddr(const void *src, size_t len, int af, int *error_num) {
 	}
 
 	n = lwres_context_create(&lwrctx, NULL, NULL, NULL, 0);
-	if (n == LWRES_R_SUCCESS)
+	if (n == LWRES_R_SUCCESS) {
 		(void) lwres_conf_parse(lwrctx, lwres_resolv_conf);
-	if (n == LWRES_R_SUCCESS)
 		n = lwres_getnamebyaddr(lwrctx, LWRES_ADDRTYPE_V6, IN6ADDRSZ,
 					src, &by);
+	}
 	if (n != 0) {
 		lwres_conf_clear(lwrctx);
 		lwres_context_destroy(&lwrctx);
@@ -837,7 +842,7 @@ copyandmerge(struct hostent *he1, struct hostent *he2, int af, int *error_num)
 	struct hostent *he = NULL;
 	int addresses = 1;	/* NULL terminator */
 	int names = 1;		/* NULL terminator */
-	int len = 0;
+	char *cp_name;
 	char **cpp, **npp;
 
 	/*
@@ -944,14 +949,17 @@ copyandmerge(struct hostent *he1, struct hostent *he2, int af, int *error_num)
 	 * Copy aliases.
 	 */
 	npp = he->h_aliases;
-	cpp = (he1 != NULL) ? he1->h_aliases
-		: ((he2 != NULL) ?  he2->h_aliases : NULL);
+	if (he1 != NULL) {
+		cpp = he1->h_aliases;
+	} else if (he2 != NULL) {
+		cpp = he2->h_aliases;
+	} else {
+		cpp = NULL;
+	}
 	while (cpp != NULL && *cpp != NULL) {
-		len = strlen (*cpp) + 1;
-		*npp = malloc(len);
+		*npp = strdup(*cpp);
 		if (*npp == NULL)
 			goto cleanup2;
-		strcpy(*npp, *cpp);
 		npp++;
 		cpp++;
 	}
@@ -959,17 +967,24 @@ copyandmerge(struct hostent *he1, struct hostent *he2, int af, int *error_num)
 	/*
 	 * Copy hostname.
 	 */
-	he->h_name = malloc(strlen((he1 != NULL) ?
-			    he1->h_name : he2->h_name) + 1);
-	if (he->h_name == NULL)
+	if (he1 != NULL) {
+		cp_name = he1->h_name;
+	} else if (he2 != NULL) {
+		cp_name = he2->h_name;
+	} else {
 		goto cleanup2;
-	strcpy(he->h_name, (he1 != NULL) ? he1->h_name : he2->h_name);
+	}
+	he->h_name = strdup(cp_name);
+	if (he->h_name == NULL) {
+		goto cleanup2;
+	}
 
 	/*
 	 * Set address type and length.
 	 */
 	he->h_addrtype = af;
 	he->h_length = (af == AF_INET) ? INADDRSZ : IN6ADDRSZ;
+	/* cppcheck-suppress memleak */
 	return (he);
 
  cleanup2:
@@ -1020,6 +1035,7 @@ hostfromaddr(lwres_gnbaresponse_t *addr, int af, const void *src) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	/*
@@ -1097,6 +1113,7 @@ hostfromname(lwres_gabnresponse_t *name, int af) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	/*

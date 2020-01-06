@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: log.h,v 1.27 2009/01/07 23:47:46 tbox Exp $ */
@@ -28,6 +31,7 @@
 #define NS_LOGCATEGORY_UNMATCHED	(&ns_g_categories[5])
 #define NS_LOGCATEGORY_UPDATE_SECURITY	(&ns_g_categories[6])
 #define NS_LOGCATEGORY_QUERY_ERRORS	(&ns_g_categories[7])
+#define NS_LOGCATEGORY_TAT		(&ns_g_categories[8])
 
 /*
  * Backwards compatibility.
@@ -47,7 +51,7 @@
 #define NS_LOGMODULE_LWRESD		(&ns_g_modules[10])
 
 isc_result_t
-ns_log_init(isc_boolean_t safe);
+ns_log_init(bool safe);
 /*%
  * Initialize the logging system and set up an initial default
  * logging default configuration that will be used until the

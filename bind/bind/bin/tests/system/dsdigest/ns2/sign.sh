@@ -1,20 +1,21 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-# $Id$
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
 
-zone1=good.
+zone1=good
 infile1=good.db.in
 zonefile1=good.db
-zone2=bad.
+zone2=bad
 infile2=bad.db.in
 zonefile2=bad.db
 
@@ -29,8 +30,8 @@ cat $infile2 $keyname21.key $keyname22.key >$zonefile2
 $SIGNER -P -g -r $RANDFILE -o $zone1 $zonefile1 > /dev/null
 $SIGNER -P -g -r $RANDFILE -o $zone2 $zonefile2 > /dev/null
 
-DSFILENAME1=dsset-`echo $zone1 |sed -e "s/\.$//g"`$TP
-DSFILENAME2=dsset-`echo $zone2 |sed -e "s/\.$//g"`$TP
+DSFILENAME1=dsset-${zone1}${TP}
+DSFILENAME2=dsset-${zone2}${TP}
 $DSFROMKEY -a SHA-256 $keyname12 > $DSFILENAME1
 $DSFROMKEY -a SHA-256 $keyname22 > $DSFILENAME2
 

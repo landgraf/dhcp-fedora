@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwderror.c,v 1.12 2007/06/19 23:46:59 tbox Exp $ */
@@ -31,7 +34,7 @@
  * size we use, set the reply bit, and recompute any security information.
  */
 void
-ns_lwdclient_errorpktsend(ns_lwdclient_t *client, isc_uint32_t _result) {
+ns_lwdclient_errorpktsend(ns_lwdclient_t *client, uint32_t _result) {
 	isc_result_t result;
 	int lwres;
 	isc_region_t r;

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: x25_19.c,v 1.41 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Thu Mar 16 16:15:57 PST 2000 by bwelling */
 
 /* RFC1183 */
 
@@ -31,7 +30,7 @@ fromtext_x25(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_qstring,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_textregion.length < 4)
 		RETTOK(DNS_R_SYNTAX);
 	for (i = 0; i < token.value.as_textregion.length; i++)
@@ -51,7 +50,7 @@ totext_x25(ARGS_TOTEXT) {
 	REQUIRE(rdata->length != 0);
 
 	dns_rdata_toregion(rdata, &region);
-	return (txt_totext(&region, ISC_TRUE, target));
+	return (txt_totext(&region, true, target));
 }
 
 static inline isc_result_t
@@ -100,10 +99,10 @@ compare_x25(ARGS_COMPARE) {
 static inline isc_result_t
 fromstruct_x25(ARGS_FROMSTRUCT) {
 	dns_rdata_x25_t *x25 = source;
-	isc_uint8_t i;
+	uint8_t i;
 
 	REQUIRE(type == dns_rdatatype_x25);
-	REQUIRE(source != NULL);
+	REQUIRE(x25 != NULL);
 	REQUIRE(x25->common.rdtype == type);
 	REQUIRE(x25->common.rdclass == rdclass);
 	REQUIRE(x25->x25 != NULL && x25->x25_len != 0);
@@ -128,7 +127,7 @@ tostruct_x25(ARGS_TOSTRUCT) {
 	isc_region_t r;
 
 	REQUIRE(rdata->type == dns_rdatatype_x25);
-	REQUIRE(target != NULL);
+	REQUIRE(x25 != NULL);
 	REQUIRE(rdata->length != 0);
 
 	x25->common.rdclass = rdata->rdclass;
@@ -149,7 +148,8 @@ tostruct_x25(ARGS_TOSTRUCT) {
 static inline void
 freestruct_x25(ARGS_FREESTRUCT) {
 	dns_rdata_x25_t *x25 = source;
-	REQUIRE(source != NULL);
+
+	REQUIRE(x25 != NULL);
 	REQUIRE(x25->common.rdtype == dns_rdatatype_x25);
 
 	if (x25->mctx == NULL)
@@ -182,7 +182,7 @@ digest_x25(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_x25(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_x25);
@@ -192,10 +192,10 @@ checkowner_x25(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_x25(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_x25);
@@ -204,7 +204,7 @@ checknames_x25(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

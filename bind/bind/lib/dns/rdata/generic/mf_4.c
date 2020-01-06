@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2001, 2004, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: mf_4.c,v 1.47 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 17:47:33 PST 2000 by brister */
 
 #ifndef RDATA_GENERIC_MF_4_C
 #define RDATA_GENERIC_MF_4_C
@@ -28,7 +27,7 @@ fromtext_mf(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
@@ -43,7 +42,7 @@ totext_mf(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_mf);
 	REQUIRE(rdata->length != 0);
@@ -123,7 +122,7 @@ fromstruct_mf(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_mf);
-	REQUIRE(source != NULL);
+	REQUIRE(mf != NULL);
 	REQUIRE(mf->common.rdtype == type);
 	REQUIRE(mf->common.rdclass == rdclass);
 
@@ -141,7 +140,7 @@ tostruct_mf(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_mf);
-	REQUIRE(target != NULL);
+	REQUIRE(mf != NULL);
 	REQUIRE(rdata->length != 0);
 
 	mf->common.rdclass = rdata->rdclass;
@@ -161,7 +160,7 @@ static inline void
 freestruct_mf(ARGS_FREESTRUCT) {
 	dns_rdata_mf_t *mf = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(mf != NULL);
 	REQUIRE(mf->common.rdtype == dns_rdatatype_mf);
 
 	if (mf->mctx == NULL)
@@ -199,7 +198,7 @@ digest_mf(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_mf(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_mf);
@@ -209,10 +208,10 @@ checkowner_mf(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_mf(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_mf);
@@ -221,7 +220,7 @@ checknames_mf(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

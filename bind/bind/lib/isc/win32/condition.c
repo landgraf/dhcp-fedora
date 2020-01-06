@@ -1,14 +1,19 @@
 /*
- * Copyright (C) 1998-2001, 2004, 2006, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: condition.c,v 1.23 2007/06/18 23:47:49 tbox Exp $ */
 
 #include <config.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/condition.h>
 #include <isc/assertions.h>
@@ -134,7 +139,7 @@ isc_result_t
 isc_condition_broadcast(isc_condition_t *cond) {
 
 	isc_condition_thread_t *threadcond;
-	isc_boolean_t failed = ISC_FALSE;
+	bool failed = false;
 
 	/*
 	 * Unlike pthreads, the caller MUST hold the lock associated with
@@ -150,7 +155,7 @@ isc_condition_broadcast(isc_condition_t *cond) {
 	     threadcond = ISC_LIST_NEXT(threadcond, link)) {
 
 		if (!SetEvent(threadcond->handle[LBROADCAST]))
-			failed = ISC_TRUE;
+			failed = true;
 	}
 
 	if (failed)
@@ -232,7 +237,7 @@ isc_result_t
 isc_condition_waituntil(isc_condition_t *cond, isc_mutex_t *mutex,
 			isc_time_t *t) {
 	DWORD milliseconds;
-	isc_uint64_t microseconds;
+	uint64_t microseconds;
 	isc_time_t now;
 
 	if (isc_time_now(&now) != ISC_R_SUCCESS) {

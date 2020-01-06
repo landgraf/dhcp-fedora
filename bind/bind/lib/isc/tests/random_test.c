@@ -1,27 +1,50 @@
 /*
- * Copyright (C) 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ */
+
+/*
+ * IMPORTANT NOTE:
+ * These tests work by generating a large number of pseudo-random numbers
+ * and then statistically analyzing them to determine whether they seem
+ * random. The test is expected to fail on occasion by random happenstance.
  */
 
 #include <config.h>
 
-#include <isc/random.h>
-#include <isc/result.h>
+#if HAVE_CMOCKA
+
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+
+#include <inttypes.h>
+#include <math.h>
+#include <sched.h> /* IWYU pragma: keep */
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define UNIT_TESTING
+#include <cmocka.h>
+
+#include <isc/commandline.h>
 #include <isc/mem.h>
 #include <isc/print.h>
+#include <isc/random.h>
+#include <isc/result.h>
 #include <isc/util.h>
 
-#include <atf-c.h>
-
-#include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
+#define REPS 25000
 
 typedef double (pvalue_func_t)(isc_mem_t *mctx,
-			       isc_uint16_t *values, size_t length);
+			       uint16_t *values, size_t length);
 
 /* igamc(), igam(), etc. were adapted (and cleaned up) from the Cephes
  * math library:
@@ -41,6 +64,18 @@ static double biginv =	2.22044604925031308085e-16;
 static double igamc(double a, double x);
 static double igam(double a, double x);
 
+/* Set to true (or use -v option) for verbose output */
+static bool verbose = false;
+
+typedef enum {
+	ISC_RANDOM8,
+	ISC_RANDOM16,
+	ISC_RANDOM32,
+	ISC_RANDOM_BYTES,
+	ISC_RANDOM_UNIFORM,
+	ISC_NONCE_BYTES
+} isc_random_func;
+
 static double
 igamc(double a, double x) {
 	double ans, ax, c, yc, r, t, y, z;
@@ -54,7 +89,7 @@ igamc(double a, double x) {
 
 	ax = a * log(x) - x - lgamma(a);
 	if (ax < -MAXLOG) {
-		fprintf(stderr, "igamc: UNDERFLOW, ax=%f\n", ax);
+		print_error("# igamc: UNDERFLOW, ax=%f\n", ax);
 		return (0.0);
 	}
 	ax = exp(ax);
@@ -111,8 +146,8 @@ igam(double a, double x) {
 
 	/* Compute  x**a * exp(-x) / md_gamma(a)  */
 	ax = a * log(x) - x - lgamma(a);
-	if( ax < -MAXLOG ) {
-		fprintf(stderr, "igam: UNDERFLOW, ax=%f\n", ax);
+	if (ax < -MAXLOG ) {
+		print_error("# igam: UNDERFLOW, ax=%f\n", ax);
 		return (0.0);
 	}
 	ax = exp(ax);
@@ -131,17 +166,17 @@ igam(double a, double x) {
 	return (ans * ax / a);
 }
 
-static isc_int8_t scounts_table[65536];
-static isc_uint8_t bitcounts_table[65536];
+static int8_t scounts_table[65536];
+static uint8_t bitcounts_table[65536];
 
-static isc_int8_t
-scount_calculate(isc_uint16_t n) {
+static int8_t
+scount_calculate(uint16_t n) {
 	int i;
-	isc_int8_t sc;
+	int8_t sc;
 
 	sc = 0;
 	for (i = 0; i < 16; i++) {
-		isc_uint16_t lsb;
+		uint16_t lsb;
 
 		lsb = n & 1;
 		if (lsb != 0)
@@ -155,14 +190,14 @@ scount_calculate(isc_uint16_t n) {
 	return (sc);
 }
 
-static isc_uint8_t
-bitcount_calculate(isc_uint16_t n) {
+static uint8_t
+bitcount_calculate(uint16_t n) {
 	int i;
-	isc_uint8_t bc;
+	uint8_t bc;
 
 	bc = 0;
 	for (i = 0; i < 16; i++) {
-		isc_uint16_t lsb;
+		uint16_t lsb;
 
 		lsb = n & 1;
 		if (lsb != 0)
@@ -176,7 +211,7 @@ bitcount_calculate(isc_uint16_t n) {
 
 static void
 tables_init(void) {
-	isc_uint32_t i;
+	uint32_t i;
 
 	for (i = 0; i < 65536; i++) {
 		scounts_table[i] = scount_calculate(i);
@@ -191,17 +226,17 @@ tables_init(void) {
  *
  * This function destroys (modifies) the data passed in bits.
  */
-static isc_uint32_t
-matrix_binaryrank(isc_uint32_t *bits, ssize_t rows, ssize_t cols) {
-	ssize_t i, j, k;
-	int rt = 0;
-	isc_uint32_t rank = 0;
-	isc_uint32_t tmp;
+static uint32_t
+matrix_binaryrank(uint32_t *bits, size_t rows, size_t cols) {
+	size_t i, j, k;
+	unsigned int rt = 0;
+	uint32_t rank = 0;
+	uint32_t tmp;
 
 	for (k = 0; k < rows; k++) {
 		i = k;
 
-		while (((bits[i] >> rt) & 1) == 0) {
+		while (rt >= cols || ((bits[i] >> rt) & 1) == 0) {
 			i++;
 
 			if (i < rows)
@@ -242,45 +277,43 @@ random_test(pvalue_func_t *func) {
 	isc_mem_t *mctx = NULL;
 	isc_result_t result;
 	isc_rng_t *rng;
-	isc_uint32_t m;
-	isc_uint32_t j;
-	isc_uint32_t histogram[11];
-	isc_uint32_t passed;
+	uint32_t m;
+	uint32_t j;
+	uint32_t histogram[11] = { 0 };
+	uint32_t passed;
 	double proportion;
 	double p_hat;
-	double lower_confidence;
+	double lower_confidence, higher_confidence;
 	double chi_square;
 	double p_value_t;
+	double alpha;
 
 	tables_init();
 
 	result = isc_mem_create(0, 0, &mctx);
-	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
+	assert_int_equal(result, ISC_R_SUCCESS);
 
 	rng = NULL;
 	result = isc_rng_create(mctx, NULL, &rng);
-	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
+	assert_int_equal(result, ISC_R_SUCCESS);
 
 	m = 1000;
 	passed = 0;
 
-	for (j = 0; j < 11; j++)
-		histogram[j] = 0;
-
 	for (j = 0; j < m; j++) {
-		isc_uint32_t i;
-		isc_uint16_t values[128000];
+		uint32_t i;
+		uint16_t values[REPS];
 		double p_value;
 
-		for (i = 0; i < 128000; i++)
+		for (i = 0; i < REPS; i++)
 			values[i] = isc_rng_random(rng);
 
-		p_value = (*func)(mctx, values, 128000);
-		if (p_value >= 0.01)
+		p_value = (*func)(mctx, values, REPS);
+		if (p_value >= 0.01) {
 			passed++;
+		}
 
-		ATF_REQUIRE(p_value >= 0.0);
-		ATF_REQUIRE(p_value <= 1.0);
+		assert_in_range(p_value, 0.0, 1.0);
 
 		i = (int) floor(p_value * 10);
 		histogram[i]++;
@@ -288,42 +321,52 @@ random_test(pvalue_func_t *func) {
 
 	isc_rng_detach(&rng);
 
-	/* Fold histogram[10] (p_value = 1.0) into histogram[9] for
-	 * interval [0.9, 1.0]
-	 */
-	histogram[9] += histogram[10];
-	histogram[10] = 0;
-
 	/*
 	 * Check proportion of sequences passing a test (see section
 	 * 4.2.1 in NIST SP 800-22).
 	 */
+	alpha = 0.01; /* the significance level */
 	proportion = (double) passed / (double) m;
-	p_hat = 1 - 0.01; /* alpha is 0.01 in the NIST tests */
-	lower_confidence = p_hat - (3.0 * sqrt((p_hat * (1 - p_hat)) / m));
+	p_hat = 1.0 - alpha;
+	lower_confidence = p_hat - (3.0 * sqrt((p_hat * (1.0 - p_hat)) / m));
+	higher_confidence = p_hat + (3.0 * sqrt((p_hat * (1.0 - p_hat)) / m));
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("passed=%u/1000\n", passed);
-	printf("lower_confidence=%f, proportion=%f\n",
-	       lower_confidence, proportion);
+	if (verbose) {
+		print_message("# passed=%u/1000\n", passed);
+		print_message("# higher_confidence=%f, lower_confidence=%f, "
+			      "proportion=%f\n",
+			      higher_confidence, lower_confidence, proportion);
+	}
 
-	ATF_REQUIRE(proportion >= lower_confidence);
+	assert_in_range(proportion, lower_confidence, higher_confidence);
 
 	/*
 	 * Check uniform distribution of p-values (see section 4.2.2 in
 	 * NIST SP 800-22).
 	 */
 
+	/* Fold histogram[10] (p_value = 1.0) into histogram[9] for
+	 * interval [0.9, 1.0]
+	 */
+	histogram[9] += histogram[10];
+	histogram[10] = 0;
+
 	/* Pre-requisite that at least 55 sequences are processed. */
-	ATF_REQUIRE(m >= 55);
+	/* cppcheck-suppress constArgument */
+	assert_true(m >= 55);
+
+	if (verbose) {
+		print_message("# ");
+	}
 
 	chi_square = 0.0;
 	for (j = 0; j < 10; j++) {
 		double numer;
 		double denom;
 
-		/* Debug message, not displayed when running via atf-run */
-		printf("hist%u=%u ", j, histogram[j]);
+		if (verbose) {
+			print_message("hist%u=%u ", j, histogram[j]);
+		}
 
 		numer = (histogram[j] - (m / 10.0)) *
 			(histogram[j] - (m / 10.0));
@@ -331,11 +374,13 @@ random_test(pvalue_func_t *func) {
 		chi_square += numer / denom;
 	}
 
-	printf("\n");
+	if (verbose) {
+		print_message("\n");
+	}
 
 	p_value_t = igamc(9 / 2.0, chi_square / 2.0);
 
-	ATF_REQUIRE(p_value_t >= 0.0001);
+	assert_true(p_value_t >= 0.0001);
 }
 
 /*
@@ -343,10 +388,10 @@ random_test(pvalue_func_t *func) {
  * RNG test suite.
  */
 static double
-monobit(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
+monobit(isc_mem_t *mctx, uint16_t *values, size_t length) {
 	size_t i;
-	isc_int32_t scount;
-	isc_uint32_t numbits;
+	int32_t scount;
+	uint32_t numbits;
 	double s_obs;
 	double p_value;
 
@@ -359,10 +404,11 @@ monobit(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 		scount += scounts_table[values[i]];
 
 	/* Preconditions (section 2.1.7 in NIST SP 800-22) */
-	ATF_REQUIRE(numbits >= 100);
+	assert_true(numbits >= 100);
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("numbits=%u, scount=%d\n", numbits, scount);
+	if (verbose) {
+		print_message("# numbits=%u, scount=%d\n", numbits, scount);
+	}
 
 	s_obs = abs(scount) / sqrt(numbits);
 	p_value = erfc(s_obs / sqrt(2.0));
@@ -374,17 +420,17 @@ monobit(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
  * This is the runs test taken from the NIST SP 800-22 RNG test suite.
  */
 static double
-runs(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
+runs(isc_mem_t *mctx, uint16_t *values, size_t length) {
 	size_t i;
-	isc_uint32_t bcount;
-	isc_uint32_t numbits;
+	uint32_t bcount;
+	uint32_t numbits;
 	double pi;
 	double tau;
-	isc_uint32_t j;
-	isc_uint32_t b;
-	isc_uint8_t bit_this;
-	isc_uint8_t bit_prev;
-	isc_uint32_t v_obs;
+	uint32_t j;
+	uint32_t b;
+	uint8_t bit_this;
+	uint8_t bit_prev;
+	uint32_t v_obs;
 	double numer;
 	double denom;
 	double p_value;
@@ -394,17 +440,18 @@ runs(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 	numbits = length * 16;
 	bcount = 0;
 
-	for (i = 0; i < 128000; i++)
+	for (i = 0; i < REPS; i++)
 		bcount += bitcounts_table[values[i]];
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("numbits=%u, bcount=%u\n", numbits, bcount);
+	if (verbose) {
+		print_message("# numbits=%u, bcount=%u\n", numbits, bcount);
+	}
 
 	pi = (double) bcount / (double) numbits;
 	tau = 2.0 / sqrt(numbits);
 
 	/* Preconditions (section 2.3.7 in NIST SP 800-22) */
-	ATF_REQUIRE(numbits >= 100);
+	assert_true(numbits >= 100);
 
 	/*
 	 * Pre-condition implied from the monobit test. This can fail
@@ -450,14 +497,13 @@ runs(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
  * test suite.
  */
 static double
-blockfrequency(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
-	isc_uint32_t i;
-	isc_uint32_t numbits;
-	isc_uint32_t mbits;
-	isc_uint32_t mwords;
-	isc_uint32_t numblocks;
+blockfrequency(isc_mem_t *mctx, uint16_t *values, size_t length) {
+	uint32_t i;
+	uint32_t numbits;
+	uint32_t mbits;
+	uint32_t mwords;
+	uint32_t numblocks;
 	double *pi;
-	isc_uint32_t cur_word;
 	double chi_square;
 	double p_value;
 
@@ -466,29 +512,28 @@ blockfrequency(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 	mwords = mbits / 16;
 	numblocks = numbits / mbits;
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("numblocks=%u\n", numblocks);
+	if (verbose) {
+		print_message("# numblocks=%u\n", numblocks);
+	}
 
 	/* Preconditions (section 2.2.7 in NIST SP 800-22) */
-	ATF_REQUIRE(numbits >= 100);
-	ATF_REQUIRE(mbits >= 20);
-	ATF_REQUIRE((double) mbits > (0.01 * numbits));
-	ATF_REQUIRE(numblocks < 100);
-	ATF_REQUIRE(numbits >= (mbits * numblocks));
+	assert_true(numbits >= 100);
+	assert_true(mbits >= 20);
+	assert_true((double) mbits > (0.01 * numbits));
+	assert_true(numblocks < 100);
+	assert_true(numbits >= (mbits * numblocks));
 
 	pi = isc_mem_get(mctx, numblocks * sizeof(double));
-	ATF_REQUIRE(pi != NULL);
+	assert_non_null(pi);
 
-	cur_word = 0;
 	for (i = 0; i < numblocks; i++) {
-		isc_uint32_t j;
+		uint32_t j;
 		pi[i] = 0.0;
 		for (j = 0; j < mwords; j++) {
-			isc_uint32_t idx;
+			uint32_t idx;
 
 			idx = i * mwords + j;
 			pi[i] += bitcounts_table[values[idx]];
-			cur_word++;
 		}
 		pi[i] /= mbits;
 	}
@@ -502,8 +547,9 @@ blockfrequency(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 
 	isc_mem_put(mctx, pi, numblocks * sizeof(double));
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("chi_square=%f\n", chi_square);
+	if (verbose) {
+		print_message("# chi_square=%f\n", chi_square);
+	}
 
 	p_value = igamc(numblocks * 0.5, chi_square * 0.5);
 
@@ -515,15 +561,15 @@ blockfrequency(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
  * test suite.
  */
 static double
-binarymatrixrank(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
-	isc_uint32_t i;
+binarymatrixrank(isc_mem_t *mctx, uint16_t *values, size_t length) {
+	uint32_t i;
 	size_t matrix_m;
 	size_t matrix_q;
-	isc_uint32_t num_matrices;
+	uint32_t num_matrices;
 	size_t numbits;
-	isc_uint32_t fm_0;
-	isc_uint32_t fm_1;
-	isc_uint32_t fm_rest;
+	uint32_t fm_0;
+	uint32_t fm_1;
+	uint32_t fm_rest;
 	double term1;
 	double term2;
 	double term3;
@@ -538,26 +584,26 @@ binarymatrixrank(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 	numbits = num_matrices * matrix_m * matrix_q;
 
 	/* Preconditions (section 2.5.7 in NIST SP 800-22) */
-	ATF_REQUIRE(matrix_m == 32);
-	ATF_REQUIRE(matrix_q == 32);
-	ATF_REQUIRE(numbits >= (38 * matrix_m * matrix_q));
+	assert_int_equal(matrix_m, 32);
+	assert_int_equal(matrix_q, 32);
+	assert_true(numbits >= (38 * matrix_m * matrix_q));
 
 	fm_0 = 0;
 	fm_1 = 0;
 	fm_rest = 0;
 	for (i = 0; i < num_matrices; i++) {
 		/*
-		 * Each isc_uint32_t supplies 32 bits, so a 32x32 bit matrix
-		 * takes up isc_uint32_t array of size 32.
+		 * Each uint32_t supplies 32 bits, so a 32x32 bit matrix
+		 * takes up uint32_t array of size 32.
 		 */
-		isc_uint32_t bits[32];
+		uint32_t bits[32];
 		int j;
-		isc_uint32_t rank;
+		uint32_t rank;
 
 		for (j = 0; j < 32; j++) {
 			size_t idx;
-			isc_uint32_t r1;
-			isc_uint32_t r2;
+			uint32_t r1;
+			uint32_t r2;
 
 			idx = i * ((matrix_m * matrix_q) / 16);
 			idx += j * 2;
@@ -587,71 +633,83 @@ binarymatrixrank(isc_mem_t *mctx, isc_uint16_t *values, size_t length) {
 
 	chi_square = term1 + term2 + term3;
 
-	/* Debug message, not displayed when running via atf-run */
-	printf("fm_0=%u, fm_1=%u, fm_rest=%u, chi_square=%f\n",
-	       fm_0, fm_1, fm_rest, chi_square);
+	if (verbose) {
+		print_message("# fm_0=%u, fm_1=%u, fm_rest=%u, chi_square=%f\n",
+			      fm_0, fm_1, fm_rest, chi_square);
+	}
 
 	p_value = exp(-chi_square * 0.5);
 
 	return (p_value);
 }
 
-ATF_TC(isc_rng_monobit);
-ATF_TC_HEAD(isc_rng_monobit, tc) {
-	atf_tc_set_md_var(tc, "descr", "Monobit test for the RNG");
-}
-
-ATF_TC_BODY(isc_rng_monobit, tc) {
-	UNUSED(tc);
+/* Monobit test for the RNG */
+static void
+isc_rng_monobit_bytes(void **state) {
+	UNUSED(state);
 
 	random_test(monobit);
 }
 
-ATF_TC(isc_rng_runs);
-ATF_TC_HEAD(isc_rng_runs, tc) {
-	atf_tc_set_md_var(tc, "descr", "Runs test for the RNG");
-}
-
-ATF_TC_BODY(isc_rng_runs, tc) {
-	UNUSED(tc);
+/* Runs test for the RNG */
+static void
+isc_rng_runs_bytes(void **state) {
+	UNUSED(state);
 
 	random_test(runs);
 }
 
-ATF_TC(isc_rng_blockfrequency);
-ATF_TC_HEAD(isc_rng_blockfrequency, tc) {
-	atf_tc_set_md_var(tc, "descr", "Block frequency test for the RNG");
-}
-
-ATF_TC_BODY(isc_rng_blockfrequency, tc) {
-	UNUSED(tc);
+/* Block frequncy test for the RNG */
+static void
+isc_rng_blockfrequency_bytes(void **state) {
+	UNUSED(state);
 
 	random_test(blockfrequency);
 }
 
-ATF_TC(isc_rng_binarymatrixrank);
-ATF_TC_HEAD(isc_rng_binarymatrixrank, tc) {
-	atf_tc_set_md_var(tc, "descr", "Binary matrix rank test for the RNG");
-}
-
 /*
+ * Binary matrix rank test for the RNG
  * This is the binary matrix rank test taken from the NIST SP 800-22 RNG
  * test suite.
  */
-ATF_TC_BODY(isc_rng_binarymatrixrank, tc) {
-	UNUSED(tc);
+static void
+isc_rng_binarymatrixrank_bytes(void **state) {
+	UNUSED(state);
 
 	random_test(binarymatrixrank);
 }
 
-/*
- * Main
- */
-ATF_TP_ADD_TCS(tp) {
-	ATF_TP_ADD_TC(tp, isc_rng_monobit);
-	ATF_TP_ADD_TC(tp, isc_rng_runs);
-	ATF_TP_ADD_TC(tp, isc_rng_blockfrequency);
-	ATF_TP_ADD_TC(tp, isc_rng_binarymatrixrank);
+int
+main(int argc, char **argv) {
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(isc_rng_monobit_bytes),
+		cmocka_unit_test(isc_rng_runs_bytes),
+		cmocka_unit_test(isc_rng_blockfrequency_bytes),
+		cmocka_unit_test(isc_rng_binarymatrixrank_bytes),
+	};
+	int c;
 
-	return (atf_no_error());
+	while ((c = isc_commandline_parse(argc, argv, "v")) != -1) {
+		switch (c) {
+		case 'v':
+			verbose = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return (cmocka_run_group_tests(tests, NULL, NULL));
 }
+
+#else /* HAVE_CMOCKA */
+
+#include <stdio.h>
+
+int
+main(void) {
+	printf("1..0 # Skipped: cmocka not available\n");
+	return (0);
+}
+
+#endif

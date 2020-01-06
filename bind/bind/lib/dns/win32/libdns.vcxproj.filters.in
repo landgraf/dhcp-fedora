@@ -96,14 +96,22 @@
     <ClCompile Include="..\ecdb.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\fixedname.c">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\forward.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
 @IF GEOIP
-    <ClCompile Include="..\geoip.c">
+    <ClCompile Include="..\geoip2.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
 @END GEOIP
+@IF GEOIPLEGACY
+    <ClCompile Include="..\geoip.c">
+      <Filter>Library Source Files</Filter>
+    </ClCompile>
+@END GEOIPLEGACY
     <ClCompile Include="..\ipkeylist.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
@@ -309,6 +317,9 @@
     <ClCompile Include="..\opensslecdsa_link.c">
       <Filter>Dst Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\openssleddsa_link.c">
+      <Filter>Dst Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\opensslgost_link.c">
       <Filter>Dst Source Files</Filter>
     </ClCompile>
@@ -327,6 +338,9 @@
       <Filter>Dst Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\pkcs11ecdsa_link.c">
+      <Filter>Dst Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\pkcs11eddsa_link.c">
       <Filter>Dst Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\pkcs11gost_link.c">
@@ -454,6 +468,11 @@
       <Filter>Library Header Files</Filter>
     </ClInclude>
 @END GEOIP
+@IF GEOIPLEGACY
+    <ClInclude Include="..\include\dns\geoip.h">
+      <Filter>Library Header Files</Filter>
+    </ClInclude>
+@END GEOIPLEGACY
     <ClInclude Include="..\include\dns\ipkeylist.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>

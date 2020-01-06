@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2003-2005, 2007-2009, 2012-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: context.c,v 1.55 2009/09/02 23:48:03 tbox Exp $ */
@@ -79,6 +82,7 @@
 #include <config.h>
 
 #include <fcntl.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -119,7 +123,7 @@ do { \
 } while (0)
 #endif
 
-LIBLWRES_EXTERNAL_DATA lwres_uint16_t lwres_udp_port = LWRES_UDP_PORT;
+LIBLWRES_EXTERNAL_DATA uint16_t lwres_udp_port = LWRES_UDP_PORT;
 LIBLWRES_EXTERNAL_DATA const char *lwres_resolv_conf = LWRES_RESOLV_CONF;
 
 static void *
@@ -224,7 +228,7 @@ lwres_context_destroy(lwres_context_t **contextp) {
 	CTXFREE(ctx, sizeof(lwres_context_t));
 }
 /*% Increments the serial number and returns the previous value. */
-lwres_uint32_t
+uint32_t
 lwres_context_nextserial(lwres_context_t *ctx) {
 	REQUIRE(ctx != NULL);
 
@@ -233,7 +237,7 @@ lwres_context_nextserial(lwres_context_t *ctx) {
 
 /*% Sets the serial number for context *ctx to serial. */
 void
-lwres_context_initserial(lwres_context_t *ctx, lwres_uint32_t serial) {
+lwres_context_initserial(lwres_context_t *ctx, uint32_t serial) {
 	REQUIRE(ctx != NULL);
 
 	ctx->serial = serial;
@@ -398,8 +402,8 @@ lwres_context_recv(lwres_context_t *ctx,
 		   int *recvd_len)
 {
 	LWRES_SOCKADDR_LEN_T fromlen;
-	struct sockaddr_in sin;
-	struct sockaddr_in6 sin6;
+	struct sockaddr_in sin = { .sin_port = 0 };
+	struct sockaddr_in6 sin6 = { .sin6_port = 0 };
 	struct sockaddr *sa;
 	int ret;
 

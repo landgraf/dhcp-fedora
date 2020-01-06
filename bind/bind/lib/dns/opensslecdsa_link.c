@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2012-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
@@ -14,8 +17,12 @@
 #error "ECDSA without EVP for SHA2?"
 #endif
 
+#include <stdbool.h>
+
+
 #include <isc/entropy.h>
 #include <isc/mem.h>
+#include <isc/safe.h>
 #include <isc/sha2.h>
 #include <isc/string.h>
 #include <isc/util.h>
@@ -41,20 +48,23 @@
 
 #define DST_RET(a) {ret = a; goto err;}
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(HAVE_ECDSA_SIG_GET0)
 /* From OpenSSL 1.1 */
 static void
 ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps) {
-	if (pr != NULL)
+	if (pr != NULL) {
 		*pr = sig->r;
-	if (ps != NULL)
+	}
+	if (ps != NULL) {
 		*ps = sig->s;
+	}
 }
 
 static int
 ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s) {
-	if (r == NULL || s == NULL)
+	if (r == NULL || s == NULL) {
 		return 0;
+	}
 
 	BN_clear_free(sig->r);
 	BN_clear_free(sig->s);
@@ -253,9 +263,9 @@ opensslecdsa_verify(dst_context_t *dctx, const isc_region_t *sig) {
 	return (ret);
 }
 
-static isc_boolean_t
+static bool
 opensslecdsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
-	isc_boolean_t ret;
+	bool ret;
 	int status;
 	EVP_PKEY *pkey1 = key1->keydata.pkey;
 	EVP_PKEY *pkey2 = key2->keydata.pkey;
@@ -264,30 +274,30 @@ opensslecdsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	const BIGNUM *priv1, *priv2;
 
 	if (pkey1 == NULL && pkey2 == NULL)
-		return (ISC_TRUE);
+		return (true);
 	else if (pkey1 == NULL || pkey2 == NULL)
-		return (ISC_FALSE);
+		return (false);
 
 	eckey1 = EVP_PKEY_get1_EC_KEY(pkey1);
 	eckey2 = EVP_PKEY_get1_EC_KEY(pkey2);
 	if (eckey1 == NULL && eckey2 == NULL) {
-		DST_RET (ISC_TRUE);
+		DST_RET (true);
 	} else if (eckey1 == NULL || eckey2 == NULL)
-		DST_RET (ISC_FALSE);
+		DST_RET (false);
 
 	status = EVP_PKEY_cmp(pkey1, pkey2);
 	if (status != 1)
-		DST_RET (ISC_FALSE);
+		DST_RET (false);
 
 	priv1 = EC_KEY_get0_private_key(eckey1);
 	priv2 = EC_KEY_get0_private_key(eckey2);
 	if (priv1 != NULL || priv2 != NULL) {
 		if (priv1 == NULL || priv2 == NULL)
-			DST_RET (ISC_FALSE);
+			DST_RET (false);
 		if (BN_cmp(priv1, priv2) != 0)
-			DST_RET (ISC_FALSE);
+			DST_RET (false);
 	}
-	ret = ISC_TRUE;
+	ret = true;
 
  err:
 	if (eckey1 != NULL)
@@ -342,13 +352,13 @@ opensslecdsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 	return (ret);
 }
 
-static isc_boolean_t
+static bool
 opensslecdsa_isprivate(const dst_key_t *key) {
-	isc_boolean_t ret;
+	bool ret;
 	EVP_PKEY *pkey = key->keydata.pkey;
 	EC_KEY *eckey = EVP_PKEY_get1_EC_KEY(pkey);
 
-	ret = ISC_TF(eckey != NULL && EC_KEY_get0_private_key(eckey) != NULL);
+	ret = (eckey != NULL && EC_KEY_get0_private_key(eckey) != NULL);
 	if (eckey != NULL)
 		EC_KEY_free(eckey);
 	return (ret);
@@ -559,7 +569,7 @@ opensslecdsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		key->keydata.pkey = pub->keydata.pkey;
 		pub->keydata.pkey = NULL;
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 		return (ISC_R_SUCCESS);
 	}
 
@@ -601,7 +611,7 @@ opensslecdsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 	if (eckey != NULL)
 		EC_KEY_free(eckey);
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ret);
 }
 

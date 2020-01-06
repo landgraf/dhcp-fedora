@@ -1,27 +1,29 @@
 /*
- * Copyright (C) 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: util.c,v 1.3 2009/06/11 23:47:55 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <isc/boolean.h>
 #include <isc/print.h>
 
 #include "util.h"
 
-extern isc_boolean_t verbose;
+extern bool verbose;
 extern const char *progname;
 
 void

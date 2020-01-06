@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2007, 2011, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: timedb.c,v 1.12 2011/10/11 23:46:45 tbox Exp $ */
 
 /*
  * A simple database driver that enables the server to return the
@@ -68,22 +70,30 @@ timedb_lookup(const char *zone, const char *name, void *dbdata,
 		 * remove the trailing newline.
 		 */
 		n = snprintf(buf, sizeof(buf), "\"%s", ctime(&now));
-		if (n < 0)
+		if (n <= 0) {
 			return (ISC_R_FAILURE);
+		}
+		if (n >= sizeof(buf) || buf[n - 1] != '\n') {
+			return (ISC_R_FAILURE);
+		}
 		buf[n - 1] = '\"';
 		result = dns_sdb_putrr(lookup, "txt", 1, buf);
-		if (result != ISC_R_SUCCESS)
+		if (result != ISC_R_SUCCESS) {
 			return (ISC_R_FAILURE);
+		}
 	} else if (strcmp(name, "clock") == 0) {
 		result = dns_sdb_putrr(lookup, "cname", 1, "time");
-		if (result != ISC_R_SUCCESS)
+		if (result != ISC_R_SUCCESS) {
 			return (ISC_R_FAILURE);
+		}
 	} else if (strcmp(name, "current") == 0) {
 		result = dns_sdb_putrr(lookup, "dname", 1, "@");
-		if (result != ISC_R_SUCCESS)
+		if (result != ISC_R_SUCCESS) {
 			return (ISC_R_FAILURE);
-	} else
+		}
+	} else {
 		return (ISC_R_NOTFOUND);
+	}
 
 	return (ISC_R_SUCCESS);
 }

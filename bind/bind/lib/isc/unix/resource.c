@@ -1,14 +1,19 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2007-2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: resource.c,v 1.23 2009/02/13 23:48:14 tbox Exp $ */
 
 #include <config.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <sys/time.h>	/* Required on some systems for <sys/resource.h>. */
@@ -116,8 +121,8 @@ isc_resource_setlimit(isc_resource_t resource, isc_resourcevalue_t value) {
 		 * ISC_PLATFORM_RLIMITTYPE is not overflowed.
 		 */
 		isc_resourcevalue_t rlim_max;
-		isc_boolean_t rlim_t_is_signed =
-			ISC_TF(((double)(ISC_PLATFORM_RLIMITTYPE)-1) < 0);
+		bool rlim_t_is_signed =
+			(((double)(ISC_PLATFORM_RLIMITTYPE)-1) < 0);
 
 		if (rlim_t_is_signed)
 			rlim_max = ~((ISC_PLATFORM_RLIMITTYPE)1 <<
@@ -189,34 +194,38 @@ isc_resource_setlimit(isc_resource_t resource, isc_resourcevalue_t value) {
 
 isc_result_t
 isc_resource_getlimit(isc_resource_t resource, isc_resourcevalue_t *value) {
-	int unixresult;
 	int unixresource;
 	struct rlimit rl;
 	isc_result_t result;
 
 	result = resource2rlim(resource, &unixresource);
-	if (result == ISC_R_SUCCESS) {
-		unixresult = getrlimit(unixresource, &rl);
-		INSIST(unixresult == 0);
-		*value = rl.rlim_max;
+	if (result != ISC_R_SUCCESS) {
+		return (result);
 	}
 
-	return (result);
+	if (getrlimit(unixresource, &rl) != 0) {
+		return (isc__errno2result(errno));
+	}
+
+	*value = rl.rlim_max;
+	return (ISC_R_SUCCESS);
 }
 
 isc_result_t
 isc_resource_getcurlimit(isc_resource_t resource, isc_resourcevalue_t *value) {
-	int unixresult;
 	int unixresource;
 	struct rlimit rl;
 	isc_result_t result;
 
 	result = resource2rlim(resource, &unixresource);
-	if (result == ISC_R_SUCCESS) {
-		unixresult = getrlimit(unixresource, &rl);
-		INSIST(unixresult == 0);
-		*value = rl.rlim_cur;
+	if (result != ISC_R_SUCCESS) {
+		return (result);
 	}
 
-	return (result);
+	if (getrlimit(unixresource, &rl) != 0) {
+		return (isc__errno2result(errno));
+	}
+
+	*value = rl.rlim_cur;
+	return (ISC_R_SUCCESS);
 }

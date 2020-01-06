@@ -1,18 +1,21 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2009, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: log.h,v 1.59 2009/02/16 02:01:16 marka Exp $ */
 
 #ifndef ISC_LOG_H
 #define ISC_LOG_H 1
 
 /*! \file isc/log.h */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <syslog.h> /* XXXDCL NT */
@@ -121,7 +124,7 @@ typedef struct isc_logfile {
 	 * to a size large enough for the largest possible file on a system.
 	 */
 	isc_offset_t maximum_size;
-	isc_boolean_t maximum_reached; /*%< Private. */
+	bool maximum_reached; /*%< Private. */
 } isc_logfile_t;
 
 /*%
@@ -705,13 +708,13 @@ isc_log_getdebuglevel(isc_log_t *lctx);
  *\li	The current logging debugging level is returned.
  */
 
-isc_boolean_t
+bool
 isc_log_wouldlog(isc_log_t *lctx, int level);
 /*%<
  * Determine whether logging something to 'lctx' at 'level' would
  * actually cause something to be logged somewhere.
  *
- * If #ISC_FALSE is returned, it is guaranteed that nothing would
+ * If #false is returned, it is guaranteed that nothing would
  * be logged, allowing the caller to omit unnecessary
  * isc_log_write() calls and possible message preformatting.
  */

@@ -1,15 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwpacket.h,v 1.24 2007/06/19 23:47:23 tbox Exp $ */
 
 #ifndef LWRES_LWPACKET_H
 #define LWRES_LWPACKET_H 1
+
+#include <inttypes.h>
 
 #include <lwres/lang.h>
 #include <lwres/lwbuffer.h>
@@ -26,14 +31,14 @@ struct lwres_lwpacket {
 	 *  \link lwres_gabn.c lwres_gabn_*()\endlink
 	 *  and \link lwres_gnba.c lwres_gnba_*()\endlink calls.
 	 */
-	lwres_uint32_t		length;
+	uint32_t		length;
 	/*! Specifies the header format.  Currently,
 	 *  there is only one format, #LWRES_LWPACKETVERSION_0.
 	 *  This field is filled in by the
 	 *  \link lwres_gabn.c lwres_gabn_*()\endlink
 	 *  and \link lwres_gnba.c lwres_gnba_*()\endlink calls.
 	 */
-	lwres_uint16_t		version;
+	uint16_t		version;
 	/*! Specifies library-defined flags for this packet, such as
 	 *  whether the packet is a request or a reply.  None of
 	 *  these are definable by the caller, but library-defined values
@@ -46,7 +51,7 @@ struct lwres_lwpacket {
 	 *  \link lwres_gabn.c lwres_gabn_*()\endlink
 	 *  and \link lwres_gnba.c lwres_gnba_*()\endlink calls.
 	 */
-	lwres_uint16_t		pktflags;
+	uint16_t		pktflags;
 	/*! Set by the requestor and is returned in all replies.
 	 *  If two packets from the same source have the same serial
 	 *  number and are from the same source, they are assumed to
@@ -54,7 +59,7 @@ struct lwres_lwpacket {
 	 *  (The library does not do this by default on replies, but
 	 * does so on requests.)
 	 */
-	lwres_uint32_t		serial;
+	uint32_t		serial;
 	/*! Opcodes between 0x04000000 and 0xffffffff
 	 *  are application defined.  Opcodes between
 	 *  0x00000000 and 0x03ffffff are
@@ -63,7 +68,7 @@ struct lwres_lwpacket {
 	 *  \link lwres_gabn.c lwres_gabn_*()\endlink
 	 *  and \link lwres_gnba.c lwres_gnba_*()\endlink calls.
 	 */
-	lwres_uint32_t		opcode;
+	uint32_t		opcode;
 	/*! Only valid for results.
 	 *  Results between 0x04000000 and 0xffffffff are application
 	 *  defined.
@@ -77,14 +82,14 @@ struct lwres_lwpacket {
 	 *  \link lwres_gabn.c lwres_gabn_*()\endlink
 	 *  and \link lwres_gnba.c lwres_gnba_*()\endlink calls.
 	 */
-	lwres_uint32_t		result;
+	uint32_t		result;
 	/*! Set to the maximum buffer size that the receiver can
 	 *  handle on requests, and the size of the buffer needed to
 	 *  satisfy a request
 	 *  when the buffer is too large for replies.
 	 *  This field is supplied by the application.
 	 */
-	lwres_uint32_t		recvlength;
+	uint32_t		recvlength;
 	/*! The packet level auth type used.
 	 *  Authtypes between 0x1000 and 0xffff are application defined.
 	 *  Authtypes
@@ -92,14 +97,14 @@ struct lwres_lwpacket {
 	 *  This is currently
 	 *  unused and MUST be set to zero.
 	 */
-	lwres_uint16_t		authtype;
+	uint16_t		authtype;
 	/*! The length of the authentication data.
 	 *  See the specific
 	 * authtypes for more information on what is contained
 	 * in this field.  This is currently unused, and
 	 * MUST be set to zero.
 	 */
-	lwres_uint16_t		authlength;
+	uint16_t		authlength;
 };
 
 #define LWRES_LWPACKET_LENGTH		(4 * 5 + 2 * 4) /*%< Overall length. */

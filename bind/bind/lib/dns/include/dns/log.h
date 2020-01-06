@@ -1,13 +1,16 @@
 /*
- * Copyright (C) 1999-2001, 2003-2007, 2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file dns/log.h
- * \author  Principal Authors: DCL */
+ */
 
 #ifndef DNS_LOG_H
 #define DNS_LOG_H 1
@@ -73,6 +76,7 @@ LIBDNS_EXTERNAL_DATA extern isc_logmodule_t dns_modules[];
 #define DNS_LOGMODULE_NTA		(&dns_modules[30])
 #define DNS_LOGMODULE_DYNDB		(&dns_modules[31])
 #define DNS_LOGMODULE_DNSTAP		(&dns_modules[32])
+#define DNS_LOGMODULE_SSU		(&dns_modules[33])
 
 ISC_LANG_BEGINDECLS
 

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2001, 2003-2008, 2010, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
@@ -11,6 +14,8 @@
 #include <config.h>
 
 #include <ctype.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>		/* for sprintf() */
 #include <string.h>		/* for strlen() */
 #include <assert.h>		/* for assert() */
@@ -18,7 +23,6 @@
 #define	ISC__PRINT_SOURCE	/* Used to get the isc_print_* prototypes. */
 
 #include <isc/assertions.h>
-#include <isc/int.h>
 #include <isc/msgs.h>
 #include <isc/print.h>
 #include <isc/stdlib.h>
@@ -160,8 +164,8 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 	int plus;
 	int space;
 	int neg;
-	isc_int64_t tmpi;
-	isc_uint64_t tmpui;
+	int64_t tmpi;
+	uint64_t tmpui;
 	unsigned long width;
 	unsigned long precision;
 	unsigned int length;
@@ -175,7 +179,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 	int zeropad;
 	int dot;
 	double dbl;
-	isc_boolean_t precision_set;
+	bool precision_set;
 #ifdef HAVE_LONG_DOUBLE
 	long double ldbl;
 #endif
@@ -200,7 +204,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 		width = precision = 0;
 		head = "";
 		pad = zeropad = 0;
-		precision_set = ISC_FALSE;
+		precision_set = false;
 
 		do {
 			if (*format == '#') {
@@ -246,12 +250,12 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 			dot = 1;
 			if (*format == '*') {
 				precision = va_arg(ap, int);
-				precision_set = ISC_TRUE;
+				precision_set = true;
 				format++;
 			} else if (isdigit((unsigned char)*format)) {
 				char *e;
 				precision = strtoul(format, &e, 10);
-				precision_set = ISC_TRUE;
+				precision_set = true;
 				format = e;
 			}
 		}
@@ -330,7 +334,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 			case 'i':
 			case 'd':
 				if (q)
-					tmpi = va_arg(ap, isc_int64_t);
+					tmpi = va_arg(ap, int64_t);
 				else if (l)
 					tmpi = va_arg(ap, long int);
 				else if (z)
@@ -372,7 +376,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 				goto printint;
 			case 'o':
 				if (q)
-					tmpui = va_arg(ap, isc_uint64_t);
+					tmpui = va_arg(ap, uint64_t);
 				else if (l)
 					tmpui = va_arg(ap, long int);
 				else if (z)
@@ -405,7 +409,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 				goto printint;
 			case 'u':
 				if (q)
-					tmpui = va_arg(ap, isc_uint64_t);
+					tmpui = va_arg(ap, uint64_t);
 				else if (l)
 					tmpui = va_arg(ap, unsigned long int);
 				else if (z)
@@ -435,7 +439,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 				goto printint;
 			case 'x':
 				if (q)
-					tmpui = va_arg(ap, isc_uint64_t);
+					tmpui = va_arg(ap, uint64_t);
 				else if (l)
 					tmpui = va_arg(ap, unsigned long int);
 				else if (z)
@@ -459,7 +463,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 				goto printint;
 			case 'X':
 				if (q)
-					tmpui = va_arg(ap, isc_uint64_t);
+					tmpui = va_arg(ap, uint64_t);
 				else if (l)
 					tmpui = va_arg(ap, unsigned long int);
 				else if (z)
@@ -618,19 +622,23 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 			}
 			break;
 		case 'D':	/*deprecated*/
+			/* cppcheck-suppress literalWithCharPtrCompare */
 			assert("use %ld instead of %D" == NULL);
 		case 'O':	/*deprecated*/
+			/* cppcheck-suppress literalWithCharPtrCompare */
 			assert("use %lo instead of %O" == NULL);
 		case 'U':	/*deprecated*/
+			/* cppcheck-suppress literalWithCharPtrCompare */
 			assert("use %lu instead of %U" == NULL);
 
 		case 'L':
 #ifdef HAVE_LONG_DOUBLE
 			l = 1;
 #else
+			/* cppcheck-suppress literalWithCharPtrCompare */
 			assert("long doubles are not supported" == NULL);
 #endif
-			/*FALLTHROUGH*/
+			/* FALLTHROUGH */
 		case 'e':
 		case 'E':
 		case 'f':
@@ -682,7 +690,7 @@ isc__print_printf(void (*emit)(char, void *), void *arg,
 						pad--;
 					}
 				cp = buf;
-				while (*cp != ' ')
+				while (*cp != '\0')
 					emit(*cp++, arg);
 				while (pad > 0) {
 					emit(' ', arg);

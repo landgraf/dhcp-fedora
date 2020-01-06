@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1998-2002, 2004-2009, 2012-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: timer.h,v 1.43 2009/09/02 23:48:03 tbox Exp $ */
 
 #ifndef ISC_TIMER_H
 #define ISC_TIMER_H 1
@@ -63,6 +65,8 @@
  *** Imports
  ***/
 
+#include <stdbool.h>
+
 #include <isc/types.h>
 #include <isc/event.h>
 #include <isc/eventclass.h>
@@ -114,7 +118,7 @@ typedef struct {
 	isc_result_t	(*reset)(isc_timer_t *timer, isc_timertype_t type,
 				 const isc_time_t *expires,
 				 const isc_interval_t *interval,
-				 isc_boolean_t purge);
+				 bool purge);
 	isc_result_t	(*touch)(isc_timer_t *timer);
 } isc_timermethods_t;
 
@@ -227,7 +231,7 @@ isc_timer_reset(isc_timer_t *timer,
 		isc_timertype_t type,
 		const isc_time_t *expires,
 		const isc_interval_t *interval,
-		isc_boolean_t purge);
+		bool purge);
 /*%<
  * Change the timer's type, expires, and interval values to the given
  * values.  If 'purge' is TRUE, any pending events from this timer

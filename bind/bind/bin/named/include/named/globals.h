@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef NAMED_GLOBALS_H
@@ -11,6 +14,7 @@
 
 /*! \file */
 
+#include <stdbool.h>
 #include <isc/rwlock.h>
 #include <isc/log.h>
 #include <isc/net.h>
@@ -50,7 +54,7 @@ EXTERN isc_entropy_t *		ns_g_fallbackentropy	INIT(NULL);
 EXTERN unsigned int		ns_g_cpus_detected	INIT(1);
 
 #ifdef ENABLE_AFL
-EXTERN isc_boolean_t		ns_g_run_done		INIT(ISC_FALSE);
+EXTERN bool		ns_g_run_done		INIT(false);
 #endif
 /*
  * XXXRTH  We're going to want multiple timer managers eventually.  One
@@ -73,7 +77,7 @@ EXTERN in_port_t		lwresd_g_listenport	INIT(0);
 
 EXTERN ns_server_t *		ns_g_server		INIT(NULL);
 
-EXTERN isc_boolean_t		ns_g_lwresdonly		INIT(ISC_FALSE);
+EXTERN bool			ns_g_lwresdonly		INIT(false);
 
 /*
  * Logging.
@@ -101,9 +105,9 @@ EXTERN const char *		lwresd_g_conffile	INIT(NS_SYSCONFDIR
 							     "/lwresd.conf");
 EXTERN const char *		lwresd_g_resolvconffile	INIT("/etc"
 							     "/resolv.conf");
-EXTERN isc_boolean_t		ns_g_conffileset	INIT(ISC_FALSE);
-EXTERN isc_boolean_t		lwresd_g_useresolvconf	INIT(ISC_FALSE);
-EXTERN isc_uint16_t		ns_g_udpsize		INIT(4096);
+EXTERN bool			ns_g_conffileset	INIT(false);
+EXTERN bool			lwresd_g_useresolvconf	INIT(false);
+EXTERN uint16_t			ns_g_udpsize		INIT(4096);
 EXTERN cfg_aclconfctx_t *	ns_g_aclconfctx		INIT(NULL);
 
 /*
@@ -117,11 +121,11 @@ EXTERN isc_resourcevalue_t	ns_g_initopenfiles	INIT(0);
 /*
  * Misc.
  */
-EXTERN isc_boolean_t		ns_g_coreok		INIT(ISC_TRUE);
+EXTERN bool			ns_g_coreok		INIT(true);
 EXTERN const char *		ns_g_chrootdir		INIT(NULL);
-EXTERN isc_boolean_t		ns_g_foreground		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_logstderr		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_nosyslog		INIT(ISC_FALSE);
+EXTERN bool			ns_g_foreground		INIT(false);
+EXTERN bool			ns_g_logstderr		INIT(false);
+EXTERN bool			ns_g_nosyslog		INIT(false);
 EXTERN const char *		ns_g_logfile		INIT(NULL);
 
 EXTERN const char *		ns_g_defaultsessionkeyfile
@@ -130,7 +134,7 @@ EXTERN const char *		ns_g_defaultsessionkeyfile
 EXTERN const char *		ns_g_defaultlockfile	INIT(NS_LOCALSTATEDIR
 							     "/run/named/"
 							     "named.lock");
-EXTERN isc_boolean_t		ns_g_forcelock		INIT(ISC_FALSE);
+EXTERN bool			ns_g_forcelock		INIT(false);
 
 #if NS_RUN_PID_DIR
 EXTERN const char *		ns_g_defaultpidfile 	INIT(NS_LOCALSTATEDIR
@@ -146,14 +150,6 @@ EXTERN const char *		lwresd_g_defaultpidfile INIT(NS_LOCALSTATEDIR
 							     "/run/lwresd.pid");
 #endif
 
-#ifdef HAVE_DNSTAP
-EXTERN const char *		ns_g_defaultdnstap
-					INIT(NS_LOCALSTATEDIR "/run/named/"
-							      "dnstap.sock");
-#else
-EXTERN const char *		ns_g_defaultdnstap	INIT(NULL);
-#endif /* HAVE_DNSTAP */
-
 EXTERN const char *		ns_g_username		INIT(NULL);
 
 #if defined(USE_PKCS11)
@@ -165,21 +161,26 @@ EXTERN const char *		ns_g_engine		INIT(NULL);
 EXTERN int			ns_g_listen		INIT(3);
 EXTERN isc_time_t		ns_g_boottime;
 EXTERN isc_time_t		ns_g_configtime;
-EXTERN isc_boolean_t		ns_g_memstatistics	INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_clienttest		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_dropedns		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_noedns		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_nosoa		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_noaa		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_keepstderr		INIT(ISC_FALSE);
+EXTERN bool			ns_g_memstatistics	INIT(false);
+EXTERN bool			ns_g_clienttest		INIT(false);
+EXTERN bool			ns_g_dropedns		INIT(false);
+EXTERN bool			ns_g_ednsformerr	INIT(false);
+EXTERN bool			ns_g_ednsnotimp		INIT(false);
+EXTERN bool			ns_g_ednsrefused	INIT(false);
+EXTERN bool			ns_g_noedns		INIT(false);
+EXTERN bool			ns_g_nosoa		INIT(false);
+EXTERN bool			ns_g_noaa		INIT(false);
+EXTERN bool			ns_g_keepstderr		INIT(false);
 EXTERN unsigned int		ns_g_delay		INIT(0);
-EXTERN isc_boolean_t		ns_g_nonearest		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_notcp		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_disable6		INIT(ISC_FALSE);
-EXTERN isc_boolean_t		ns_g_disable4		INIT(ISC_FALSE);
+EXTERN bool			ns_g_nonearest		INIT(false);
+EXTERN bool			ns_g_notcp		INIT(false);
+EXTERN bool			ns_g_disable6		INIT(false);
+EXTERN bool			ns_g_disable4		INIT(false);
 EXTERN unsigned int		ns_g_tat_interval	INIT(24*3600);
+EXTERN bool			ns_g_fixedlocal		INIT(false);
+EXTERN bool			ns_g_sigvalinsecs	INIT(false);
 
-#ifdef HAVE_GEOIP
+#if defined(HAVE_GEOIP) || defined(HAVE_GEOIP2)
 EXTERN dns_geoip_databases_t	*ns_g_geoip		INIT(NULL);
 #endif
 

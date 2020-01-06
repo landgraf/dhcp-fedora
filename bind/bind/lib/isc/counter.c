@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stddef.h>
 
 #include <isc/counter.h>
@@ -110,7 +114,7 @@ destroy(isc_counter_t *counter) {
 void
 isc_counter_detach(isc_counter_t **counterp) {
 	isc_counter_t *counter;
-	isc_boolean_t want_destroy = ISC_FALSE;
+	bool want_destroy = false;
 
 	REQUIRE(counterp != NULL && *counterp != NULL);
 	counter = *counterp;
@@ -122,7 +126,7 @@ isc_counter_detach(isc_counter_t **counterp) {
 	INSIST(counter->references > 0);
 	counter->references--;
 	if (counter->references == 0)
-		want_destroy = ISC_TRUE;
+		want_destroy = true;
 	UNLOCK(&counter->lock);
 
 	if (want_destroy)

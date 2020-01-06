@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2009, 2011, 2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file */
 
@@ -15,6 +17,8 @@
  ***/
 
 #include <config.h>
+
+#include <inttypes.h>
 
 #include <isc/string.h>
 #include <isc/util.h>
@@ -177,7 +181,7 @@ dns_rriterator_destroy(dns_rriterator_t *it) {
 
 void
 dns_rriterator_current(dns_rriterator_t *it, dns_name_t **name,
-		       isc_uint32_t *ttl, dns_rdataset_t **rdataset,
+		       uint32_t *ttl, dns_rdataset_t **rdataset,
 		       dns_rdata_t **rdata)
 {
 	REQUIRE(name != NULL && *name == NULL);

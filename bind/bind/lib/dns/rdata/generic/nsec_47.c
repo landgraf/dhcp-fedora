@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 2003, 2004, 2007-2009, 2011, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: nsec_47.c,v 1.15 2011/01/13 04:59:26 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 18:21:15 PST 2000 by brister */
 
 /* RFC 3845 */
 
@@ -19,7 +18,9 @@
  * The attributes do not include DNS_RDATATYPEATTR_SINGLETON
  * because we must be able to handle a parent/child NSEC pair.
  */
-#define RRTYPE_NSEC_ATTRIBUTES (DNS_RDATATYPEATTR_DNSSEC)
+#define RRTYPE_NSEC_ATTRIBUTES \
+	( DNS_RDATATYPEATTR_DNSSEC | DNS_RDATATYPEATTR_ZONECUTAUTH | \
+	  DNS_RDATATYPEATTR_ATCNAME )
 
 static inline isc_result_t
 fromtext_nsec(ARGS_FROMTEXT) {
@@ -37,14 +38,14 @@ fromtext_nsec(ARGS_FROMTEXT) {
 	 * Next domain.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	if (origin == NULL)
 		origin = dns_rootname;
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
 
-	return (typemap_fromtext(lexer, target, ISC_FALSE));
+	return (typemap_fromtext(lexer, target, false));
 }
 
 static inline isc_result_t
@@ -61,7 +62,13 @@ totext_nsec(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &sr);
 	dns_name_fromregion(&name, &sr);
 	isc_region_consume(&sr, name_length(&name));
-	RETERR(dns_name_totext(&name, ISC_FALSE, target));
+	RETERR(dns_name_totext(&name, false, target));
+	/*
+	 * Don't leave a trailing space when there's no typemap present.
+	 */
+	if (sr.length > 0) {
+		RETERR(str_totext(" ", target));
+	}
 	return (typemap_totext(&sr, NULL, target));
 }
 
@@ -81,7 +88,7 @@ fromwire_nsec(ARGS_FROMWIRE) {
 	RETERR(dns_name_fromwire(&name, source, dctx, options, target));
 
 	isc_buffer_activeregion(source, &sr);
-	RETERR(typemap_test(&sr, ISC_FALSE));
+	RETERR(typemap_test(&sr, false));
 	RETERR(mem_tobuffer(target, sr.base, sr.length));
 	isc_buffer_forward(source, sr.length);
 	return (ISC_R_SUCCESS);
@@ -128,7 +135,7 @@ fromstruct_nsec(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_nsec);
-	REQUIRE(source != NULL);
+	REQUIRE(nsec != NULL);
 	REQUIRE(nsec->common.rdtype == type);
 	REQUIRE(nsec->common.rdclass == rdclass);
 	REQUIRE(nsec->typebits != NULL || nsec->len == 0);
@@ -141,7 +148,7 @@ fromstruct_nsec(ARGS_FROMSTRUCT) {
 
 	region.base = nsec->typebits;
 	region.length = nsec->len;
-	RETERR(typemap_test(&region, ISC_FALSE));
+	RETERR(typemap_test(&region, false));
 	return (mem_tobuffer(target, nsec->typebits, nsec->len));
 }
 
@@ -152,7 +159,7 @@ tostruct_nsec(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_nsec);
-	REQUIRE(target != NULL);
+	REQUIRE(nsec != NULL);
 	REQUIRE(rdata->length != 0);
 
 	nsec->common.rdclass = rdata->rdclass;
@@ -184,7 +191,7 @@ static inline void
 freestruct_nsec(ARGS_FREESTRUCT) {
 	dns_rdata_nsec_t *nsec = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(nsec != NULL);
 	REQUIRE(nsec->common.rdtype == dns_rdatatype_nsec);
 
 	if (nsec->mctx == NULL)
@@ -217,7 +224,7 @@ digest_nsec(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_nsec(ARGS_CHECKOWNER) {
 
        REQUIRE(type == dns_rdatatype_nsec);
@@ -227,10 +234,10 @@ checkowner_nsec(ARGS_CHECKOWNER) {
        UNUSED(rdclass);
        UNUSED(wildcard);
 
-       return (ISC_TRUE);
+       return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_nsec(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_nsec);
@@ -239,7 +246,7 @@ checknames_nsec(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

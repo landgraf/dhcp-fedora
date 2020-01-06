@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!--
- - Copyright (C) 2000, 2001, 2004, 2005, 2007, 2014-2016 Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2000, 2001, 2004, 2005, 2007, 2014-2016, 2018, 2019 Internet Systems Consortium, Inc. ("ISC")
  - 
  - This Source Code Form is subject to the terms of the Mozilla Public
  - License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -195,7 +195,7 @@ void
     </p>
     <pre class="programlisting">
 typedef struct {
-        lwres_uint32_t  flags;
+        uint32_t  flags;
         lwres_addr_t    addr;
 } lwres_gnbarequest_t;
 </pre>
@@ -203,12 +203,12 @@ typedef struct {
     </p>
     <pre class="programlisting">
 typedef struct {
-        lwres_uint32_t  flags;
-        lwres_uint16_t  naliases;
+        uint32_t  flags;
+        uint16_t  naliases;
         char           *realname;
         char          **aliases;
-        lwres_uint16_t  realnamelen;
-        lwres_uint16_t *aliaslen;
+        uint16_t  realnamelen;
+        uint16_t *aliaslen;
         void           *base;
         size_t          baselen;
 } lwres_gnbaresponse_t;

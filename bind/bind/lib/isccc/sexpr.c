@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004, 2005, 2007, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -25,6 +28,7 @@
 #include <config.h>
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -136,18 +140,18 @@ isccc_sexpr_free(isccc_sexpr_t **sexprp) {
 	*sexprp = NULL;
 }
 
-static isc_boolean_t
+static bool
 printable(isccc_region_t *r) {
 	unsigned char *curr;
 
 	curr = r->rstart;
 	while (curr != r->rend) {
 		if (!isprint(*curr))
-			return (ISC_FALSE);
+			return (false);
 		curr++;
 	}
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 void
@@ -198,6 +202,7 @@ isccc_sexpr_print(isccc_sexpr_t *sexpr, FILE *stream) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 }
 
@@ -251,32 +256,32 @@ isccc_sexpr_addtolist(isccc_sexpr_t **l1p, isccc_sexpr_t *l2) {
 	return (elt);
 }
 
-isc_boolean_t
+bool
 isccc_sexpr_listp(isccc_sexpr_t *sexpr) {
 	if (sexpr == NULL || sexpr->type == ISCCC_SEXPRTYPE_DOTTEDPAIR)
-		return (ISC_TRUE);
-	return (ISC_FALSE);
+		return (true);
+	return (false);
 }
 
-isc_boolean_t
+bool
 isccc_sexpr_emptyp(isccc_sexpr_t *sexpr) {
 	if (sexpr == NULL)
-		return (ISC_TRUE);
-	return (ISC_FALSE);
+		return (true);
+	return (false);
 }
 
-isc_boolean_t
+bool
 isccc_sexpr_stringp(isccc_sexpr_t *sexpr) {
 	if (sexpr != NULL && sexpr->type == ISCCC_SEXPRTYPE_STRING)
-		return (ISC_TRUE);
-	return (ISC_FALSE);
+		return (true);
+	return (false);
 }
 
-isc_boolean_t
+bool
 isccc_sexpr_binaryp(isccc_sexpr_t *sexpr) {
 	if (sexpr != NULL && sexpr->type == ISCCC_SEXPRTYPE_BINARY)
-		return (ISC_TRUE);
-	return (ISC_FALSE);
+		return (true);
+	return (false);
 }
 
 char *

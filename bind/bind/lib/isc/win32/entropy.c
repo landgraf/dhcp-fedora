@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2007, 2009, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: entropy.c,v 1.10 2009/01/18 23:48:14 tbox Exp $ */
 
 /*
  * This is the system dependent part of the ISC entropy API.
  */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <windows.h>
 #include <wincrypt.h>
@@ -37,7 +41,7 @@ typedef struct {
 #include "../entropy.c"
 
 static unsigned int
-get_from_filesource(isc_entropysource_t *source, isc_uint32_t desired) {
+get_from_filesource(isc_entropysource_t *source, uint32_t desired) {
 	isc_entropy_t *ent = source->ent;
 	unsigned char buf[128];
 	HCRYPTPROV hcryptprov = source->sources.file.handle;
@@ -54,7 +58,7 @@ get_from_filesource(isc_entropysource_t *source, isc_uint32_t desired) {
 		ndesired = ISC_MIN(desired, sizeof(buf));
 		if (!CryptGenRandom(hcryptprov, (DWORD)ndesired, buf)) {
 			CryptReleaseContext(hcryptprov, 0);
-			source->bad = ISC_TRUE;
+			source->bad = true;
 			goto out;
 		}
 
@@ -62,7 +66,7 @@ get_from_filesource(isc_entropysource_t *source, isc_uint32_t desired) {
 				    (unsigned int)ndesired,
 				    (unsigned int)ndesired * 8);
 		added += (unsigned int)ndesired * 8;
-		desired -= (isc_uint32_t)ndesired;
+		desired -= (uint32_t)ndesired;
 	}
 
  out:
@@ -74,7 +78,7 @@ get_from_filesource(isc_entropysource_t *source, isc_uint32_t desired) {
  * pool.
  */
 static void
-fillpool(isc_entropy_t *ent, unsigned int desired, isc_boolean_t blocking) {
+fillpool(isc_entropy_t *ent, unsigned int desired, bool blocking) {
 	unsigned int added;
 	unsigned int remaining;
 	unsigned int needed;
@@ -268,7 +272,7 @@ isc_entropy_createfilesource(isc_entropy_t *ent, const char *fname) {
 	source->type = ENTROPY_SOURCETYPE_FILE;
 	source->ent = ent;
 	source->total = 0;
-	source->bad = ISC_FALSE;
+	source->bad = false;
 	memset(source->name, 0, sizeof(source->name));
 	ISC_LINK_INIT(source, link);
 	source->sources.file.handle = hcryptprov;
@@ -293,7 +297,3 @@ isc_entropy_createfilesource(isc_entropy_t *ent, const char *fname) {
 
 	return (ret);
 }
-
-
-
-

@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2005, 2007, 2008, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: atomic.h,v 1.6 2008/01/24 23:47:00 tbox Exp $ */
 
 #ifndef ISC_ATOMIC_H
 #define ISC_ATOMIC_H 1
+
+#include <inttypes.h>
 
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -27,12 +31,11 @@
  * registers for arguments, which would not actually correspond to the
  * intended address or value in the embedded mnemonic.
  */
-#include <isc/util.h>		/* for 'UNUSED' macro */
 
-static isc_int32_t
-isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(val);
+static int32_t
+isc_atomic_xadd(int32_t *p, int32_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movq %rdi, %rdx\n"
@@ -48,10 +51,10 @@ isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
 }
 
 #ifdef ISC_PLATFORM_HAVEXADDQ
-static isc_int64_t
-isc_atomic_xaddq(isc_int64_t *p, isc_int64_t val) {
-	UNUSED(p);
-	UNUSED(val);
+static int64_t
+isc_atomic_xaddq(int64_t *p, int64_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movq %rdi, %rdx\n"
@@ -68,9 +71,9 @@ isc_atomic_xaddq(isc_int64_t *p, isc_int64_t val) {
 #endif
 
 static void
-isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(val);
+isc_atomic_store(int32_t *p, int32_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movq %rdi, %rax\n"
@@ -84,9 +87,9 @@ isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
 
 #ifdef ISC_PLATFORM_HAVEATOMICSTOREQ
 static void
-isc_atomic_storeq(isc_int64_t *p, isc_int64_t val) {
-	UNUSED(p);
-	UNUSED(val);
+isc_atomic_storeq(int64_t *p, int64_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movq %rdi, %rax\n"
@@ -99,11 +102,11 @@ isc_atomic_storeq(isc_int64_t *p, isc_int64_t val) {
 }
 #endif
 
-static isc_int32_t
-isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(cmpval);
-	UNUSED(val);
+static int32_t
+isc_atomic_cmpxchg(int32_t *p, int32_t cmpval, int32_t val) {
+	(void)(p);
+	(void)(cmpval);
+	(void)(val);
 
 	__asm (
 		/*

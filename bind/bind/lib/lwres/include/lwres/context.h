@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004-2008, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: context.h,v 1.23 2008/12/17 23:47:58 tbox Exp $ */
@@ -13,10 +16,10 @@
 
 /*! \file lwres/context.h */
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <lwres/lang.h>
-#include <lwres/int.h>
 #include <lwres/result.h>
 
 /*!
@@ -88,14 +91,14 @@ lwres_context_destroy(lwres_context_t **contextp);
  *\pre	contextp != NULL && contextp == NULL.
  */
 
-lwres_uint32_t
+uint32_t
 lwres_context_nextserial(lwres_context_t *ctx);
 /**<
  * XXXMLG Document
  */
 
 void
-lwres_context_initserial(lwres_context_t *ctx, lwres_uint32_t serial);
+lwres_context_initserial(lwres_context_t *ctx, uint32_t serial);
 
 void
 lwres_context_freemem(lwres_context_t *ctx, void *mem, size_t len);
@@ -124,4 +127,3 @@ lwres_context_sendrecv(lwres_context_t *ctx,
 LWRES_LANG_ENDDECLS
 
 #endif /* LWRES_CONTEXT_H */
-

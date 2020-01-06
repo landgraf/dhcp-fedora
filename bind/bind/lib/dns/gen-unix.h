@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: gen-unix.h,v 1.21 2009/01/17 23:47:42 tbox Exp $ */
 
 /*! \file
  * \brief
@@ -26,10 +28,12 @@
 
 #include <sys/types.h>          /* Required on some systems for dirent.h. */
 
+#include <errno.h>
 #include <dirent.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <unistd.h>		/* XXXDCL Required for ?. */
 
-#include <isc/boolean.h>
 #include <isc/lang.h>
 
 #ifdef NEED_OPTARG
@@ -46,33 +50,39 @@ typedef struct {
 
 ISC_LANG_BEGINDECLS
 
-static isc_boolean_t
+static bool
 start_directory(const char *path, isc_dir_t *dir) {
 	dir->handle = opendir(path);
 
 	if (dir->handle != NULL)
-		return (ISC_TRUE);
+		return (true);
 	else
-		return (ISC_FALSE);
+		return (false);
 
 }
 
-static isc_boolean_t
+static bool
 next_file(isc_dir_t *dir) {
 	struct dirent *dirent;
 
 	dir->filename = NULL;
 
 	if (dir->handle != NULL) {
+		errno = 0;
 		dirent = readdir(dir->handle);
-		if (dirent != NULL)
+		if (dirent != NULL) {
 			dir->filename = dirent->d_name;
+		} else {
+			if (errno != 0) {
+				exit(1);
+			}
+		}
 	}
 
 	if (dir->filename != NULL)
-		return (ISC_TRUE);
+		return (true);
 	else
-		return (ISC_FALSE);
+		return (false);
 }
 
 static void

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: isdn_20.c,v 1.40 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Wed Mar 15 16:53:11 PST 2000 by bwelling */
 
 /* RFC1183 */
 
@@ -31,12 +30,12 @@ fromtext_isdn(ARGS_FROMTEXT) {
 
 	/* ISDN-address */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_qstring,
-				      ISC_FALSE));
+				      false));
 	RETTOK(txt_fromtext(&token.value.as_textregion, target));
 
 	/* sa: optional */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_qstring,
-				      ISC_TRUE));
+				      true));
 	if (token.type != isc_tokentype_string &&
 	    token.type != isc_tokentype_qstring) {
 		isc_lex_ungettoken(lexer, &token);
@@ -56,11 +55,11 @@ totext_isdn(ARGS_TOTEXT) {
 	UNUSED(tctx);
 
 	dns_rdata_toregion(rdata, &region);
-	RETERR(txt_totext(&region, ISC_TRUE, target));
+	RETERR(txt_totext(&region, true, target));
 	if (region.length == 0)
 		return (ISC_R_SUCCESS);
 	RETERR(str_totext(" ", target));
-	return (txt_totext(&region, ISC_TRUE, target));
+	return (txt_totext(&region, true, target));
 }
 
 static inline isc_result_t
@@ -109,7 +108,7 @@ fromstruct_isdn(ARGS_FROMSTRUCT) {
 	dns_rdata_isdn_t *isdn = source;
 
 	REQUIRE(type == dns_rdatatype_isdn);
-	REQUIRE(source != NULL);
+	REQUIRE(isdn != NULL);
 	REQUIRE(isdn->common.rdtype == type);
 	REQUIRE(isdn->common.rdclass == rdclass);
 
@@ -130,7 +129,7 @@ tostruct_isdn(ARGS_TOSTRUCT) {
 	isc_region_t r;
 
 	REQUIRE(rdata->type == dns_rdatatype_isdn);
-	REQUIRE(target != NULL);
+	REQUIRE(isdn != NULL);
 	REQUIRE(rdata->length != 0);
 
 	isdn->common.rdclass = rdata->rdclass;
@@ -171,7 +170,7 @@ static inline void
 freestruct_isdn(ARGS_FREESTRUCT) {
 	dns_rdata_isdn_t *isdn = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(isdn != NULL);
 
 	if (isdn->mctx == NULL)
 		return;
@@ -205,7 +204,7 @@ digest_isdn(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_isdn(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_isdn);
@@ -215,10 +214,10 @@ checkowner_isdn(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_isdn(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_isdn);
@@ -227,7 +226,7 @@ checknames_isdn(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

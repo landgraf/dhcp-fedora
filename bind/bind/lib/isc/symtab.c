@@ -1,18 +1,21 @@
 /*
- * Copyright (C) 1996-2001, 2004, 2005, 2007, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file */
 
 #include <config.h>
 
 #include <ctype.h>
+#include <stdbool.h>
 
 #include <isc/magic.h>
 #include <isc/mem.h>
@@ -42,14 +45,14 @@ struct isc_symtab {
 	eltlist_t *			table;
 	isc_symtabaction_t		undefine_action;
 	void *				undefine_arg;
-	isc_boolean_t			case_sensitive;
+	bool			case_sensitive;
 };
 
 isc_result_t
 isc_symtab_create(isc_mem_t *mctx, unsigned int size,
 		  isc_symtabaction_t undefine_action,
 		  void *undefine_arg,
-		  isc_boolean_t case_sensitive,
+		  bool case_sensitive,
 		  isc_symtab_t **symtabp)
 {
 	isc_symtab_t *symtab;
@@ -116,7 +119,7 @@ isc_symtab_destroy(isc_symtab_t **symtabp) {
 }
 
 static inline unsigned int
-hash(const char *key, isc_boolean_t case_sensitive) {
+hash(const char *key, bool case_sensitive) {
 	const char *s;
 	unsigned int h = 0;
 	int c;

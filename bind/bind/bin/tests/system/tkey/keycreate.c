@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2001, 2004, 2005, 2007, 2009, 2011, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: keycreate.c,v 1.20 2011/01/11 23:47:13 tbox Exp $ */
 
 #include <config.h>
 
@@ -171,7 +173,7 @@ sendquery(isc_task_t *task, isc_event_t *event) {
 				    DNS_TSIG_HMACMD5_NAME,
 				    isc_buffer_base(&keybuf),
 				    isc_buffer_usedlength(&keybuf),
-				    ISC_FALSE, NULL, 0, 0, mctx, ring,
+				    false, NULL, 0, 0, mctx, ring,
 				    &initialkey);
 	CHECK("dns_tsigkey_create", result);
 

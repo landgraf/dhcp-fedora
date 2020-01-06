@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_TALINK_58_C
@@ -30,7 +33,7 @@ fromtext_talink(ARGS_FROMTEXT) {
 	for (i = 0; i < 2; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_string,
-					      ISC_FALSE));
+					      false));
 
 		dns_name_init(&name, NULL);
 		buffer_fromregion(&buffer, &token.value.as_region);
@@ -47,7 +50,7 @@ totext_talink(ARGS_TOTEXT) {
 	dns_name_t prev;
 	dns_name_t next;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_talink);
 	REQUIRE(rdata->length != 0);
@@ -141,7 +144,7 @@ fromstruct_talink(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_talink);
-	REQUIRE(source != NULL);
+	REQUIRE(talink != NULL);
 	REQUIRE(talink->common.rdtype == type);
 	REQUIRE(talink->common.rdclass == rdclass);
 
@@ -162,7 +165,7 @@ tostruct_talink(ARGS_TOSTRUCT) {
 	isc_result_t result;
 
 	REQUIRE(rdata->type == dns_rdatatype_talink);
-	REQUIRE(target != NULL);
+	REQUIRE(talink != NULL);
 	REQUIRE(rdata->length != 0);
 
 	talink->common.rdclass = rdata->rdclass;
@@ -197,7 +200,7 @@ static inline void
 freestruct_talink(ARGS_FREESTRUCT) {
 	dns_rdata_talink_t *talink = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(talink != NULL);
 	REQUIRE(talink->common.rdtype == dns_rdatatype_talink);
 
 	if (talink->mctx == NULL)
@@ -229,7 +232,7 @@ digest_talink(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_talink(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_talink);
@@ -239,10 +242,10 @@ checkowner_talink(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_talink(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_talink);
@@ -250,7 +253,7 @@ checknames_talink(ARGS_CHECKNAMES) {
 	UNUSED(bad);
 	UNUSED(owner);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1998-2001, 2003-2005, 2007, 2008, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
@@ -96,6 +99,12 @@ static const char *description[ISC_R_NRESULTS] = {
 	"unset",				/*%< 61 */
 	"multiple",				/*%< 62 */
 	"would block",				/*%< 63 */
+	"complete",				/*%< 64 */
+	"crypto failure",			/*%< 65 */
+	"disc quota",				/*%< 66 */
+	"disc full",				/*%< 67 */
+	"default",				/*%< 68 */
+	"IPv4 prefix",				/*%< 69 */
 };
 
 static const char *identifier[ISC_R_NRESULTS] = {
@@ -163,6 +172,12 @@ static const char *identifier[ISC_R_NRESULTS] = {
 	"ISC_R_UNSET",
 	"ISC_R_MULTIPLE",
 	"ISC_R_WOULDBLOCK",
+	"ISC_R_COMPLETE",
+	"ISC_R_CRYPTOFAILURE",
+	"ISC_R_DISCQUOTA",
+	"ISC_R_DISCFULL",
+	"ISC_R_DEFAULT",
+	"ISC_R_IPV4PREFIX",
 };
 
 #define ISC_RESULT_RESULTSET			2

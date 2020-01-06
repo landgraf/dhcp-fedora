@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-/* $Id: hinfo_13.c,v 1.46 2009/12/04 22:06:37 tbox Exp $ */
-
-/*
- * Reviewed: Wed Mar 15 16:47:10 PST 2000 by halley.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_HINFO_13_C
@@ -33,7 +30,7 @@ fromtext_hinfo(ARGS_FROMTEXT) {
 	for (i = 0; i < 2; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_qstring,
-					      ISC_FALSE));
+					      false));
 		RETTOK(txt_fromtext(&token.value.as_textregion, target));
 	}
 	return (ISC_R_SUCCESS);
@@ -49,9 +46,9 @@ totext_hinfo(ARGS_TOTEXT) {
 	REQUIRE(rdata->length != 0);
 
 	dns_rdata_toregion(rdata, &region);
-	RETERR(txt_totext(&region, ISC_TRUE, target));
+	RETERR(txt_totext(&region, true, target));
 	RETERR(str_totext(" ", target));
-	return (txt_totext(&region, ISC_TRUE, target));
+	return (txt_totext(&region, true, target));
 }
 
 static inline isc_result_t
@@ -100,7 +97,7 @@ fromstruct_hinfo(ARGS_FROMSTRUCT) {
 	dns_rdata_hinfo_t *hinfo = source;
 
 	REQUIRE(type == dns_rdatatype_hinfo);
-	REQUIRE(source != NULL);
+	REQUIRE(hinfo != NULL);
 	REQUIRE(hinfo->common.rdtype == type);
 	REQUIRE(hinfo->common.rdclass == rdclass);
 
@@ -119,7 +116,7 @@ tostruct_hinfo(ARGS_TOSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(rdata->type == dns_rdatatype_hinfo);
-	REQUIRE(target != NULL);
+	REQUIRE(hinfo != NULL);
 	REQUIRE(rdata->length != 0);
 
 	hinfo->common.rdclass = rdata->rdclass;
@@ -153,7 +150,7 @@ static inline void
 freestruct_hinfo(ARGS_FREESTRUCT) {
 	dns_rdata_hinfo_t *hinfo = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(hinfo != NULL);
 
 	if (hinfo->mctx == NULL)
 		return;
@@ -187,7 +184,7 @@ digest_hinfo(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_hinfo(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_hinfo);
@@ -197,10 +194,10 @@ checkowner_hinfo(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_hinfo(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_hinfo);
@@ -209,7 +206,7 @@ checknames_hinfo(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

@@ -1,18 +1,24 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: fsaccess.c,v 1.10 2007/06/19 23:47:17 tbox Exp $ */
 
 /*! \file
  * \brief
  * This file contains the OS-independent functionality of the API.
  */
+
+#include <stdbool.h>
+
 #include <isc/fsaccess.h>
+#include <isc/print.h>
 #include <isc/result.h>
 #include <isc/util.h>
 
@@ -57,7 +63,7 @@ isc_fsaccess_remove(int trustee, int permission, isc_fsaccess_t *access) {
 }
 
 static isc_result_t
-check_bad_bits(isc_fsaccess_t access, isc_boolean_t is_dir) {
+check_bad_bits(isc_fsaccess_t access, bool is_dir) {
 	isc_fsaccess_t bits;
 
 	/*

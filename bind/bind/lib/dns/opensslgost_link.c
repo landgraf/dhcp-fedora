@@ -1,14 +1,19 @@
 /*
- * Copyright (C) 2010-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
 
 #if defined(OPENSSL) && defined(HAVE_OPENSSL_GOST)
+
+#include <stdbool.h>
 
 #include <isc/entropy.h>
 #include <isc/mem.h>
@@ -191,7 +196,7 @@ opensslgost_verify(dst_context_t *dctx, const isc_region_t *sig) {
 	}
 }
 
-static isc_boolean_t
+static bool
 opensslgost_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	EVP_PKEY *pkey1, *pkey2;
 
@@ -199,13 +204,13 @@ opensslgost_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	pkey2 = key2->keydata.pkey;
 
 	if (pkey1 == NULL && pkey2 == NULL)
-		return (ISC_TRUE);
+		return (true);
 	else if (pkey1 == NULL || pkey2 == NULL)
-		return (ISC_FALSE);
+		return (false);
 
 	if (EVP_PKEY_cmp(pkey1, pkey2) != 1)
-		return (ISC_FALSE);
-	return (ISC_TRUE);
+		return (false);
+	return (true);
 }
 
 static int
@@ -266,7 +271,7 @@ err:
 	return (ret);
 }
 
-static isc_boolean_t
+static bool
 opensslgost_isprivate(const dst_key_t *key) {
 	EVP_PKEY *pkey = key->keydata.pkey;
 	EC_KEY *ec;
@@ -274,7 +279,7 @@ opensslgost_isprivate(const dst_key_t *key) {
 	INSIST(pkey != NULL);
 
 	ec = EVP_PKEY_get0(pkey);
-	return (ISC_TF(ec != NULL && EC_KEY_get0_private_key(ec) != NULL));
+	return (ec != NULL && EC_KEY_get0_private_key(ec) != NULL);
 }
 
 static void
@@ -471,7 +476,7 @@ opensslgost_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		pub->keydata.pkey = NULL;
 		key->key_size = pub->key_size;
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 		return (ISC_R_SUCCESS);
 	}
 
@@ -523,7 +528,7 @@ opensslgost_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 	key->keydata.pkey = pkey;
 	key->key_size = EVP_PKEY_bits(pkey);
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ISC_R_SUCCESS);
 
  err:
@@ -533,7 +538,7 @@ opensslgost_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		EVP_PKEY_free(pkey);
 	opensslgost_destroy(key);
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ret);
 }
 

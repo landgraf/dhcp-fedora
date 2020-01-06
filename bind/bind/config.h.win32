@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2006-2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -322,17 +325,32 @@ typedef __int64 off_t;
 /* Define to 1 if you have the `EVP_sha512' function. */
 @HAVE_EVP_SHA512@
 
+/* Define if OpenSSL provides FIPS_mode() */
+@HAVE_FIPS_MODE@
+
 /* Define if OpenSSL includes DSA support */
 @HAVE_OPENSSL_DSA@
 
 /* Define if OpenSSL includes ECDSA support */
 @HAVE_OPENSSL_ECDSA@
 
+/* Define if OpenSSL includes Ed25519 support */
+@HAVE_OPENSSL_ED25519@
+
+/* Define if OpenSSL includes Ed448 support */
+@HAVE_OPENSSL_ED448@
+
 /* Define if your OpenSSL version supports GOST. */
 @HAVE_OPENSSL_GOST@
 
 /* Define if your PKCS11 provider supports ECDSA. */
 @HAVE_PKCS11_ECDSA@
+
+/* Define if your PKCS11 provider supports Ed25519. */
+@HAVE_PKCS11_ED25519@
+
+/* Define if your PKCS11 provider supports Ed448. */
+@HAVE_PKCS11_ED448@
 
 /* Define if your PKCS11 provider supports GOST. */
 @HAVE_PKCS11_GOST@
@@ -346,23 +364,29 @@ typedef __int64 off_t;
 /* Define if your OpenSSL version supports AES */
 @HAVE_OPENSSL_AES@
 
+/* Define if your OpenSSL version supports DH functions. */
+@HAVE_DH_GET0_KEY@
+
+/* Define if your OpenSSL version supports DSA functions. */
+@HAVE_DSA_GET0_PQG@
+
+/* Define if your OpenSSL version supports ECDSA functions. */
+@HAVE_ECDSA_SIG_GET0@
+
+/* Define if your OpenSSL version supports RSA functions. */
+@HAVE_RSA_SET0_KEY@
+
 /* HMAC_*() return ints */
 @HMAC_RETURN_INT@
-
-/* Use AES for Client Cookie generation */
-@AES_CC@
-
-/* Use HMAC-SHA1 for Client Cookie generation */
-@HMAC_SHA1_CC@
-
-/* Use HMAC-SHA256 for Client Cookie generation */
-@HMAC_SHA256_CC@
 
 /* Define to 1 if you have the `readline' function. */
 @HAVE_READLINE@
 
 /* Build with GeoIP support */
 @HAVE_GEOIP@
+
+/* Build with GeoIP2 support */
+@HAVE_GEOIP2@
 
 /* define if idnkit support is to be included. */
 @WITH_IDN@

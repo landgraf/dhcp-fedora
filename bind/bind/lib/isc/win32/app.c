@@ -1,17 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2007, 2009, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: app.c,v 1.9 2009/09/02 23:48:03 tbox Exp $ */
 
 #include <config.h>
 
 #include <sys/types.h>
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -19,7 +22,6 @@
 #include <process.h>
 
 #include <isc/app.h>
-#include <isc/boolean.h>
 #include <isc/condition.h>
 #include <isc/mem.h>
 #include <isc/msgs.h>
@@ -84,28 +86,28 @@ enum {
 };
 
 typedef struct isc__appctx {
-	isc_appctx_t		common;
-	isc_mem_t		*mctx;
-	isc_eventlist_t		on_run;
-	isc_mutex_t		lock;
-	isc_boolean_t		shutdown_requested;
-	isc_boolean_t		running;
+	isc_appctx_t	common;
+	isc_mem_t	*mctx;
+	isc_eventlist_t	on_run;
+	isc_mutex_t	lock;
+	bool		shutdown_requested;
+	bool		running;
 	/*
 	 * We assume that 'want_shutdown' can be read and written atomically.
 	 */
-	isc_boolean_t		want_shutdown;
+	bool		want_shutdown;
 	/*
 	 * We assume that 'want_reload' can be read and written atomically.
 	 */
-	isc_boolean_t		want_reload;
+	bool		want_reload;
 
-	isc_boolean_t		blocked;
+	bool		blocked;
 
-	HANDLE			hEvents[NUM_EVENTS];
+	HANDLE		hEvents[NUM_EVENTS];
 
-	isc_taskmgr_t		*taskmgr;
-	isc_socketmgr_t		*socketmgr;
-	isc_timermgr_t		*timermgr;
+	isc_taskmgr_t	*taskmgr;
+	isc_socketmgr_t	*socketmgr;
+	isc_timermgr_t	*timermgr;
 } isc__appctx_t;
 
 static isc__appctx_t isc_g_appctx;
@@ -161,11 +163,11 @@ isc__app_ctxstart(isc_appctx_t *ctx0) {
 	if (result != ISC_R_SUCCESS)
 		return (result);
 
-	ctx->shutdown_requested = ISC_FALSE;
-	ctx->running = ISC_FALSE;
-	ctx->want_shutdown = ISC_FALSE;
-	ctx->want_reload = ISC_FALSE;
-	ctx->blocked  = ISC_FALSE;
+	ctx->shutdown_requested = false;
+	ctx->running = false;
+	ctx->want_shutdown = false;
+	ctx->want_reload = false;
+	ctx->blocked  = false;
 
 	/* Create the reload event in a non-signaled state */
 	ctx->hEvents[RELOAD_EVENT] = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -250,7 +252,7 @@ isc__app_ctxrun(isc_appctx_t *ctx0) {
 	LOCK(&ctx->lock);
 
 	if (!ctx->running) {
-		ctx->running = ISC_TRUE;
+		ctx->running = true;
 
 		/*
 		 * Post any on-run events (in FIFO order).
@@ -287,17 +289,17 @@ isc__app_ctxrun(isc_appctx_t *ctx0) {
 			 */
 			switch (WaitSucceededIndex(dwWaitResult)) {
 			case RELOAD_EVENT:
-				ctx->want_reload = ISC_TRUE;
+				ctx->want_reload = true;
 				break;
 
 			case SHUTDOWN_EVENT:
-				ctx->want_shutdown = ISC_TRUE;
+				ctx->want_shutdown = true;
 				break;
 			}
 		}
 
 		if (ctx->want_reload) {
-			ctx->want_reload = ISC_FALSE;
+			ctx->want_reload = false;
 			return (ISC_R_RELOAD);
 		}
 
@@ -316,7 +318,7 @@ isc__app_run(void) {
 isc_result_t
 isc__app_ctxshutdown(isc_appctx_t *ctx0) {
 	isc__appctx_t *ctx = (isc__appctx_t *)ctx0;
-	isc_boolean_t want_kill = ISC_TRUE;
+	bool want_kill = true;
 
 	REQUIRE(VALID_APPCTX(ctx));
 
@@ -325,9 +327,9 @@ isc__app_ctxshutdown(isc_appctx_t *ctx0) {
 	REQUIRE(ctx->running);
 
 	if (ctx->shutdown_requested)
-		want_kill = ISC_FALSE;		/* We're only signaling once */
+		want_kill = false;		/* We're only signaling once */
 	else
-		ctx->shutdown_requested = ISC_TRUE;
+		ctx->shutdown_requested = true;
 
 	UNLOCK(&ctx->lock);
 
@@ -345,7 +347,7 @@ isc__app_shutdown(void) {
 isc_result_t
 isc__app_ctxsuspend(isc_appctx_t *ctx0) {
 	isc__appctx_t *ctx = (isc__appctx_t *)ctx0;
-	isc_boolean_t want_kill = ISC_TRUE;
+	bool want_kill = true;
 
 	REQUIRE(VALID_APPCTX(ctx));
 
@@ -357,7 +359,7 @@ isc__app_ctxsuspend(isc_appctx_t *ctx0) {
 	 * Don't send the reload signal if we're shutting down.
 	 */
 	if (ctx->shutdown_requested)
-		want_kill = ISC_FALSE;
+		want_kill = false;
 
 	UNLOCK(&ctx->lock);
 
@@ -391,7 +393,7 @@ isc__app_block(void) {
 	REQUIRE(isc_g_appctx.running);
 	REQUIRE(!isc_g_appctx.blocked);
 
-	isc_g_appctx.blocked = ISC_TRUE;
+	isc_g_appctx.blocked = true;
 	blockedthread = GetCurrentThread();
 }
 
@@ -400,7 +402,7 @@ isc__app_unblock(void) {
 	REQUIRE(isc_g_appctx.running);
 	REQUIRE(isc_g_appctx.blocked);
 
-	isc_g_appctx.blocked = ISC_FALSE;
+	isc_g_appctx.blocked = false;
 	REQUIRE(blockedthread == GetCurrentThread());
 }
 

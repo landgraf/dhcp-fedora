@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 2001, 2002, 2004, 2005, 2007, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: getaddresses.c,v 1.22 2007/06/19 23:47:16 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <isc/net.h>
@@ -19,6 +23,7 @@
 #include <isc/netscope.h>
 #include <isc/result.h>
 #include <isc/sockaddr.h>
+#include <isc/string.h>
 #include <isc/util.h>
 
 #include <bind9/getaddresses.h>
@@ -43,7 +48,7 @@ bind9_getaddresses(const char *hostname, in_port_t port,
 {
 	struct in_addr in4;
 	struct in6_addr in6;
-	isc_boolean_t have_ipv4, have_ipv6;
+	bool have_ipv4, have_ipv6;
 	int i;
 
 #ifdef USE_GETADDRINFO
@@ -58,8 +63,8 @@ bind9_getaddresses(const char *hostname, in_port_t port,
 	REQUIRE(addrcount != NULL);
 	REQUIRE(addrsize > 0);
 
-	have_ipv4 = ISC_TF((isc_net_probeipv4() == ISC_R_SUCCESS));
-	have_ipv6 = ISC_TF((isc_net_probeipv6() == ISC_R_SUCCESS));
+	have_ipv4 = (isc_net_probeipv4() == ISC_R_SUCCESS);
+	have_ipv6 = (isc_net_probeipv6() == ISC_R_SUCCESS);
 
 	/*
 	 * Try IPv4, then IPv6.  In order to handle the extended format
@@ -79,9 +84,9 @@ bind9_getaddresses(const char *hostname, in_port_t port,
 		return (ISC_R_SUCCESS);
 	} else if (strlen(hostname) <= 127U) {
 		char tmpbuf[128], *d;
-		isc_uint32_t zone = 0;
+		uint32_t zone = 0;
 
-		strcpy(tmpbuf, hostname);
+		strlcpy(tmpbuf, hostname, sizeof(tmpbuf));
 		d = strchr(tmpbuf, '%');
 		if (d != NULL)
 			*d = '\0';
@@ -154,6 +159,7 @@ bind9_getaddresses(const char *hostname, in_port_t port,
 			goto again;
 		}
 #endif
+		/* FALLTHROUGH */
 	default:
 		return (ISC_R_FAILURE);
 	}

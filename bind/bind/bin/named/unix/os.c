@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 1999-2002, 2004-2011, 2013-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
 
 #include <config.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <sys/types.h>	/* dev_t FreeBSD 2.1 */
 #include <sys/stat.h>
@@ -104,13 +108,13 @@ static pid_t mainpid = 0;
 #endif
 
 static struct passwd *runas_pw = NULL;
-static isc_boolean_t done_setuid = ISC_FALSE;
+static bool done_setuid = false;
 static int dfd[2] = { -1, -1 };
 
 #ifdef HAVE_LINUX_CAPABILITY_H
 
-static isc_boolean_t non_root = ISC_FALSE;
-static isc_boolean_t non_root_caps = ISC_FALSE;
+static bool non_root = false;
+static bool non_root_caps = false;
 
 #ifdef HAVE_SYS_CAPABILITY_H
 #include <sys/capability.h>
@@ -228,18 +232,47 @@ linux_setcaps(cap_t caps) {
 		cap_free(curcaps); \
 	} while (0)
 #else
-#define SET_CAP(flag) do { caps |= (1 << (flag)); } while (0)
+#define SET_CAP(flag) \
+	do { \
+		if (curcaps & (1 << (flag))) { \
+			caps |= (1 << (flag)); \
+		} \
+	} while (0)
 #define INIT_CAP do { caps = 0; } while (0)
+#endif /* HAVE_LIBCAP */
+
+#ifndef HAVE_LIBCAP
+/*%
+ * Store the bitmask representing the permitted capability set in 'capsp'.  To
+ * match libcap-enabled behavior, capget() syscall errors are not reported,
+ * they just cause 'capsp' to be set to 0, which effectively prevents any
+ * capability from being subsequently requested.
+ */
+static void
+linux_getpermittedcaps(cap_t *capsp) {
+	struct __user_cap_header_struct caphead;
+	struct __user_cap_data_struct curcaps;
+
+	memset(&caphead, 0, sizeof(caphead));
+	caphead.version = _LINUX_CAPABILITY_VERSION;
+	caphead.pid = 0;
+	memset(&curcaps, 0, sizeof(curcaps));
+	syscall(SYS_capget, &caphead, &curcaps);
+
+	*capsp = curcaps.permitted;
+}
 #endif /* HAVE_LIBCAP */
 
 static void
 linux_initialprivs(void) {
+	cap_t curcaps;
 	cap_t caps;
 #ifdef HAVE_LIBCAP
-	cap_t curcaps;
 	cap_value_t capval;
 	char strbuf[ISC_STRERRORSIZE];
 	int err;
+#else
+	linux_getpermittedcaps(&curcaps);
 #endif
 
 	/*%
@@ -304,12 +337,14 @@ linux_initialprivs(void) {
 
 static void
 linux_minprivs(void) {
+	cap_t curcaps;
 	cap_t caps;
 #ifdef HAVE_LIBCAP
-	cap_t curcaps;
 	cap_value_t capval;
 	char strbuf[ISC_STRERRORSIZE];
 	int err;
+#else
+	linux_getpermittedcaps(&curcaps);
 #endif
 
 	INIT_CAP;
@@ -354,9 +389,9 @@ linux_keepcaps(void) {
 			ns_main_earlyfatal("prctl() failed: %s", strbuf);
 		}
 	} else {
-		non_root_caps = ISC_TRUE;
+		non_root_caps = true;
 		if (getuid() != 0)
-			non_root = ISC_TRUE;
+			non_root = true;
 	}
 }
 #endif
@@ -492,16 +527,16 @@ ns_os_closedevnull(void) {
 	}
 }
 
-static isc_boolean_t
+static bool
 all_digits(const char *s) {
 	if (*s == '\0')
-		return (ISC_FALSE);
+		return (false);
 	while (*s != '\0') {
 		if (!isdigit((*s)&0xff))
-			return (ISC_FALSE);
+			return (false);
 		s++;
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 void
@@ -560,7 +595,7 @@ ns_os_changeuser(void) {
 	if (runas_pw == NULL || done_setuid)
 		return;
 
-	done_setuid = ISC_TRUE;
+	done_setuid = true;
 
 #ifdef HAVE_LINUXTHREADS
 #ifdef HAVE_LINUX_CAPABILITY_H
@@ -642,7 +677,7 @@ ns_os_minprivs(void) {
 }
 
 static int
-safe_open(const char *filename, mode_t mode, isc_boolean_t append) {
+safe_open(const char *filename, mode_t mode, bool append) {
 	int fd;
 	struct stat sb;
 
@@ -753,7 +788,9 @@ mkdirpath(char *filename, void (*report)(const char *, ...)) {
 
 static void
 setperms(uid_t uid, gid_t gid) {
+#if defined(HAVE_SETEGID) || defined(HAVE_SETRESGID)
 	char strbuf[ISC_STRERRORSIZE];
+#endif
 #if !defined(HAVE_SETEGID) && defined(HAVE_SETRESGID)
 	gid_t oldgid, tmpg;
 #endif
@@ -794,7 +831,7 @@ setperms(uid_t uid, gid_t gid) {
 }
 
 FILE *
-ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user) {
+ns_os_openfile(const char *filename, mode_t mode, bool switch_user) {
 	char strbuf[ISC_STRERRORSIZE], *f;
 	FILE *fp;
 	int fd;
@@ -822,7 +859,7 @@ ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user) {
 		/* Set UID/GID to the one we'll be running with eventually */
 		setperms(runas_pw->pw_uid, runas_pw->pw_gid);
 
-		fd = safe_open(filename, mode, ISC_FALSE);
+		fd = safe_open(filename, mode, false);
 
 #ifndef HAVE_LINUXTHREADS
 		/* Restore UID/GID to root */
@@ -831,7 +868,7 @@ ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user) {
 
 		if (fd == -1) {
 #ifndef HAVE_LINUXTHREADS
-			fd = safe_open(filename, mode, ISC_FALSE);
+			fd = safe_open(filename, mode, false);
 			if (fd != -1) {
 				ns_main_earlywarning("Required root "
 						     "permissions to open "
@@ -852,7 +889,7 @@ ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user) {
 #endif /* HAVE_LINUXTHREADS */
 		}
 	} else {
-		fd = safe_open(filename, mode, ISC_FALSE);
+		fd = safe_open(filename, mode, false);
 	}
 
 	if (fd < 0) {
@@ -873,7 +910,7 @@ ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user) {
 }
 
 void
-ns_os_writepidfile(const char *filename, isc_boolean_t first_time) {
+ns_os_writepidfile(const char *filename, bool first_time) {
 	FILE *fh;
 	pid_t pid;
 	char strbuf[ISC_STRERRORSIZE];
@@ -923,16 +960,16 @@ ns_os_writepidfile(const char *filename, isc_boolean_t first_time) {
 	(void)fclose(fh);
 }
 
-isc_boolean_t
+bool
 ns_os_issingleton(const char *filename) {
 	char strbuf[ISC_STRERRORSIZE];
 	struct flock lock;
 
 	if (singletonfd != -1)
-		return (ISC_TRUE);
+		return (true);
 
 	if (strcasecmp(filename, "none") == 0)
-		return (ISC_TRUE);
+		return (true);
 
 	/*
 	 * Make the containing directory if it doesn't exist.
@@ -947,7 +984,7 @@ ns_os_issingleton(const char *filename) {
 		if (ret == -1) {
 			ns_main_earlywarning("couldn't create '%s'", filename);
 			cleanup_lockfile();
-			return (ISC_FALSE);
+			return (false);
 		}
 	}
 
@@ -959,7 +996,7 @@ ns_os_issingleton(const char *filename) {
 			   S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	if (singletonfd == -1) {
 		cleanup_lockfile();
-		return (ISC_FALSE);
+		return (false);
 	}
 
 	memset(&lock, 0, sizeof(lock));
@@ -972,10 +1009,10 @@ ns_os_issingleton(const char *filename) {
 	if (fcntl(singletonfd, F_SETLK, &lock) == -1) {
 		close(singletonfd);
 		singletonfd = -1;
-		return (ISC_FALSE);
+		return (false);
 	}
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 void
@@ -1056,7 +1093,7 @@ getuname(void) {
 
 	memset(&uts, 0, sizeof(uts));
 	if (uname(&uts) < 0) {
-		strcpy(unamebuf, "unknown architecture");
+		snprintf(unamebuf, sizeof(unamebuf), "unknown architecture");
 		return;
 	}
 
@@ -1064,7 +1101,7 @@ getuname(void) {
 		 "%s %s %s %s",
 		 uts.sysname, uts.machine, uts.release, uts.version);
 #else
-	strcpy(unamebuf, "unknown architecture");
+	snprintf(unamebuf, sizeof(unamebuf), "unknown architecture");
 #endif
 	unamep = unamebuf;
 }

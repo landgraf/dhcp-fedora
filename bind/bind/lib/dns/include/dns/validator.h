@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000-2010, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: validator.h,v 1.46 2010/02/25 05:08:01 tbox Exp $ */
 
 #ifndef DNS_VALIDATOR_H
 #define DNS_VALIDATOR_H 1
@@ -45,6 +47,8 @@
  * Standards:
  *\li	RFCs:	1034, 1035, 2181, 4033, 4034, 4035.
  */
+
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/event.h>
@@ -94,11 +98,11 @@ typedef struct dns_validatorevent {
 	/*
 	 * Optout proof seen.
 	 */
-	isc_boolean_t			optout;
+	bool			optout;
 	/*
 	 * Answer is secure.
 	 */
-	isc_boolean_t			secure;
+	bool			secure;
 } dns_validatorevent_t;
 
 #define DNS_VALIDATOR_NOQNAMEPROOF 0
@@ -134,7 +138,7 @@ struct dns_validator {
 	void *				arg;
 	unsigned int			labels;
 	dns_rdataset_t *		currentset;
-	isc_boolean_t			seensig;
+	bool			seensig;
 	dns_rdataset_t *		keyset;
 	dns_rdataset_t *		dsset;
 	dns_rdataset_t *		soaset;
@@ -150,8 +154,8 @@ struct dns_validator {
 	ISC_LINK(dns_validator_t)	link;
 	dns_rdataset_t 			dlv;
 	dns_fixedname_t			dlvsep;
-	isc_boolean_t			havedlvsep;
-	isc_boolean_t			mustbesecure;
+	bool			havedlvsep;
+	bool			mustbesecure;
 	unsigned int			dlvlabels;
 	unsigned int			depth;
 	unsigned int			authcount;

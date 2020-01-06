@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2001, 2004, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: mg_8.c,v 1.45 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 17:49:21 PST 2000 by brister */
 
 #ifndef RDATA_GENERIC_MG_8_C
 #define RDATA_GENERIC_MG_8_C
@@ -28,7 +27,7 @@ fromtext_mg(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
@@ -43,7 +42,7 @@ totext_mg(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_mg);
 	REQUIRE(rdata->length != 0);
@@ -123,7 +122,7 @@ fromstruct_mg(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_mg);
-	REQUIRE(source != NULL);
+	REQUIRE(mg != NULL);
 	REQUIRE(mg->common.rdtype == type);
 	REQUIRE(mg->common.rdclass == rdclass);
 
@@ -141,7 +140,7 @@ tostruct_mg(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_mg);
-	REQUIRE(target != NULL);
+	REQUIRE(mg != NULL);
 	REQUIRE(rdata->length != 0);
 
 	mg->common.rdclass = rdata->rdclass;
@@ -161,7 +160,7 @@ static inline void
 freestruct_mg(ARGS_FREESTRUCT) {
 	dns_rdata_mg_t *mg = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(mg != NULL);
 	REQUIRE(mg->common.rdtype == dns_rdatatype_mg);
 
 	if (mg->mctx == NULL)
@@ -195,7 +194,7 @@ digest_mg(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_mg(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_mg);
@@ -207,7 +206,7 @@ checkowner_mg(ARGS_CHECKOWNER) {
 	return (dns_name_ismailbox(name));
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_mg(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_mg);
@@ -216,7 +215,7 @@ checknames_mg(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

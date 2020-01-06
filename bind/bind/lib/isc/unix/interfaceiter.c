@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2005, 2007, 2008, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: interfaceiter.c,v 1.45 2008/12/01 03:51:47 marka Exp $ */
 
 /*! \file */
 
@@ -19,6 +21,7 @@
 #endif
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -94,7 +97,7 @@ get_addr(unsigned int family, isc_netaddr_t *dst, struct sockaddr *src,
 			 * we only consider unicast link-local addresses.
 			 */
 			if (IN6_IS_ADDR_LINKLOCAL(&sa6->sin6_addr)) {
-				isc_uint16_t zone16;
+				uint16_t zone16;
 
 				memmove(&zone16, &sa6->sin6_addr.s6_addr[2],
 					sizeof(zone16));
@@ -102,7 +105,7 @@ get_addr(unsigned int family, isc_netaddr_t *dst, struct sockaddr *src,
 				if (zone16 != 0) {
 					/* the zone ID is embedded */
 					isc_netaddr_setzone(dst,
-							    (isc_uint32_t)zone16);
+							    (uint32_t)zone16);
 					dst->type.in6.s6_addr[2] = 0;
 					dst->type.in6.s6_addr[3] = 0;
 #ifdef ISC_PLATFORM_HAVEIFNAMETOINDEX
@@ -118,7 +121,7 @@ get_addr(unsigned int family, isc_netaddr_t *dst, struct sockaddr *src,
 					zone = if_nametoindex(ifname);
 					if (zone != 0) {
 						isc_netaddr_setzone(dst,
-								    (isc_uint32_t)zone);
+								    (uint32_t)zone);
 					}
 #endif
 				}
@@ -128,7 +131,7 @@ get_addr(unsigned int family, isc_netaddr_t *dst, struct sockaddr *src,
 		break;
 	default:
 		INSIST(0);
-		break;
+		ISC_UNREACHABLE();
 	}
 }
 
@@ -177,7 +180,7 @@ linux_if_inet6_current(isc_interfaceiter_t *iter) {
 	char address[33];
 	char name[IF_NAMESIZE+1];
 	struct in6_addr addr6;
-	int ifindex, prefix, flag3, flag4;
+	unsigned int ifindex, prefix, flag3, flag4;
 	int res;
 	unsigned int i;
 
@@ -217,7 +220,7 @@ linux_if_inet6_current(isc_interfaceiter_t *iter) {
 	isc_netaddr_fromin6(&iter->current.address, &addr6);
 	if (isc_netaddr_islinklocal(&iter->current.address)) {
 		isc_netaddr_setzone(&iter->current.address,
-				    (isc_uint32_t)ifindex);
+				    (uint32_t)ifindex);
 	}
 	for (i = 0; i < 16; i++) {
 		if (prefix > 8) {
@@ -229,7 +232,7 @@ linux_if_inet6_current(isc_interfaceiter_t *iter) {
 		}
 	}
 	isc_netaddr_fromin6(&iter->current.netmask, &addr6);
-	strncpy(iter->current.name, name, sizeof(iter->current.name));
+	strlcpy(iter->current.name, name, sizeof(iter->current.name));
 	return (ISC_R_SUCCESS);
 }
 #endif

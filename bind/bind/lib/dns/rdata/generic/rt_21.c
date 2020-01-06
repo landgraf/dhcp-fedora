@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2001, 2003-2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: rt_21.c,v 1.48 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Thu Mar 16 15:02:31 PST 2000 by brister */
 
 /* RFC1183 */
 
@@ -22,7 +21,7 @@ fromtext_rt(ARGS_FROMTEXT) {
 	isc_token_t token;
 	dns_name_t name;
 	isc_buffer_t buffer;
-	isc_boolean_t ok;
+	bool ok;
 
 	REQUIRE(type == dns_rdatatype_rt);
 
@@ -31,22 +30,22 @@ fromtext_rt(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	if (origin == NULL)
 		origin = dns_rootname;
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
-	ok = ISC_TRUE;
+	ok = true;
 	if ((options & DNS_RDATA_CHECKNAMES) != 0)
-		ok = dns_name_ishostname(&name, ISC_FALSE);
+		ok = dns_name_ishostname(&name, false);
 	if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
 		RETTOK(DNS_R_BADNAME);
 	if (!ok && callbacks != NULL)
@@ -59,7 +58,7 @@ totext_rt(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 	char buf[sizeof("64000")];
 	unsigned short num;
 
@@ -72,7 +71,7 @@ totext_rt(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u", num);
+	snprintf(buf, sizeof(buf), "%u", num);
 	RETERR(str_totext(buf, target));
 	RETERR(str_totext(" ", target));
 	dns_name_fromregion(&name, &region);
@@ -171,7 +170,7 @@ fromstruct_rt(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_rt);
-	REQUIRE(source != NULL);
+	REQUIRE(rt != NULL);
 	REQUIRE(rt->common.rdtype == type);
 	REQUIRE(rt->common.rdclass == rdclass);
 
@@ -190,7 +189,7 @@ tostruct_rt(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_rt);
-	REQUIRE(target != NULL);
+	REQUIRE(rt != NULL);
 	REQUIRE(rdata->length != 0);
 
 	rt->common.rdclass = rdata->rdclass;
@@ -213,7 +212,7 @@ static inline void
 freestruct_rt(ARGS_FREESTRUCT) {
 	dns_rdata_rt_t *rt = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(rt != NULL);
 	REQUIRE(rt->common.rdtype == dns_rdatatype_rt);
 
 	if (rt->mctx == NULL)
@@ -266,7 +265,7 @@ digest_rt(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_rt(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_rt);
@@ -276,10 +275,10 @@ checkowner_rt(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_rt(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -292,12 +291,12 @@ checknames_rt(ARGS_CHECKNAMES) {
 	isc_region_consume(&region, 2);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
-	if (!dns_name_ishostname(&name, ISC_FALSE)) {
+	if (!dns_name_ishostname(&name, false)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

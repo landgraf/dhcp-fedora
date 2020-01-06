@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2000-2002, 2004-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 1995-2000 by Network Associates, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) Network Associates, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,14 +23,15 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: dst_internal.h,v 1.31 2011/10/20 21:20:02 marka Exp $ */
 
 #ifndef DST_DST_INTERNAL_H
 #define DST_DST_INTERNAL_H 1
 
+#include <inttypes.h>
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isc/buffer.h>
-#include <isc/int.h>
 #include <isc/magic.h>
 #include <isc/region.h>
 #include <isc/types.h>
@@ -97,11 +101,11 @@ struct dst_key {
 	unsigned int	key_size;	/*%< size of the key in bits */
 	unsigned int	key_proto;	/*%< protocols this key is used for */
 	unsigned int	key_alg;	/*%< algorithm of the key */
-	isc_uint32_t	key_flags;	/*%< flags of the public key */
-	isc_uint16_t	key_id;		/*%< identifier of the key */
-	isc_uint16_t	key_rid;	/*%< identifier of the key when
+	uint32_t	key_flags;	/*%< flags of the public key */
+	uint16_t	key_id;		/*%< identifier of the key */
+	uint16_t	key_rid;	/*%< identifier of the key when
 					     revoked */
-	isc_uint16_t	key_bits;	/*%< hmac digest bits */
+	uint16_t	key_bits;	/*%< hmac digest bits */
 	dns_rdataclass_t key_class;	/*%< class of the key record */
 	dns_ttl_t	key_ttl;	/*%< default/initial dnskey ttl */
 	isc_mem_t	*mctx;		/*%< memory context */
@@ -136,12 +140,12 @@ struct dst_key {
 	} keydata;			/*%< pointer to key in crypto pkg fmt */
 
 	isc_stdtime_t	times[DST_MAX_TIMES + 1];    /*%< timing metadata */
-	isc_boolean_t	timeset[DST_MAX_TIMES + 1];  /*%< data set? */
+	bool	timeset[DST_MAX_TIMES + 1];  /*%< data set? */
 	isc_stdtime_t	nums[DST_MAX_NUMERIC + 1];   /*%< numeric metadata */
-	isc_boolean_t	numset[DST_MAX_NUMERIC + 1]; /*%< data set? */
-	isc_boolean_t 	inactive;      /*%< private key not present as it is
+	bool	numset[DST_MAX_NUMERIC + 1]; /*%< data set? */
+	bool 	inactive;      /*%< private key not present as it is
 					    inactive */
-	isc_boolean_t 	external;      /*%< external key */
+	bool 	external;      /*%< external key */
 
 	int		fmt_major;     /*%< private key format, major version */
 	int		fmt_minor;     /*%< private key format, minor version */
@@ -201,12 +205,12 @@ struct dst_func {
 	isc_result_t (*computesecret)(const dst_key_t *pub,
 				      const dst_key_t *priv,
 				      isc_buffer_t *secret);
-	isc_boolean_t (*compare)(const dst_key_t *key1, const dst_key_t *key2);
-	isc_boolean_t (*paramcompare)(const dst_key_t *key1,
+	bool (*compare)(const dst_key_t *key1, const dst_key_t *key2);
+	bool (*paramcompare)(const dst_key_t *key1,
 				      const dst_key_t *key2);
 	isc_result_t (*generate)(dst_key_t *key, int parms,
 				 void (*callback)(int));
-	isc_boolean_t (*isprivate)(const dst_key_t *key);
+	bool (*isprivate)(const dst_key_t *key);
 	void (*destroy)(dst_key_t *key);
 
 	/* conversion functions */
@@ -256,8 +260,14 @@ isc_result_t dst__gssapi_init(struct dst_func **funcp);
 #ifdef HAVE_OPENSSL_ECDSA
 isc_result_t dst__opensslecdsa_init(struct dst_func **funcp);
 #endif
+#if defined(HAVE_OPENSSL_ED25519) || defined(HAVE_OPENSSL_ED448)
+isc_result_t dst__openssleddsa_init(struct dst_func **funcp);
+#endif
 #ifdef HAVE_PKCS11_ECDSA
 isc_result_t dst__pkcs11ecdsa_init(struct dst_func **funcp);
+#endif
+#if defined(HAVE_PKCS11_ED25519) || defined(HAVE_PKCS11_ED448)
+isc_result_t dst__pkcs11eddsa_init(struct dst_func **funcp);
 #endif
 #ifdef HAVE_OPENSSL_GOST
 isc_result_t dst__opensslgost_init(struct dst_func **funcp);
@@ -283,7 +293,7 @@ void * dst__mem_realloc(void *ptr, size_t size);
  * Entropy retriever using the DST entropy pool.
  */
 isc_result_t dst__entropy_getdata(void *buf, unsigned int len,
-				  isc_boolean_t pseudo);
+				  bool pseudo);
 
 /*
  * Entropy status hook.

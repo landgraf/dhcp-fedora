@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 1999-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: named-checkzone.c,v 1.65.32.2 2012/02/07 02:45:21 each Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include <isc/app.h>
 #include <isc/commandline.h>
@@ -106,10 +110,10 @@ main(int argc, char **argv) {
 	dns_masterformat_t inputformat = dns_masterformat_text;
 	dns_masterformat_t outputformat = dns_masterformat_text;
 	dns_masterrawheader_t header;
-	isc_uint32_t rawversion = 1, serialnum = 0;
+	uint32_t rawversion = 1, serialnum = 0;
 	dns_ttl_t maxttl = 0;
-	isc_boolean_t snset = ISC_FALSE;
-	isc_boolean_t logdump = ISC_FALSE;
+	bool snset = false;
+	bool logdump = false;
 	FILE *errout = stdout;
 	char *endp;
 
@@ -137,12 +141,14 @@ main(int argc, char **argv) {
 #define PROGCMP(X) \
 	(strcasecmp(prog_name, X) == 0 || strcasecmp(prog_name, X ".exe") == 0)
 
-	if (PROGCMP("named-checkzone"))
+	if (PROGCMP("named-checkzone")) {
 		progmode = progmode_check;
-	else if (PROGCMP("named-compilezone"))
+	} else if (PROGCMP("named-compilezone")) {
 		progmode = progmode_compile;
-	else
+	} else {
 		INSIST(0);
+		ISC_UNREACHABLE();
+	}
 
 	/* Compilation specific defaults */
 	if (progmode == progmode_compile) {
@@ -159,7 +165,7 @@ main(int argc, char **argv) {
 
 #define ARGCMP(X) (strcmp(isc_commandline_argument, X) == 0)
 
-	isc_commandline_errprint = ISC_FALSE;
+	isc_commandline_errprint = false;
 
 	while ((c = isc_commandline_parse(argc, argv,
 			       "c:df:hi:jJ:k:L:l:m:n:qr:s:t:o:vw:DF:M:S:T:W:"))
@@ -177,33 +183,33 @@ main(int argc, char **argv) {
 			if (ARGCMP("full")) {
 				zone_options |= DNS_ZONEOPT_CHECKINTEGRITY |
 						DNS_ZONEOPT_CHECKSIBLING;
-				docheckmx = ISC_TRUE;
-				docheckns = ISC_TRUE;
-				dochecksrv = ISC_TRUE;
+				docheckmx = true;
+				docheckns = true;
+				dochecksrv = true;
 			} else if (ARGCMP("full-sibling")) {
 				zone_options |= DNS_ZONEOPT_CHECKINTEGRITY;
 				zone_options &= ~DNS_ZONEOPT_CHECKSIBLING;
-				docheckmx = ISC_TRUE;
-				docheckns = ISC_TRUE;
-				dochecksrv = ISC_TRUE;
+				docheckmx = true;
+				docheckns = true;
+				dochecksrv = true;
 			} else if (ARGCMP("local")) {
 				zone_options |= DNS_ZONEOPT_CHECKINTEGRITY;
 				zone_options |= DNS_ZONEOPT_CHECKSIBLING;
-				docheckmx = ISC_FALSE;
-				docheckns = ISC_FALSE;
-				dochecksrv = ISC_FALSE;
+				docheckmx = false;
+				docheckns = false;
+				dochecksrv = false;
 			} else if (ARGCMP("local-sibling")) {
 				zone_options |= DNS_ZONEOPT_CHECKINTEGRITY;
 				zone_options &= ~DNS_ZONEOPT_CHECKSIBLING;
-				docheckmx = ISC_FALSE;
-				docheckns = ISC_FALSE;
-				dochecksrv = ISC_FALSE;
+				docheckmx = false;
+				docheckns = false;
+				dochecksrv = false;
 			} else if (ARGCMP("none")) {
 				zone_options &= ~DNS_ZONEOPT_CHECKINTEGRITY;
 				zone_options &= ~DNS_ZONEOPT_CHECKSIBLING;
-				docheckmx = ISC_FALSE;
-				docheckns = ISC_FALSE;
-				dochecksrv = ISC_FALSE;
+				docheckmx = false;
+				docheckns = false;
+				dochecksrv = false;
 			} else {
 				fprintf(stderr, "invalid argument to -i: %s\n",
 					isc_commandline_argument);
@@ -220,12 +226,12 @@ main(int argc, char **argv) {
 			break;
 
 		case 'j':
-			nomerge = ISC_FALSE;
+			nomerge = false;
 			break;
 
 		case 'J':
 			journal = isc_commandline_argument;
-			nomerge = ISC_FALSE;
+			nomerge = false;
 			break;
 
 		case 'k':
@@ -246,7 +252,7 @@ main(int argc, char **argv) {
 			break;
 
 		case 'L':
-			snset = ISC_TRUE;
+			snset = true;
 			endp = NULL;
 			serialnum = strtol(isc_commandline_argument, &endp, 0);
 			if (*endp != '\0') {
@@ -505,7 +511,7 @@ main(int argc, char **argv) {
 	     strcmp(output_filename, "/dev/fd/1") == 0 ||
 	     strcmp(output_filename, "/dev/stdout") == 0)) {
 		errout = stderr;
-		logdump = ISC_FALSE;
+		logdump = false;
 	}
 
 	if (isc_commandline_index + 2 != argc)

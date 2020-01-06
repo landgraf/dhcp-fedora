@@ -3,7 +3,7 @@
    Find and identify the network interfaces. */
 
 /*
- * Copyright (c) 2004-2017 by Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (c) 2004-2019 by Internet Systems Consortium, Inc. ("ISC")
  * Copyright (c) 1995-2003 by Internet Software Consortium
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -643,7 +643,9 @@ discover_interfaces(int state) {
 				log_fatal("Error allocating interface %s: %s",
 					  info.name, isc_result_totext(status));
 			}
-			strncpy(tmp->name, info.name, sizeof(tmp->name) - 1);
+
+			memcpy(tmp->name, info.name, sizeof(tmp->name));
+
 			interface_snorf(tmp, ir);
 			interface_dereference(&tmp, MDL);
 			tmp = interfaces; /* XXX */

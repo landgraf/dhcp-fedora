@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2011, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: zt.h,v 1.40 2011/09/02 23:46:32 tbox Exp $ */
 
 #ifndef DNS_ZT_H
 #define DNS_ZT_H 1
 
 /*! \file dns/zt.h */
+
+#include <stdbool.h>
 
 #include <isc/lang.h>
 
@@ -136,17 +140,21 @@ dns_zt_attach(dns_zt_t *zt, dns_zt_t **ztp);
  */
 
 isc_result_t
-dns_zt_load(dns_zt_t *zt, isc_boolean_t stop);
+dns_zt_load(dns_zt_t *zt, bool stop);
 
 isc_result_t
-dns_zt_loadnew(dns_zt_t *zt, isc_boolean_t stop);
+dns_zt_loadnew(dns_zt_t *zt, bool stop);
 
 isc_result_t
 dns_zt_asyncload(dns_zt_t *zt, dns_zt_allloaded_t alldone, void *arg);
+
+isc_result_t
+dns_zt_asyncload2(dns_zt_t *zt, dns_zt_allloaded_t alldone, void *arg,
+		  bool newonly);
 /*%<
- * Load all zones in the table.  If 'stop' is ISC_TRUE,
+ * Load all zones in the table.  If 'stop' is true,
  * stop on the first error and return it.  If 'stop'
- * is ISC_FALSE, ignore errors.
+ * is false, ignore errors.
  *
  * dns_zt_loadnew() only loads zones that are not yet loaded.
  * dns_zt_load() also loads zones that are already loaded and
@@ -161,7 +169,7 @@ dns_zt_asyncload(dns_zt_t *zt, dns_zt_allloaded_t alldone, void *arg);
  */
 
 isc_result_t
-dns_zt_freezezones(dns_zt_t *zt, isc_boolean_t freeze);
+dns_zt_freezezones(dns_zt_t *zt, bool freeze);
 /*%<
  * Freeze/thaw updates to master zones.
  * Any pending updates will be flushed.
@@ -169,15 +177,15 @@ dns_zt_freezezones(dns_zt_t *zt, isc_boolean_t freeze);
  */
 
 isc_result_t
-dns_zt_apply(dns_zt_t *zt, isc_boolean_t stop,
+dns_zt_apply(dns_zt_t *zt, bool stop,
 	     isc_result_t (*action)(dns_zone_t *, void *), void *uap);
 
 isc_result_t
-dns_zt_apply2(dns_zt_t *zt, isc_boolean_t stop, isc_result_t *sub,
+dns_zt_apply2(dns_zt_t *zt, bool stop, isc_result_t *sub,
 	      isc_result_t (*action)(dns_zone_t *, void *), void *uap);
 /*%<
  * Apply a given 'action' to all zone zones in the table.
- * If 'stop' is 'ISC_TRUE' then walking the zone tree will stop if
+ * If 'stop' is 'true' then walking the zone tree will stop if
  * 'action' does not return ISC_R_SUCCESS.
  *
  * Requires:
@@ -186,19 +194,39 @@ dns_zt_apply2(dns_zt_t *zt, isc_boolean_t stop, isc_result_t *sub,
  *
  * Returns:
  * \li	ISC_R_SUCCESS if action was applied to all nodes.  If 'stop' is
- *	ISC_FALSE and 'sub' is non NULL then the first error (if any)
+ *	false and 'sub' is non NULL then the first error (if any)
  *	reported by 'action' is returned in '*sub';
  *	any error code from 'action'.
  */
 
-isc_boolean_t
+bool
 dns_zt_loadspending(dns_zt_t *zt);
 /*%<
- * Returns ISC_TRUE if and only if there are zones still waiting to
+ * Returns true if and only if there are zones still waiting to
  * be loaded in zone table 'zt'.
  *
  * Requires:
  * \li	'zt' to be valid.
+ */
+
+void
+dns_zt_setviewcommit(dns_zt_t *zt);
+/*%<
+ * Commit dns_zone_setview() calls previously made for all zones in this
+ * zone table.
+ *
+ * Requires:
+ *\li	'view' to be valid.
+ */
+
+void
+dns_zt_setviewrevert(dns_zt_t *zt);
+/*%<
+ * Revert dns_zone_setview() calls previously made for all zones in this
+ * zone table.
+ *
+ * Requires:
+ *\li	'view' to be valid.
  */
 
 ISC_LANG_ENDDECLS

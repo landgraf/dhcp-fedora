@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2001, 2004, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: ptr_12.c,v 1.45 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Thu Mar 16 14:05:12 PST 2000 by explorer */
 
 #ifndef RDATA_GENERIC_PTR_12_C
 #define RDATA_GENERIC_PTR_12_C
@@ -28,7 +27,7 @@ fromtext_ptr(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
@@ -38,8 +37,8 @@ fromtext_ptr(ARGS_FROMTEXT) {
 	if (rdclass == dns_rdataclass_in &&
 	    (options & DNS_RDATA_CHECKNAMES) != 0 &&
 	    (options & DNS_RDATA_CHECKREVERSE) != 0) {
-		isc_boolean_t ok;
-		ok = dns_name_ishostname(&name, ISC_FALSE);
+		bool ok;
+		ok = dns_name_ishostname(&name, false);
 		if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
 			RETTOK(DNS_R_BADNAME);
 		if (!ok && callbacks != NULL)
@@ -53,7 +52,7 @@ totext_ptr(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_ptr);
 	REQUIRE(rdata->length != 0);
@@ -133,7 +132,7 @@ fromstruct_ptr(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_ptr);
-	REQUIRE(source != NULL);
+	REQUIRE(ptr != NULL);
 	REQUIRE(ptr->common.rdtype == type);
 	REQUIRE(ptr->common.rdclass == rdclass);
 
@@ -151,7 +150,7 @@ tostruct_ptr(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_ptr);
-	REQUIRE(target != NULL);
+	REQUIRE(ptr != NULL);
 	REQUIRE(rdata->length != 0);
 
 	ptr->common.rdclass = rdata->rdclass;
@@ -171,7 +170,7 @@ static inline void
 freestruct_ptr(ARGS_FREESTRUCT) {
 	dns_rdata_ptr_t *ptr = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(ptr != NULL);
 	REQUIRE(ptr->common.rdtype == dns_rdatatype_ptr);
 
 	if (ptr->mctx == NULL)
@@ -206,7 +205,7 @@ digest_ptr(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_ptr(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_ptr);
@@ -216,46 +215,25 @@ checkowner_ptr(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static unsigned char ip6_arpa_data[]  = "\003IP6\004ARPA";
 static unsigned char ip6_arpa_offsets[] = { 0, 4, 9 };
 static const dns_name_t ip6_arpa =
-{
-	DNS_NAME_MAGIC,
-	ip6_arpa_data, 10, 3,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	ip6_arpa_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
+	DNS_NAME_INITABSOLUTE(ip6_arpa_data, ip6_arpa_offsets);
 
 static unsigned char ip6_int_data[]  = "\003IP6\003INT";
 static unsigned char ip6_int_offsets[] = { 0, 4, 8 };
 static const dns_name_t ip6_int =
-{
-	DNS_NAME_MAGIC,
-	ip6_int_data, 9, 3,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	ip6_int_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
+	DNS_NAME_INITABSOLUTE(ip6_int_data, ip6_int_offsets);
 
 static unsigned char in_addr_arpa_data[]  = "\007IN-ADDR\004ARPA";
 static unsigned char in_addr_arpa_offsets[] = { 0, 8, 13 };
 static const dns_name_t in_addr_arpa =
-{
-	DNS_NAME_MAGIC,
-	in_addr_arpa_data, 14, 3,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	in_addr_arpa_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
+	DNS_NAME_INITABSOLUTE(in_addr_arpa_data, in_addr_arpa_offsets);
 
-static inline isc_boolean_t
+static inline bool
 checknames_ptr(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -263,10 +241,10 @@ checknames_ptr(ARGS_CHECKNAMES) {
 	REQUIRE(rdata->type == dns_rdatatype_ptr);
 
 	if (rdata->rdclass != dns_rdataclass_in)
-	    return (ISC_TRUE);
+	    return (true);
 
 	if (dns_name_isdnssd(owner))
-		return (ISC_TRUE);
+		return (true);
 
 	if (dns_name_issubdomain(owner, &in_addr_arpa) ||
 	    dns_name_issubdomain(owner, &ip6_arpa) ||
@@ -274,13 +252,13 @@ checknames_ptr(ARGS_CHECKNAMES) {
 		dns_rdata_toregion(rdata, &region);
 		dns_name_init(&name, NULL);
 		dns_name_fromregion(&name, &region);
-		if (!dns_name_ishostname(&name, ISC_FALSE)) {
+		if (!dns_name_ishostname(&name, false)) {
 			if (bad != NULL)
 				dns_name_clone(&name, bad);
-			return (ISC_FALSE);
+			return (false);
 		}
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

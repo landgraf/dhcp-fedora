@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2002-2007, 2010, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: ds.c,v 1.13 2010/12/23 23:47:08 tbox Exp $ */
 
 /*! \file */
 
@@ -35,7 +37,7 @@
 
 isc_result_t
 dns_ds_buildrdata(dns_name_t *owner, dns_rdata_t *key,
-		  unsigned int digest_type, unsigned char *buffer,
+		  dns_dsdigest_t digest_type, unsigned char *buffer,
 		  dns_rdata_t *rdata)
 {
 	dns_fixedname_t fname;
@@ -57,8 +59,7 @@ dns_ds_buildrdata(dns_name_t *owner, dns_rdata_t *key,
 	if (!dst_ds_digest_supported(digest_type))
 		return (ISC_R_NOTIMPLEMENTED);
 
-	dns_fixedname_init(&fname);
-	name = dns_fixedname_name(&fname);
+	name = dns_fixedname_initname(&fname);
 	(void)dns_name_downcase(owner, name, NULL);
 
 	memset(buffer, 0, DNS_DS_BUFFERSIZE);
@@ -106,7 +107,6 @@ dns_ds_buildrdata(dns_name_t *owner, dns_rdata_t *key,
 		break;
 
 	case DNS_DSDIGEST_SHA256:
-	default:
 		isc_sha256_init(&sha256);
 		dns_name_toregion(name, &r);
 		isc_sha256_update(&sha256, r.base, r.length);
@@ -115,6 +115,10 @@ dns_ds_buildrdata(dns_name_t *owner, dns_rdata_t *key,
 		isc_sha256_update(&sha256, r.base, r.length);
 		isc_sha256_final(digest, &sha256);
 		break;
+
+	default:
+		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	ds.mctx = NULL;

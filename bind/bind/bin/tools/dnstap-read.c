@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -26,6 +29,8 @@
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/buffer.h>
@@ -42,10 +47,13 @@
 #include <dns/name.h>
 #include <dns/result.h>
 
+#include <protobuf-c/protobuf-c.h>
+#include "lib/dns/dnstap.pb-c.h"
+
 isc_mem_t *mctx = NULL;
-isc_boolean_t memrecord = ISC_FALSE;
-isc_boolean_t printmessage = ISC_FALSE;
-isc_boolean_t yaml = ISC_FALSE;
+bool memrecord = false;
+bool printmessage = false;
+bool yaml = false;
 
 const char *program = "dnstap-read";
 
@@ -119,6 +127,7 @@ print_packet(dns_dtdata_t *dt, const dns_master_style_t *style) {
 
 			result = dns_message_totext(dt->msg, style, 0, b);
 			if (result == ISC_R_NOSPACE) {
+				isc_buffer_clear(b);
 				textlen *= 2;
 				continue;
 			} else if (result == ISC_R_SUCCESS) {
@@ -144,7 +153,7 @@ print_yaml(dns_dtdata_t *dt) {
 	Dnstap__Dnstap *frame = dt->frame;
 	Dnstap__Message *m = frame->message;
 	const ProtobufCEnumValue *ftype, *mtype;
-	static isc_boolean_t first = ISC_TRUE;
+	static bool first = true;
 
 	ftype = protobuf_c_enum_descriptor_get_value(
 				     &dnstap__dnstap__type__descriptor,
@@ -155,7 +164,7 @@ print_yaml(dns_dtdata_t *dt) {
 	if (!first)
 		printf("---\n");
 	else
-		first = ISC_FALSE;
+		first = false;
 
 	printf("type: %s\n", ftype->name);
 
@@ -193,7 +202,7 @@ print_yaml(dns_dtdata_t *dt) {
 	}
 
 	if (dt->msgdata.base != NULL) {
-		printf("  message_size: %zdb\n", (size_t) dt->msgdata.length);
+		printf("  message_size: %zub\n", (size_t) dt->msgdata.length);
 	} else
 		printf("  message_size: 0b\n");
 
@@ -239,8 +248,7 @@ print_yaml(dns_dtdata_t *dt) {
 		isc_buffer_t b;
 		dns_decompress_t dctx;
 
-		dns_fixedname_init(&fn);
-		name = dns_fixedname_name(&fn);
+		name = dns_fixedname_initname(&fn);
 
 		isc_buffer_init(&b, m->query_zone.data, m->query_zone.len);
 		isc_buffer_add(&b, m->query_zone.len);
@@ -281,13 +289,13 @@ main(int argc, char *argv[]) {
 		switch (ch) {
 			case 'm':
 				isc_mem_debugging |= ISC_MEM_DEBUGRECORD;
-				memrecord = ISC_TRUE;
+				memrecord = true;
 				break;
 			case 'p':
-				printmessage = ISC_TRUE;
+				printmessage = true;
 				break;
 			case 'y':
-				yaml = ISC_TRUE;
+				yaml = true;
 				dns_master_indentstr = "  ";
 				dns_master_indent = 2;
 				break;
@@ -312,7 +320,7 @@ main(int argc, char *argv[]) {
 
 	for (;;) {
 		isc_region_t input;
-		isc_uint8_t *data;
+		uint8_t *data;
 		size_t datalen;
 
 		result = dns_dt_getframe(handle, &data, &datalen);

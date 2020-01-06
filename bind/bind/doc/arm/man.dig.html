@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <!--
- - Copyright (C) 2000-2017 Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) 2000-2019 Internet Systems Consortium, Inc. ("ISC")
  - 
  - This Source Code Form is subject to the terms of the Mozilla Public
  - License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -63,8 +63,10 @@
        [<code class="option">-v</code>]
        [<code class="option">-x <em class="replaceable"><code>addr</code></em></code>]
        [<code class="option">-y <em class="replaceable"><code>[<span class="optional">hmac:</span>]name:key</code></em></code>]
-       [<code class="option">-4</code>]
-       [<code class="option">-6</code>]
+       [
+	[<code class="option">-4</code>]
+	 |  [<code class="option">-6</code>]
+      ]
        [name]
        [type]
        [class]
@@ -86,8 +88,7 @@
   <div class="refsection">
 <a name="id-1.14.2.7"></a><h2>DESCRIPTION</h2>
 
-    <p><span class="command"><strong>dig</strong></span>
-      (domain information groper) is a flexible tool
+    <p><span class="command"><strong>dig</strong></span> is a flexible tool
       for interrogating DNS name servers.  It performs DNS lookups and
       displays the answers that are returned from the name server(s) that
       were queried.  Most DNS administrators use <span class="command"><strong>dig</strong></span> to
@@ -123,9 +124,10 @@
 
     <p>
       It is possible to set per-user defaults for <span class="command"><strong>dig</strong></span> via
-      <code class="filename">${HOME}/.digrc</code>.  This file is read and
-      any options in it
-      are applied before the command line arguments.
+      <code class="filename">${HOME}/.digrc</code>. This file is read and any
+      options in it are applied before the command line arguments.
+      The <code class="option">-r</code> option disables this feature, for
+      scripts that need predictable behaviour.
     </p>
 
     <p>
@@ -247,9 +249,9 @@
 <dt><span class="term">-i</span></dt>
 <dd>
 	  <p>
-	    Do reverse IPv6 lookups using the obsolete RFC1886 IP6.INT
+	    Do reverse IPv6 lookups using the obsolete RFC 1886 IP6.INT
 	    domain, which is no longer in use. Obsolete bit string
-	    label queries (RFC2874) are not attempted.
+	    label queries (RFC 2874) are not attempted.
 	  </p>
 	</dd>
 <dt><span class="term">-k <em class="replaceable"><code>keyfile</code></em></span></dt>
@@ -291,20 +293,40 @@
 	    the <em class="parameter"><code>name</code></em> from other arguments.
 	  </p>
 	</dd>
+<dt><span class="term">-r</span></dt>
+<dd>
+	  <p>
+	    Do not read options from <code class="filename">${HOME}/.digrc</code>.
+	    This is useful for scripts that need predictable behaviour.
+	  </p>
+	</dd>
 <dt><span class="term">-t <em class="replaceable"><code>type</code></em></span></dt>
 <dd>
 	  <p>
-	    The resource record type to query. It can be any valid query type
-	    which is
-	    supported in BIND 9.  The default query type is "A", unless the
-	    <code class="option">-x</code> option is supplied to indicate a reverse lookup.
-	    A zone transfer can be requested by specifying a type of AXFR.  When
+	    The resource record type to query. It can be any valid query
+	    type.  If it is a resource record type supported in BIND 9, it
+	    can be given by the type mnemonic (such as "NS" or "AAAA").
+	    The default query type is "A", unless the <code class="option">-x</code>
+	    option is supplied to indicate a reverse lookup.  A zone
+	    transfer can be requested by specifying a type of AXFR.  When
 	    an incremental zone transfer (IXFR) is required, set the
 	    <em class="parameter"><code>type</code></em> to <code class="literal">ixfr=N</code>.
 	    The incremental zone transfer will contain the changes
 	    made to the zone since the serial number in the zone's SOA
 	    record was
 	    <em class="parameter"><code>N</code></em>.
+	  </p>
+	  <p>
+	    All resource record types can be expressed as "TYPEnn", where
+	    "nn" is the number of the type. If the resource record type is
+	    not supported in BIND 9, the result will be displayed as
+	    described in RFC 3597.
+	  </p>
+	</dd>
+<dt><span class="term">-u</span></dt>
+<dd>
+	  <p>
+	    Print query times in microseconds instead of milliseconds.
 	  </p>
 	</dd>
 <dt><span class="term">-v</span></dt>
@@ -486,16 +508,28 @@
 <dd>
 	    <p>
 	      Toggles the printing of the initial comment in the
-	      output identifying the version of <span class="command"><strong>dig</strong></span>
-	      and the query options that have been applied.  This
-	      comment is printed by default.
+	      output, identifying the version of <span class="command"><strong>dig</strong></span>
+	      and the query options that have been applied.  This option
+	      always has global effect; it cannot be set globally
+	      and then overridden on a per-lookup basis.  The default
+	      is to print this comment.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]comments</code></span></dt>
 <dd>
 	    <p>
-	      Toggle the display of comment lines in the output.
-	      The default is to print comments.
+	      Toggles the display of some comment lines in the output,
+	      containing information about the packet header and
+	      OPT pseudosection, and the names of the response
+	      section.  The default is to print these comments.
+	    </p>
+	    <p>
+	      Other types of comments in the output are not affected by
+	      this option, but can be controlled using other command
+	      line switches. These include <span class="command"><strong>+[no]cmd</strong></span>,
+	      <span class="command"><strong>+[no]question</strong></span>,
+	      <span class="command"><strong>+[no]stats</strong></span>, and
+	      <span class="command"><strong>+[no]rrcomments</strong></span>.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]cookie[<span class="optional">=####</span>]</code></span></dt>
@@ -630,12 +664,32 @@
 	      server that provided the answer.
 	    </p>
 	  </dd>
+<dt><span class="term"><code class="option">+[no]idnin</code></span></dt>
+<dd>
+	    <p>
+	      Process [do not process] IDN domain names on input.
+	      This requires IDN SUPPORT to have been enabled at
+	      compile time.
+	    </p>
+	    <p>
+	      The default is to process IDN input when standard output
+	      is a tty.  The IDN processing on input is disabled when
+	      dig output is redirected to files, pipes, and other
+	      non-tty file descriptors.
+	    </p>
+	  </dd>
 <dt><span class="term"><code class="option">+[no]idnout</code></span></dt>
 <dd>
 	    <p>
 	      Convert [do not convert] puny code on output.
 	      This requires IDN SUPPORT to have been enabled at
-	      compile time.  The default is to convert output.
+	      compile time.
+	    </p>
+	    <p>
+	      The default is to process puny code on output when
+	      standard output is a tty.  The puny code processing on
+	      output is disabled when dig output is redirected to
+	      files, pipes, and other non-tty file descriptors.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]ignore</code></span></dt>
@@ -721,14 +775,14 @@
 <dt><span class="term"><code class="option">+[no]qr</code></span></dt>
 <dd>
 	    <p>
-	      Print [do not print] the query as it is sent.  By
-	      default, the query is not printed.
+	      Toggles the display of the query message as it is sent.
+	      By default, the query is not printed.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]question</code></span></dt>
 <dd>
 	    <p>
-	      Print [do not print] the question section of a query
+	      Toggles the display of the question section of a query
 	      when an answer is returned.  The default is to print
 	      the question section as a comment.
 	    </p>
@@ -746,8 +800,10 @@
 	      in the query.  This bit is set by default, which means
 	      <span class="command"><strong>dig</strong></span> normally sends recursive
 	      queries.  Recursion is automatically disabled when
-	      the <em class="parameter"><code>+nssearch</code></em> or
-	      <em class="parameter"><code>+trace</code></em> query options are used.
+	      using the <em class="parameter"><code>+nssearch</code></em> option, and
+	      when using <em class="parameter"><code>+trace</code></em> except for
+	      an initial recursive query to get the list of root
+	      servers.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+retry=T</code></span></dt>
@@ -788,7 +844,9 @@
 <dd>
 	    <p>
 	      Provide a terse answer.  The default is to print the
-	      answer in a verbose form.
+	      answer in a verbose form.  This option always has global
+	      effect; it cannot be set globally and then overridden on
+	      a per-lookup basis.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]showsearch</code></span></dt>
@@ -822,10 +880,9 @@
 <dt><span class="term"><code class="option">+[no]stats</code></span></dt>
 <dd>
 	    <p>
-	      This query option toggles the printing of statistics:
-	      when the query was made, the size of the reply and
-	      so on.  The default behavior is to print the query
-	      statistics.
+	      Toggles the printing of statistics: when the query was made,
+	      the size of the reply and so on.  The default behavior is to
+	      print the query statistics as a comment after each lookup.
 	    </p>
 	  </dd>
 <dt><span class="term"><code class="option">+[no]subnet=addr[/prefix-length]</code></span></dt>
@@ -1025,10 +1082,9 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
       <span class="command"><strong>dig</strong></span> appropriately converts character encoding of
       domain name before sending a request to DNS server or displaying a
       reply from the server.
-      If you'd like to turn off the IDN support for some reason, defines
-      the <code class="envar">IDN_DISABLE</code> environment variable.
-      The IDN support is disabled if the variable is set when
-      <span class="command"><strong>dig</strong></span> runs.
+      If you'd like to turn off the IDN support for some reason, use
+      parameters <em class="parameter"><code>+noidnin</code></em> and
+      <em class="parameter"><code>+noidnout</code></em>.
     </p>
   </div>
 
@@ -1056,7 +1112,7 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
       <span class="citerefentry">
 	<span class="refentrytitle">dnssec-keygen</span>(8)
       </span>,
-      <em class="citetitle">RFC1035</em>.
+      <em class="citetitle">RFC 1035</em>.
     </p>
   </div>
 
@@ -1087,6 +1143,6 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
 </tr>
 </table>
 </div>
-<p xmlns:db="http://docbook.org/ns/docbook" style="text-align: center;">BIND 9.11.2-P1</p>
+<p xmlns:db="http://docbook.org/ns/docbook" style="text-align: center;">BIND 9.11.14 (Extended Support Version)</p>
 </body>
 </html>

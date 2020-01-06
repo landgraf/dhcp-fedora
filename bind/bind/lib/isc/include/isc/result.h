@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1998-2001, 2003-2009, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_RESULT_H
 #define ISC_RESULT_H 1
@@ -81,9 +83,13 @@
 #define ISC_R_UNSET			61	/*%< unset */
 #define ISC_R_MULTIPLE			62	/*%< multiple */
 #define ISC_R_WOULDBLOCK		63	/*%< would block */
-
-/*% Not a result code: the number of results. */
-#define ISC_R_NRESULTS 			64
+#define ISC_R_COMPLETE			64	/*%< complete */
+#define ISC_R_CRYPTOFAILURE		65	/*%< cryptography library failure */
+#define ISC_R_DISCQUOTA			66	/*%< disc quota */
+#define ISC_R_DISCFULL			67	/*%< disc full */
+#define ISC_R_DEFAULT			68	/*%< default */
+#define ISC_R_IPV4PREFIX		69	/*%< IPv4 prefix */
+#define ISC_R_NRESULTS 			70
 
 ISC_LANG_BEGINDECLS
 

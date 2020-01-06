@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2000-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
 
 /* This code uses functions which are only available on Server 2003 and
  * higher, and Windows XP and higher.
@@ -23,8 +24,9 @@
  * XXXPDM 5 August, 2002
  */
 
-#define MAKE_EXTERNAL 1
 #include <config.h>
+
+#define MAKE_EXTERNAL 1
 
 #include <sys/types.h>
 
@@ -33,7 +35,9 @@
 #endif
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -59,6 +63,7 @@
 #include <isc/socket.h>
 #include <isc/stats.h>
 #include <isc/strerror.h>
+#include <isc/string.h>
 #include <isc/syslog.h>
 #include <isc/task.h>
 #include <isc/thread.h>
@@ -316,19 +321,20 @@ typedef struct IoCompletionInfo {
 
 struct isc_socketmgr {
 	/* Not locked. */
-	unsigned int			magic;
-	isc_mem_t		       *mctx;
-	isc_mutex_t			lock;
-	isc_stats_t		       *stats;
+	unsigned int		magic;
+	isc_mem_t	       *mctx;
+	isc_mutex_t		lock;
+	isc_stats_t	       *stats;
 
 	/* Locked by manager lock. */
-	ISC_LIST(isc_socket_t)		socklist;
-	isc_boolean_t			bShutdown;
-	isc_condition_t			shutdown_ok;
-	HANDLE				hIoCompletionPort;
-	int				maxIOCPThreads;
-	HANDLE				hIOCPThreads[MAX_IOCPTHREADS];
-	DWORD				dwIOCPThreadIds[MAX_IOCPTHREADS];
+	ISC_LIST(isc_socket_t)	socklist;
+	bool			bShutdown;
+	isc_condition_t		shutdown_ok;
+	HANDLE			hIoCompletionPort;
+	int			maxIOCPThreads;
+	HANDLE			hIOCPThreads[MAX_IOCPTHREADS];
+	DWORD			dwIOCPThreadIds[MAX_IOCPTHREADS];
+	size_t			maxudp;
 
 	/*
 	 * Debugging.
@@ -358,9 +364,9 @@ static isc_result_t socket_create(isc_socketmgr_t *manager0, int pf,
 static isc_threadresult_t WINAPI SocketIoThread(LPVOID ThreadContext);
 static void maybe_free_socket(isc_socket_t **, int);
 static void free_socket(isc_socket_t **, int);
-static isc_boolean_t senddone_is_active(isc_socket_t *sock, isc_socketevent_t *dev);
-static isc_boolean_t acceptdone_is_active(isc_socket_t *sock, isc_socket_newconnev_t *dev);
-static isc_boolean_t connectdone_is_active(isc_socket_t *sock, isc_socket_connev_t *dev);
+static bool senddone_is_active(isc_socket_t *sock, isc_socketevent_t *dev);
+static bool acceptdone_is_active(isc_socket_t *sock, isc_socket_newconnev_t *dev);
+static bool connectdone_is_active(isc_socket_t *sock, isc_socket_connev_t *dev);
 static void send_recvdone_event(isc_socket_t *sock, isc_socketevent_t **dev);
 static void send_senddone_event(isc_socket_t *sock, isc_socketevent_t **dev);
 static void send_acceptdone_event(isc_socket_t *sock, isc_socket_newconnev_t **adev);
@@ -401,12 +407,12 @@ sock_dump(isc_socket_t *sock) {
 
 	printf("\n\t\tSock Dump\n");
 	printf("\t\tfd: %Iu\n", sock->fd);
-	printf("\t\treferences: %d\n", sock->references);
-	printf("\t\tpending_accept: %d\n", sock->pending_accept);
-	printf("\t\tconnecting: %d\n", sock->pending_connect);
-	printf("\t\tconnected: %d\n", sock->connected);
-	printf("\t\tbound: %d\n", sock->bound);
-	printf("\t\tpending_iocp: %d\n", sock->pending_iocp);
+	printf("\t\treferences: %u\n", sock->references);
+	printf("\t\tpending_accept: %u\n", sock->pending_accept);
+	printf("\t\tconnecting: %u\n", sock->pending_connect);
+	printf("\t\tconnected: %u\n", sock->connected);
+	printf("\t\tbound: %u\n", sock->bound);
+	printf("\t\tpending_iocp: %u\n", sock->pending_iocp);
 	printf("\t\tsocket type: %d\n", sock->type);
 
 	printf("\n\t\tSock Recv List\n");
@@ -494,7 +500,6 @@ iocompletionport_createthreads(int total_threads, isc_socketmgr_t *manager) {
 				ISC_MSG_FAILED,
 				"Can't create IOCP thread: %s"),
 				strbuf);
-			exit(1);
 		}
 	}
 }
@@ -522,7 +527,6 @@ iocompletionport_init(isc_socketmgr_t *manager) {
 					   "HeapCreate() failed during "
 					   "initialization: %s"),
 			    strbuf);
-		exit(1);
 	}
 
 	manager->maxIOCPThreads = min(isc_os_ncpus() + 1, MAX_IOCPTHREADS);
@@ -540,7 +544,6 @@ iocompletionport_init(isc_socketmgr_t *manager) {
 				"CreateIoCompletionPort() failed "
 				"during initialization: %s"),
 				strbuf);
-		exit(1);
 	}
 
 	/*
@@ -585,7 +588,6 @@ iocompletionport_update(isc_socket_t *sock) {
 				"CreateIoCompletionPort() failed "
 				"during initialization: %s"),
 				strbuf);
-		exit(1);
 	}
 
 	InterlockedIncrement(&sock->manager->iocp_total);
@@ -613,7 +615,7 @@ socket_close(isc_socket_t *sock) {
 }
 
 static isc_once_t initialise_once = ISC_ONCE_INIT;
-static isc_boolean_t initialised = ISC_FALSE;
+static bool initialised = false;
 
 static void
 initialise(void) {
@@ -637,13 +639,12 @@ initialise(void) {
 			    isc_msgcat_get(isc_msgcat, ISC_MSGSET_GENERAL,
 					   ISC_MSG_FAILED, "failed"),
 			    strbuf);
-		exit(1);
 	}
 	/*
-	 * The following APIs do not exist as functions in a library, but we must
-	 * ask winsock for them.  They are "extensions" -- but why they cannot be
-	 * actual functions is beyond me.  So, ask winsock for the pointers to the
-	 * functions we need.
+	 * The following APIs do not exist as functions in a library, but
+	 * we must ask winsock for them.  They are "extensions" -- but why
+	 * they cannot be actual functions is beyond me.  So, ask winsock
+	 * for the pointers to the functions we need.
 	 */
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	INSIST(sock != INVALID_SOCKET);
@@ -667,7 +668,7 @@ initialise(void) {
 
 	closesocket(sock);
 
-	initialised = ISC_TRUE;
+	initialised = true;
 }
 
 /*
@@ -739,7 +740,7 @@ queue_receive_request(isc_socket_t *sock) {
 	isc_result_t isc_result;
 
  retry:
-	need_retry = ISC_FALSE;
+	need_retry = false;
 
 	/*
 	 * If we already have a receive pending, do nothing.
@@ -799,7 +800,7 @@ queue_receive_request(isc_socket_t *sock) {
 		case WSAECONNRESET:
 			if (!sock->connected) {
 				/* soft error */
-				need_retry = ISC_TRUE;
+				need_retry = true;
 				break;
 			}
 			/* FALLTHROUGH */
@@ -881,7 +882,7 @@ socket_log(int lineno, isc_socket_t *sock, isc_sockaddr_t *address,
 		isc_sockaddr_format(address, peerbuf, sizeof(peerbuf));
 		isc_log_iwrite(isc_lctx, category, module, level,
 			       msgcat, msgset, message,
-				   "socket %p line %d peer %s: %s", sock, lineno,
+				   "socket %p line %d %s: %s", sock, lineno,
 				   peerbuf, msgbuf);
 	}
 
@@ -1239,11 +1240,21 @@ fill_recv(isc_socket_t *sock, isc_socketevent_t *dev) {
 			sock->recvbuf.from_addr_len);
 		if (isc_sockaddr_getport(&dev->address) == 0) {
 			if (isc_log_wouldlog(isc_lctx, IOEVENT_LEVEL)) {
-				socket_log(__LINE__, sock, &dev->address, IOEVENT,
-					   isc_msgcat, ISC_MSGSET_SOCKET,
-					   ISC_MSG_ZEROPORT,
+				socket_log(__LINE__, sock, &dev->address,
+					   IOEVENT, isc_msgcat,
+					   ISC_MSGSET_SOCKET, ISC_MSG_ZEROPORT,
 					   "dropping source port zero packet");
 			}
+			sock->recvbuf.remaining = 0;
+			return;
+		}
+		/*
+		 * Simulate a firewall blocking UDP responses bigger than
+		 * 'maxudp' bytes.
+		 */
+		if (sock->manager->maxudp != 0 &&
+		    sock->recvbuf.remaining > sock->manager->maxudp)
+		{
 			sock->recvbuf.remaining = 0;
 			return;
 		}
@@ -1379,6 +1390,18 @@ startio_send(isc_socket_t *sock, isc_socketevent_t *dev, int *nbytes,
 	int status;
 	struct msghdr *mh;
 
+	/*
+	 * Simulate a firewall blocking UDP responses bigger than
+	 * 'maxudp' bytes.
+	 */
+	if (sock->type == isc_sockettype_udp &&
+	    sock->manager->maxudp != 0 &&
+	    dev->region.length - dev->n > sock->manager->maxudp)
+	{
+		*nbytes = dev->region.length - dev->n;
+		return (DOIO_SUCCESS);
+	}
+
 	lpo = (IoCompletionInfo *)HeapAlloc(hHeapHandle,
 					    HEAP_ZERO_MEMORY,
 					    sizeof(IoCompletionInfo));
@@ -1446,7 +1469,8 @@ use_min_mtu(isc_socket_t *sock) {
 
 static isc_result_t
 allocate_socket(isc_socketmgr_t *manager, isc_sockettype_t type,
-		isc_socket_t **socketp) {
+		isc_socket_t **socketp)
+{
 	isc_socket_t *sock;
 	isc_result_t result;
 
@@ -1508,10 +1532,11 @@ allocate_socket(isc_socketmgr_t *manager, isc_sockettype_t type,
 	return (ISC_R_SUCCESS);
 
  error:
-	if (sock->recvbuf.base != NULL)
-		isc_mem_put(manager->mctx, sock->recvbuf.base, sock->recvbuf.len);
+	if (sock->recvbuf.base != NULL) {
+		isc_mem_put(manager->mctx, sock->recvbuf.base,
+			    sock->recvbuf.len);
+	}
 	isc_mem_put(manager->mctx, sock, sizeof(*sock));
-
 	return (result);
 }
 
@@ -1525,7 +1550,7 @@ consistent(isc_socket_t *sock) {
 	isc_socket_newconnev_t *nev;
 	unsigned int count;
 	char *crash_reason;
-	isc_boolean_t crash = ISC_FALSE;
+	bool crash = false;
 
 	REQUIRE(sock->pending_iocp == sock->pending_recv + sock->pending_send
 		+ sock->pending_accept + sock->pending_connect);
@@ -1537,7 +1562,7 @@ consistent(isc_socket_t *sock) {
 		dev = ISC_LIST_NEXT(dev, ev_link);
 	}
 	if (count > sock->pending_send) {
-		crash = ISC_TRUE;
+		crash = true;
 		crash_reason = "send_list > sock->pending_send";
 	}
 
@@ -1548,7 +1573,7 @@ consistent(isc_socket_t *sock) {
 		nev = ISC_LIST_NEXT(nev, ev_link);
 	}
 	if (count > sock->pending_accept) {
-		crash = ISC_TRUE;
+		crash = true;
 		crash_reason = "accept_list > sock->pending_accept";
 	}
 
@@ -1557,7 +1582,7 @@ consistent(isc_socket_t *sock) {
 			   ISC_MSG_DESTROYING, "SOCKET INCONSISTENT: %s",
 			   crash_reason);
 		sock_dump(sock);
-		INSIST(crash == ISC_FALSE);
+		INSIST(crash == false);
 	}
 }
 
@@ -1811,7 +1836,7 @@ socket_create(isc_socketmgr_t *manager, int pf, isc_sockettype_t type,
 
 	if (dup_socket) {
 #ifndef ISC_ALLOW_MAPPED
-		isc__socket_ipv6only(sock, ISC_TRUE);
+		isc__socket_ipv6only(sock, true);
 #endif
 
 		if (dup_socket->bound) {
@@ -1950,11 +1975,11 @@ send_recvdone_event(isc_socket_t *sock, isc_socketevent_t **dev) {
 	if (ISC_LINK_LINKED(*dev, ev_link))
 		ISC_LIST_DEQUEUE(sock->recv_list, *dev, ev_link);
 
-	if (((*dev)->attributes & ISC_SOCKEVENTATTR_ATTACHED)
-	    == ISC_SOCKEVENTATTR_ATTACHED)
+	if (((*dev)->attributes & ISC_SOCKEVENTATTR_ATTACHED) != 0) {
 		isc_task_sendanddetach(&task, (isc_event_t **)dev);
-	else
+	} else {
 		isc_task_send(task, (isc_event_t **)dev);
+	}
 
 	CONSISTENT(sock);
 }
@@ -1974,11 +1999,11 @@ send_senddone_event(isc_socket_t *sock, isc_socketevent_t **dev) {
 	if (ISC_LINK_LINKED(*dev, ev_link))
 		ISC_LIST_DEQUEUE(sock->send_list, *dev, ev_link);
 
-	if (((*dev)->attributes & ISC_SOCKEVENTATTR_ATTACHED)
-	    == ISC_SOCKEVENTATTR_ATTACHED)
+	if (((*dev)->attributes & ISC_SOCKEVENTATTR_ATTACHED) != 0) {
 		isc_task_sendanddetach(&task, (isc_event_t **)dev);
-	else
+	} else {
 		isc_task_send(task, (isc_event_t **)dev);
+	}
 
 	CONSISTENT(sock);
 }
@@ -2270,9 +2295,11 @@ internal_recv(isc_socket_t *sock, int nbytes)
 		   "internal_recv: %d bytes received", nbytes);
 
 	/*
-	 * If we got here, the I/O operation succeeded.  However, we might still have removed this
-	 * event from our notification list (or never placed it on it due to immediate completion.)
-	 * Handle the reference counting here, and handle the cancellation event just after.
+	 * If we got here, the I/O operation succeeded.  However, we might
+	 * still have removed this event from our notification list (or never
+	 * placed it on it due to immediate completion.)
+	 * Handle the reference counting here, and handle the cancellation
+	 * event just after.
 	 */
 	INSIST(sock->pending_iocp > 0);
 	sock->pending_iocp--;
@@ -2280,13 +2307,15 @@ internal_recv(isc_socket_t *sock, int nbytes)
 	sock->pending_recv--;
 
 	/*
-	 * The only way we could have gotten here is that our I/O has successfully completed.
-	 * Update our pointers, and move on.  The only odd case here is that we might not
-	 * have received enough data on a TCP stream to satisfy the minimum requirements.  If
-	 * this is the case, we will re-issue the recv() call for what we need.
+	 * The only way we could have gotten here is that our I/O has
+	 * successfully completed. Update our pointers, and move on.
+	 *  The only odd case here is that we might not have received
+	 * enough data on a TCP stream to satisfy the minimum requirements.
+	 * If this is the case, we will re-issue the recv() call for what
+	 * we need.
 	 *
-	 * We do check for a recv() of 0 bytes on a TCP stream.  This means the remote end
-	 * has closed.
+	 * We do check for a recv() of 0 bytes on a TCP stream.  This
+	 * means the remote end has closed.
 	 */
 	if (nbytes == 0 && sock->type == isc_sockettype_tcp) {
 		send_recvdone_abort(sock, ISC_R_EOF);
@@ -2369,7 +2398,7 @@ internal_send(isc_socket_t *sock, isc_socketevent_t *dev,
  * These return if the done event passed in is on the list.
  * Using these ensures we will not double-send an event.
  */
-static isc_boolean_t
+static bool
 senddone_is_active(isc_socket_t *sock, isc_socketevent_t *dev)
 {
 	isc_socketevent_t *ldev;
@@ -2378,10 +2407,10 @@ senddone_is_active(isc_socket_t *sock, isc_socketevent_t *dev)
 	while (ldev != NULL && ldev != dev)
 		ldev = ISC_LIST_NEXT(ldev, ev_link);
 
-	return (ldev == NULL ? ISC_FALSE : ISC_TRUE);
+	return (ldev == NULL ? false : true);
 }
 
-static isc_boolean_t
+static bool
 acceptdone_is_active(isc_socket_t *sock, isc_socket_newconnev_t *dev)
 {
 	isc_socket_newconnev_t *ldev;
@@ -2390,10 +2419,10 @@ acceptdone_is_active(isc_socket_t *sock, isc_socket_newconnev_t *dev)
 	while (ldev != NULL && ldev != dev)
 		ldev = ISC_LIST_NEXT(ldev, ev_link);
 
-	return (ldev == NULL ? ISC_FALSE : ISC_TRUE);
+	return (ldev == NULL ? false : true);
 }
 
-static isc_boolean_t
+static bool
 connectdone_is_active(isc_socket_t *sock, isc_socket_connev_t *dev)
 {
 	isc_socket_connev_t *cdev;
@@ -2402,7 +2431,7 @@ connectdone_is_active(isc_socket_t *sock, isc_socket_connev_t *dev)
 	while (cdev != NULL && cdev != dev)
 		cdev = ISC_LIST_NEXT(cdev, ev_link);
 
-	return (cdev == NULL ? ISC_FALSE : ISC_TRUE);
+	return (cdev == NULL ? false : true);
 }
 
 //
@@ -2470,7 +2499,6 @@ restart_accept(isc_socket_t *parent, IoCompletionInfo *lpo)
 static isc_threadresult_t WINAPI
 SocketIoThread(LPVOID ThreadContext) {
 	isc_socketmgr_t *manager = ThreadContext;
-	BOOL bSuccess = FALSE;
 	DWORD nbytes;
 	IoCompletionInfo *lpo = NULL;
 	isc_socket_t *sock = NULL;
@@ -2502,6 +2530,8 @@ SocketIoThread(LPVOID ThreadContext) {
 	 * Loop forever waiting on I/O Completions and then processing them
 	 */
 	while (TRUE) {
+		BOOL bSuccess;
+
 		wait_again:
 		bSuccess = GetQueuedCompletionStatus(manager->hIoCompletionPort,
 						     &nbytes,
@@ -2696,9 +2726,10 @@ isc__socketmgr_create2(isc_mem_t *mctx, isc_socketmgr_t **managerp,
 
 	iocompletionport_init(manager);	/* Create the Completion Ports */
 
-	manager->bShutdown = ISC_FALSE;
+	manager->bShutdown = false;
 	manager->totalSockets = 0;
 	manager->iocp_total = 0;
+	manager->maxudp = 0;
 
 	*managerp = manager;
 
@@ -2757,7 +2788,7 @@ isc__socketmgr_destroy(isc_socketmgr_t **managerp) {
 	 * thread.
 	 */
 	signal_iocompletionport_exit(manager);
-	manager->bShutdown = ISC_TRUE;
+	manager->bShutdown = true;
 
 	/*
 	 * Wait for threads to exit.
@@ -3738,7 +3769,7 @@ isc__socket_cancel(isc_socket_t *sock, isc_task_t *task, unsigned int how) {
 	 *	o Reset any state needed.
 	 */
 
-	if ((how & ISC_SOCKCANCEL_RECV) == ISC_SOCKCANCEL_RECV) {
+	if ((how & ISC_SOCKCANCEL_RECV) != 0) {
 		isc_socketevent_t      *dev;
 		isc_socketevent_t      *next;
 		isc_task_t	       *current_task;
@@ -3756,7 +3787,7 @@ isc__socket_cancel(isc_socket_t *sock, isc_task_t *task, unsigned int how) {
 	}
 	how &= ~ISC_SOCKCANCEL_RECV;
 
-	if ((how & ISC_SOCKCANCEL_SEND) == ISC_SOCKCANCEL_SEND) {
+	if ((how & ISC_SOCKCANCEL_SEND) != 0) {
 		isc_socketevent_t      *dev;
 		isc_socketevent_t      *next;
 		isc_task_t	       *current_task;
@@ -3775,7 +3806,7 @@ isc__socket_cancel(isc_socket_t *sock, isc_task_t *task, unsigned int how) {
 	}
 	how &= ~ISC_SOCKCANCEL_SEND;
 
-	if (((how & ISC_SOCKCANCEL_ACCEPT) == ISC_SOCKCANCEL_ACCEPT)
+	if (((how & ISC_SOCKCANCEL_ACCEPT) != 0)
 	    && !ISC_LIST_EMPTY(sock->accept_list)) {
 		isc_socket_newconnev_t *dev;
 		isc_socket_newconnev_t *next;
@@ -3802,7 +3833,7 @@ isc__socket_cancel(isc_socket_t *sock, isc_task_t *task, unsigned int how) {
 	}
 	how &= ~ISC_SOCKCANCEL_ACCEPT;
 
-	if (((how & ISC_SOCKCANCEL_CONNECT) == ISC_SOCKCANCEL_CONNECT)
+	if (((how & ISC_SOCKCANCEL_CONNECT) != 0)
 	    && !ISC_LIST_EMPTY(sock->connect_list)) {
 		isc_socket_connev_t    *dev;
 		isc_socket_connev_t    *next;
@@ -3826,6 +3857,7 @@ isc__socket_cancel(isc_socket_t *sock, isc_task_t *task, unsigned int how) {
 		_set_state(sock, SOCK_CLOSED);
 	}
 	how &= ~ISC_SOCKCANCEL_CONNECT;
+	UNUSED(how);
 
 	maybe_free_socket(&sock, __LINE__);
 }
@@ -3851,9 +3883,9 @@ isc__socket_gettype(isc_socket_t *sock) {
 	return (type);
 }
 
-isc_boolean_t
+bool
 isc__socket_isbound(isc_socket_t *sock) {
-	isc_boolean_t val;
+	bool val;
 
 	REQUIRE(VALID_SOCKET(sock));
 
@@ -3865,17 +3897,17 @@ isc__socket_isbound(isc_socket_t *sock) {
 	 */
 	if (sock->fd == INVALID_SOCKET) {
 		UNLOCK(&sock->lock);
-		return (ISC_FALSE);
+		return (false);
 	}
 
-	val = ((sock->bound) ? ISC_TRUE : ISC_FALSE);
+	val = ((sock->bound) ? true : false);
 	UNLOCK(&sock->lock);
 
 	return (val);
 }
 
 void
-isc__socket_ipv6only(isc_socket_t *sock, isc_boolean_t yes) {
+isc__socket_ipv6only(isc_socket_t *sock, bool yes) {
 #if defined(IPV6_V6ONLY)
 	int onoff = yes ? 1 : 0;
 #else
@@ -3921,14 +3953,14 @@ isc__socket_dscp(isc_socket_t *sock, isc_dscp_t dscp) {
 }
 
 void
-isc__socket_cleanunix(isc_sockaddr_t *addr, isc_boolean_t active) {
+isc__socket_cleanunix(isc_sockaddr_t *addr, bool active) {
 	UNUSED(addr);
 	UNUSED(active);
 }
 
 isc_result_t
-isc__socket_permunix(isc_sockaddr_t *addr, isc_uint32_t perm,
-		     isc_uint32_t owner,	isc_uint32_t group)
+isc__socket_permunix(isc_sockaddr_t *addr, uint32_t perm,
+		     uint32_t owner, uint32_t group)
 {
 	UNUSED(addr);
 	UNUSED(perm);
@@ -3947,8 +3979,7 @@ isc__socket_setname(isc_socket_t *socket, const char *name, void *tag) {
 	REQUIRE(VALID_SOCKET(socket));
 
 	LOCK(&socket->lock);
-	memset(socket->name, 0, sizeof(socket->name));
-	strncpy(socket->name, name, sizeof(socket->name) - 1);
+	strlcpy(socket->name, name, sizeof(socket->name));
 	socket->tag = tag;
 	UNLOCK(&socket->lock);
 }
@@ -3969,16 +4000,17 @@ isc__socket_getfd(isc_socket_t *socket) {
 }
 
 void
-isc__socketmgr_setreserved(isc_socketmgr_t *manager, isc_uint32_t reserved) {
+isc__socketmgr_setreserved(isc_socketmgr_t *manager, uint32_t reserved) {
 	UNUSED(manager);
 	UNUSED(reserved);
 }
 
 void
-isc___socketmgr_maxudp(isc_socketmgr_t *manager, int maxudp) {
+isc___socketmgr_maxudp(isc_socketmgr_t *manager, unsigned int maxudp) {
 
-	UNUSED(manager);
-	UNUSED(maxudp);
+	REQUIRE(VALID_MANAGER(manager));
+
+	manager->maxudp = maxudp;
 }
 
 isc_socketevent_t *
@@ -4152,7 +4184,7 @@ isc_socketmgr_renderjson(isc_socketmgr_t *mgr, json_object *stats) {
 
 		LOCK(&sock->lock);
 
-		sprintf(buf, "%p", sock);
+		snprintf(buf, sizeof(buf), "%p", sock);
 		obj = json_object_new_string(buf);
 		CHECKMEM(obj);
 		json_object_object_add(entry, "id", obj);

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000-2002, 2004-2007, 2009, 2010, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: request.h,v 1.31 2010/03/04 23:50:34 tbox Exp $ */
 
 #ifndef DNS_REQUEST_H
 #define DNS_REQUEST_H 1
@@ -32,6 +34,7 @@
  *\li	No anticipated impact.
  */
 
+#include <stdbool.h>
 #include <isc/lang.h>
 #include <isc/event.h>
 
@@ -365,19 +368,19 @@ dns_request_getresponse(dns_request_t *request, dns_message_t *message,
  *\li	Any result that dns_message_parse() can return.
  */
 
-isc_boolean_t
+bool
 dns_request_usedtcp(dns_request_t *request);
 /*%<
  * Return whether this query used TCP or not.  Setting #DNS_REQUESTOPT_TCP
  * in the call to dns_request_create() will cause the function to return
- * #ISC_TRUE, otherwise the result is based on the query message size.
+ * #true, otherwise the result is based on the query message size.
  *
  * Requires:
  *\li	'request' is a valid request.
  *
  * Returns:
- *\li	ISC_TRUE	if TCP was used.
- *\li	ISC_FALSE	if UDP was used.
+ *\li	true	if TCP was used.
+ *\li	false	if UDP was used.
  */
 
 void

@@ -1,6 +1,6 @@
 	      Internet Systems Consortium DHCP Distribution
-			     Version 4.4.1
-			    28 February 2018
+			     Version 4.4.2b1
+			    12 December 2019
 
 			      README FILE
 
@@ -78,6 +78,9 @@ referred to for information about DHCP options.
 DHCP relay agent documentation is in the dhcrelay man page, the source
 for which is distributed in the relay/ subdirectory.
 
+KEA Migration Assistant documentation, including how to build, install
+and use it, is including in the keama directory.
+
 To read installed manual pages, use the man command.  Type "man page"
 where page is the name of the manual page.   This will only work if
 you have installed the ISC DHCP distribution using the ``make install''
@@ -105,12 +108,12 @@ directory, it may not have up-to-date information).
 To build the DHCP Distribution, unpack the compressed tar file using
 the tar utility and the gzip command - type something like:
 
-	gunzip dhcp-4.4.1.tar.gz
-	tar xvf dhcp-4.4.1.tar
+	gunzip dhcp-4.4.2b1.tar.gz
+	tar xvf dhcp-4.4.2b1.tar
 
 			    CONFIGURING IT
 
-Now, cd to the dhcp-4.4.1 subdirectory that you've just created and
+Now, cd to the dhcp-4.4.2b1 subdirectory that you've just created and
 configure the source tree by typing:
 
 	./configure
@@ -704,7 +707,7 @@ bug reports are more likely to get handled more quickly overall.
 	  This assumes that it's the dhcp server you're debugging, and
 	  that the core file is in dhcpd.core.
 
-Please see https://www.isc.org/software/dhcp/ for details on how to subscribe
+Please see https://www.isc.org/dhcp/ for details on how to subscribe
 to the ISC DHCP mailing lists.
 
 			       HISTORY

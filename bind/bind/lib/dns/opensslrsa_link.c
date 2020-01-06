@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 2000-2009, 2011-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/*
- * Principal Author: Brian Wellington
- */
 #ifdef OPENSSL
 #include <config.h>
 
@@ -20,6 +20,7 @@
 #endif
 #endif
 
+#include <stdbool.h>
 
 #include <isc/entropy.h>
 #include <isc/md5.h>
@@ -44,7 +45,7 @@
 #if OPENSSL_VERSION_NUMBER > 0x00908000L
 #include <openssl/bn.h>
 #endif
-#ifdef USE_ENGINE
+#if !defined(OPENSSL_NO_ENGINE)
 #include <openssl/engine.h>
 #endif
 
@@ -120,7 +121,7 @@
 #endif
 #define DST_RET(a) {ret = a; goto err;}
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(HAVE_RSA_SET0_KEY)
 /* From OpenSSL 1.1.0 */
 static int
 RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
@@ -130,8 +131,9 @@ RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 	 * parameters MUST be non-NULL for n and e.  d may be
 	 * left NULL (in case only the public key is used).
 	 */
-	if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL))
+	if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
 		return 0;
+	}
 
 	if (n != NULL) {
 		BN_free(r->n);
@@ -156,8 +158,9 @@ RSA_set0_factors(RSA *r, BIGNUM *p, BIGNUM *q) {
 	 * If the fields p and q in r are NULL, the corresponding input
 	 * parameters MUST be non-NULL.
 	 */
-	if ((r->p == NULL && p == NULL) || (r->q == NULL && q == NULL))
+	if ((r->p == NULL && p == NULL) || (r->q == NULL && q == NULL)) {
 		return 0;
+	}
 
 	if (p != NULL) {
 		BN_free(r->p);
@@ -180,7 +183,9 @@ RSA_set0_crt_params(RSA *r, BIGNUM *dmp1, BIGNUM *dmq1, BIGNUM *iqmp) {
 	if ((r->dmp1 == NULL && dmp1 == NULL) ||
 	    (r->dmq1 == NULL && dmq1 == NULL) ||
 	    (r->iqmp == NULL && iqmp == NULL))
+	{
 		return 0;
+	}
 
 	if (dmp1 != NULL) {
 		BN_free(r->dmp1);
@@ -202,32 +207,40 @@ static void
 RSA_get0_key(const RSA *r,
 	     const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
 {
-	if (n != NULL)
+	if (n != NULL) {
 		*n = r->n;
-	if (e != NULL)
+	}
+	if (e != NULL) {
 		*e = r->e;
-	if (d != NULL)
+	}
+	if (d != NULL) {
 		*d = r->d;
+	}
 }
 
 static void
 RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q) {
-	if (p != NULL)
+	if (p != NULL) {
 		*p = r->p;
-	if (q != NULL)
-	*q = r->q;
+	}
+	if (q != NULL) {
+		*q = r->q;
+	}
 }
 
 static void
 RSA_get0_crt_params(const RSA *r, const BIGNUM **dmp1, const BIGNUM **dmq1,
 		    const BIGNUM **iqmp)
 {
-	if (dmp1 != NULL)
+	if (dmp1 != NULL) {
 		*dmp1 = r->dmp1;
-	if (dmq1 != NULL)
+	}
+	if (dmq1 != NULL) {
 		*dmq1 = r->dmq1;
-	if (iqmp != NULL)
+	}
+	if (iqmp != NULL) {
 		*iqmp = r->iqmp;
+	}
 }
 
 static int
@@ -285,6 +298,7 @@ opensslrsa_createctx(dst_key_t *key, dst_context_t *dctx) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 #if USE_EVP
@@ -314,6 +328,7 @@ opensslrsa_createctx(dst_key_t *key, dst_context_t *dctx) {
 #endif
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	if (!EVP_DigestInit_ex(evp_md_ctx, type, NULL)) {
@@ -376,6 +391,7 @@ opensslrsa_createctx(dst_key_t *key, dst_context_t *dctx) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 #endif
 
@@ -461,6 +477,7 @@ opensslrsa_destroyctx(dst_context_t *dctx) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 #endif
 }
@@ -525,6 +542,7 @@ opensslrsa_adddata(dst_context_t *dctx, const isc_region_t *data) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 #endif
 	return (ISC_R_SUCCESS);
@@ -646,6 +664,7 @@ opensslrsa_sign(dst_context_t *dctx, isc_buffer_t *sig) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 #if OPENSSL_VERSION_NUMBER < 0x00908000L
@@ -679,6 +698,7 @@ opensslrsa_sign(dst_context_t *dctx, isc_buffer_t *sig) {
 
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 #else
 	INSIST(type != 0);
@@ -808,6 +828,7 @@ opensslrsa_verify2(dst_context_t *dctx, int maxbits, const isc_region_t *sig) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	if (sig->length != (unsigned int) RSA_size(rsa))
@@ -861,6 +882,7 @@ opensslrsa_verify2(dst_context_t *dctx, int maxbits, const isc_region_t *sig) {
 
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 #else
 	INSIST(type != 0);
@@ -878,7 +900,7 @@ opensslrsa_verify(dst_context_t *dctx, const isc_region_t *sig) {
 	return (opensslrsa_verify2(dctx, 0, sig));
 }
 
-static isc_boolean_t
+static bool
 opensslrsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	int status;
 	RSA *rsa1 = NULL, *rsa2 = NULL;
@@ -912,41 +934,41 @@ opensslrsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 #endif
 
 	if (rsa1 == NULL && rsa2 == NULL)
-		return (ISC_TRUE);
+		return (true);
 	else if (rsa1 == NULL || rsa2 == NULL)
-		return (ISC_FALSE);
+		return (false);
 
 	RSA_get0_key(rsa1, &n1, &e1, &d1);
 	RSA_get0_key(rsa2, &n2, &e2, &d2);
 	status = BN_cmp(n1, n2) || BN_cmp(e1, e2);
 
 	if (status != 0)
-		return (ISC_FALSE);
+		return (false);
 
 #if USE_EVP
 	if (RSA_test_flags(rsa1, RSA_FLAG_EXT_PKEY) != 0 ||
 	    RSA_test_flags(rsa2, RSA_FLAG_EXT_PKEY) != 0) {
 		if (RSA_test_flags(rsa1, RSA_FLAG_EXT_PKEY) == 0 ||
 		    RSA_test_flags(rsa2, RSA_FLAG_EXT_PKEY) == 0)
-			return (ISC_FALSE);
+			return (false);
 		/*
 		 * Can't compare private parameters, BTW does it make sense?
 		 */
-		return (ISC_TRUE);
+		return (true);
 	}
 #endif
 
 	if (d1 != NULL || d2 != NULL) {
 		if (d1 == NULL || d2 == NULL)
-			return (ISC_FALSE);
+			return (false);
 		RSA_get0_factors(rsa1, &p1, &q1);
 		RSA_get0_factors(rsa2, &p2, &q2);
 		status = BN_cmp(d1, d2) || BN_cmp(p1, p1) || BN_cmp(q1, q2);
 
 		if (status != 0)
-			return (ISC_FALSE);
+			return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x00908000L
@@ -1009,6 +1031,7 @@ opensslrsa_generate(dst_key_t *key, int exp, void (*callback)(int)) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	if (rsa == NULL || e == NULL || cb == NULL)
@@ -1040,6 +1063,7 @@ opensslrsa_generate(dst_key_t *key, int exp, void (*callback)(int)) {
 	if (RSA_generate_key_ex(rsa, key->key_size, e, cb)) {
 		BN_free(e);
 		BN_GENCB_free(cb);
+		cb = NULL;
 		SET_FLAGS(rsa);
 #if USE_EVP
 		key->keydata.pkey = pkey;
@@ -1050,21 +1074,28 @@ opensslrsa_generate(dst_key_t *key, int exp, void (*callback)(int)) {
 #endif
 		return (ISC_R_SUCCESS);
 	}
-	BN_GENCB_free(cb);
 	ret = dst__openssl_toresult2("RSA_generate_key_ex",
 				     DST_R_OPENSSLFAILURE);
 
  err:
 #if USE_EVP
-	if (pkey != NULL)
+	if (pkey != NULL) {
 		EVP_PKEY_free(pkey);
+		pkey = NULL;
+	}
 #endif
-	if (e != NULL)
+	if (e != NULL) {
 		BN_free(e);
-	if (rsa != NULL)
+		e = NULL;
+	}
+	if (rsa != NULL) {
 		RSA_free(rsa);
-	if (cb != NULL)
+		rsa = NULL;
+	}
+	if (cb != NULL) {
 		BN_GENCB_free(cb);
+		cb = NULL;
+	}
 	return (dst__openssl_toresult(ret));
 #else
 	RSA *rsa;
@@ -1109,7 +1140,7 @@ opensslrsa_generate(dst_key_t *key, int exp, void (*callback)(int)) {
 #endif
 }
 
-static isc_boolean_t
+static bool
 opensslrsa_isprivate(const dst_key_t *key) {
 	const BIGNUM *d = NULL;
 #if USE_EVP
@@ -1121,9 +1152,9 @@ opensslrsa_isprivate(const dst_key_t *key) {
 	RSA *rsa = key->keydata.rsa;
 #endif
 	if (rsa != NULL && RSA_test_flags(rsa, RSA_FLAG_EXT_PKEY) != 0)
-		return (ISC_TRUE);
+		return (true);
 	RSA_get0_key(rsa, NULL, NULL, &d);
-	return (ISC_TF(rsa != NULL && d != NULL));
+	return (rsa != NULL && d != NULL);
 }
 
 static void
@@ -1175,13 +1206,13 @@ opensslrsa_todns(const dst_key_t *key, isc_buffer_t *data) {
 	if (e_bytes < 256) {	/*%< key exponent is <= 2040 bits */
 		if (r.length < 1)
 			DST_RET(ISC_R_NOSPACE);
-		isc_buffer_putuint8(data, (isc_uint8_t) e_bytes);
+		isc_buffer_putuint8(data, (uint8_t) e_bytes);
 		isc_region_consume(&r, 1);
 	} else {
 		if (r.length < 3)
 			DST_RET(ISC_R_NOSPACE);
 		isc_buffer_putuint8(data, 0);
-		isc_buffer_putuint16(data, (isc_uint16_t) e_bytes);
+		isc_buffer_putuint16(data, (uint16_t) e_bytes);
 		isc_region_consume(&r, 3);
 	}
 
@@ -1459,13 +1490,13 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 	isc_result_t ret;
 	int i;
 	RSA *rsa = NULL, *pubrsa = NULL;
-#ifdef USE_ENGINE
+#if !defined(OPENSSL_NO_ENGINE)
 	ENGINE *ep = NULL;
 	const BIGNUM *ex = NULL;
 #endif
 	isc_mem_t *mctx = key->mctx;
 	const char *engine = NULL, *label = NULL;
-#if defined(USE_ENGINE) || USE_EVP
+#if !defined(OPENSSL_NO_ENGINE) || USE_EVP
 	EVP_PKEY *pkey = NULL;
 #endif
 	BIGNUM *n = NULL, *e = NULL, *d = NULL;
@@ -1486,7 +1517,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		pub->keydata.pkey = NULL;
 		key->key_size = pub->key_size;
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 		return (ISC_R_SUCCESS);
 	}
 
@@ -1518,7 +1549,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 	 * See if we can fetch it.
 	 */
 	if (label != NULL) {
-#ifdef USE_ENGINE
+#if !defined(OPENSSL_NO_ENGINE)
 		if (engine == NULL)
 			DST_RET(DST_R_NOENGINE);
 		ep = dst__openssl_getengine(engine);
@@ -1554,7 +1585,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		EVP_PKEY_free(pkey);
 #endif
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 		return (ISC_R_SUCCESS);
 #else
 		DST_RET(DST_R_NOENGINE);
@@ -1618,7 +1649,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		}
 	}
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 
 	if (RSA_set0_key(rsa, n, e, d) == 0) {
 		if (n != NULL) BN_free(n);
@@ -1659,7 +1690,7 @@ opensslrsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		RSA_free(pubrsa);
 	key->keydata.generic = NULL;
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ret);
 }
 
@@ -1667,7 +1698,7 @@ static isc_result_t
 opensslrsa_fromlabel(dst_key_t *key, const char *engine, const char *label,
 		     const char *pin)
 {
-#ifdef USE_ENGINE
+#if !defined(OPENSSL_NO_ENGINE)
 	ENGINE *e = NULL;
 	isc_result_t ret;
 	EVP_PKEY *pkey = NULL;

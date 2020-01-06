@@ -1,12 +1,13 @@
 /*
- * Portions Copyright (C) 2001, 2003-2010, 2013-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: BINDInstallDlg.cpp,v 1.48 2010/01/07 23:48:54 tbox Exp $ */
 
 /*
  * Copyright (c) 1999-2000 by Nortel Networks Corporation
@@ -219,6 +220,7 @@ CBINDInstallDlg::CBINDInstallDlg(CWnd* pParent /*=NULL*/)
 	char winsys[MAX_PATH];
 
 	//{{AFX_DATA_INIT(CBINDInstallDlg)
+	/* cppcheck-suppress useInitializationList */
 	m_targetDir = _T("");
 	m_version = _T("");
 	m_toolsOnly = FALSE;
@@ -228,7 +230,6 @@ CBINDInstallDlg::CBINDInstallDlg(CWnd* pParent /*=NULL*/)
 	m_startOnInstall = FALSE;
 	m_accountName = _T("");
 	m_accountPassword = _T("");
-	m_accountName = _T("");
 	//}}AFX_DATA_INIT
 	// Note that LoadIcon does not require a subsequent
 	// DestroyIcon in Win32
@@ -470,6 +471,7 @@ void CBINDInstallDlg::OnUninstall() {
 void CBINDInstallDlg::OnInstall() {
 	BOOL success = FALSE;
 	int oldlen;
+	int n;
 
 	if (CheckBINDService())
 		StopBINDService();
@@ -578,12 +580,15 @@ void CBINDInstallDlg::OnInstall() {
 	if (runvcredist) {
 		char Vcredist_x86[MAX_PATH];
 		if (forwin64)
-			sprintf(Vcredist_x86, "\"%s\\Vcredist_x64.exe\"",
-				(LPCTSTR) m_currentDir);
+			n = snprintf(Vcredist_x86, sizeof(Vcredist_x86),
+				     "\"%s\\Vcredist_x64.exe\"",
+				     (LPCTSTR) m_currentDir);
 		else
-			sprintf(Vcredist_x86, "\"%s\\Vcredist_x86.exe\"",
-				(LPCTSTR) m_currentDir);
-		system(Vcredist_x86);
+			n = snprintf(Vcredist_x86, sizeof(Vcredist_x86),
+				     "\"%s\\Vcredist_x86.exe\"",
+				     (LPCTSTR) m_currentDir);
+		if (n >= 0 && (size_t)n < sizeof(Vcredist_x86))
+			system(Vcredist_x86);
 	}
 	try {
 		CreateDirs();
@@ -1090,7 +1095,6 @@ CBINDInstallDlg::UpdateService(CString StartName) {
 			SERVICE_ERROR_NORMAL, pathBuffer, NULL, NULL, NULL,
 			StartName, m_accountPassword, BIND_DISPLAY_NAME)
 			!= TRUE) {
-			DWORD err = GetLastError();
 			MsgBox(IDS_ERR_UPDATE_SERVICE, GetErrMessage());
 		}
 	}
@@ -1158,8 +1162,13 @@ void CBINDInstallDlg::RegisterMessages() {
 	HKEY hKey;
 	DWORD dwData;
 	char pszMsgDLL[MAX_PATH];
+	int n;
 
-	sprintf(pszMsgDLL, "%s\\%s", (LPCTSTR)m_binDir, "bindevt.dll");
+	n = snprintf(pszMsgDLL, sizeof(pszMsgDLL), "%s\\%s",
+		     (LPCTSTR)m_binDir, "bindevt.dll");
+	if (n < 0 || (size_t)n >= sizeof(pszMsgDLL))
+		throw(Exception(IDS_ERR_CREATE_KEY,
+				"<m_binDir>\\bindevt.dll too long"));
 
 	SetCurrent(IDS_REGISTER_MESSAGES);
 	/* Create a new key for named */
@@ -1282,7 +1291,8 @@ void CBINDInstallDlg::SetCurrent(int id, ...) {
 	memset(buf, 0, 128);
 
 	va_start(va, id);
-	vsprintf(buf, format, va);
+	(void)vsnprintf(buf, sizeof(buf), format, va);
+	buf[sizeof(buf) - 1] = 0;
 	va_end(va);
 
 	m_current.Format("%s", buf);
@@ -1309,6 +1319,9 @@ void CBINDInstallDlg::StopBINDService() {
 	}
 
 	BOOL rc = ControlService(hBINDSvc, SERVICE_CONTROL_STOP, &svcStatus);
+	if (!rc) {
+		MsgBox(IDS_ERR_STOP_SERVICE, GetErrMessage());
+	}
 }
 
 /*
@@ -1323,30 +1336,38 @@ void CBINDInstallDlg::StartBINDService() {
 	}
 
 	SC_HANDLE hBINDSvc = OpenService(hSCManager, BIND_SERVICE_NAME,
-				      SERVICE_ALL_ACCESS);
+					 SERVICE_ALL_ACCESS);
 	if (!hBINDSvc) {
 		MsgBox(IDS_ERR_OPEN_SERVICE, GetErrMessage());
 	}
 	BOOL rc = StartService(hBINDSvc, 0, NULL);
+	if (!rc) {
+		MsgBox(IDS_ERR_START_SERVICE, GetErrMessage());
+	}
 }
 
 /*
  * Check to see if the BIND service is running or not
  */
-BOOL CBINDInstallDlg::CheckBINDService() {
+BOOL
+CBINDInstallDlg::CheckBINDService() {
 	SERVICE_STATUS svcStatus;
 
 	SC_HANDLE hSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (hSCManager) {
 		SC_HANDLE hBINDSvc = OpenService(hSCManager, BIND_SERVICE_NAME,
-					      SERVICE_ALL_ACCESS);
+						 SERVICE_ALL_ACCESS);
 		if (hBINDSvc) {
 			BOOL rc = ControlService(hBINDSvc,
-				  SERVICE_CONTROL_INTERROGATE, &svcStatus);
-			if (!rc)
+						 SERVICE_CONTROL_INTERROGATE,
+						 &svcStatus);
+			if (!rc) {
+				/* cppcheck-suppress unreadVariable */
 				DWORD err = GetLastError();
+			}
 
-			return (svcStatus.dwCurrentState == SERVICE_RUNNING);
+			return (rc &&
+				svcStatus.dwCurrentState == SERVICE_RUNNING);
 		}
 	}
 	return (FALSE);
@@ -1365,7 +1386,8 @@ int CBINDInstallDlg::MsgBox(int id, ...) {
 	memset(buf, 0, BUFSIZ);
 
 	va_start(va, id);
-	vsprintf(buf, format, va);
+	(void)vsnprintf(buf, sizeof(buf), format, va);
+	buf[sizeof(buf) - 1] = 0;
 	va_end(va);
 
 	return (MessageBox(buf));
@@ -1380,7 +1402,8 @@ int CBINDInstallDlg::MsgBox(int id, UINT type, ...) {
 	memset(buf, 0, BUFSIZ);
 
 	va_start(va, type);
-	vsprintf(buf, format, va);
+	(void)vsnprintf(buf, sizeof(buf), format, va);
+	buf[sizeof(buf) - 1] = 0;
 	va_end(va);
 
 	return(MessageBox(buf, NULL, type));
@@ -1404,103 +1427,165 @@ CString CBINDInstallDlg::GetErrMessage(DWORD err) {
 	return(buf);
 }
 
-void CBINDInstallDlg::ProgramGroup(BOOL create) {
-	TCHAR path[MAX_PATH], commonPath[MAX_PATH], fileloc[MAX_PATH], linkpath[MAX_PATH];
+void CBINDInstallDlg::ProgramGroupCreate(TCHAR *commonPath) {
 	HRESULT hres;
 	IShellLink *psl = NULL;
-	LPMALLOC pMalloc = NULL;
 	ITEMIDLIST *itemList = NULL;
+	TCHAR fileloc[MAX_PATH];
+	TCHAR linkpath[MAX_PATH];
+	TCHAR path[MAX_PATH];
+	int n;
 
-	HRESULT hr = SHGetMalloc(&pMalloc);
+	n = snprintf(path, sizeof(path), "%s\\ISC", commonPath);
+	if (n < 0 || (size_t)n >= sizeof(path))
+		return;
+	CreateDirectory(path, NULL);
+
+	n = snprintf(path, sizeof(path), "%s\\ISC\\BIND", commonPath);
+	if (n < 0 || (size_t)n >= sizeof(path))
+		return;
+	CreateDirectory(path, NULL);
+
+	hres = CoInitialize(NULL);
+	if (!SUCCEEDED(hres))
+		return;
+
+	// Get a pointer to the IShellLink interface.
+	hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER,
+				IID_IShellLink, (LPVOID *)&psl);
+	if (!SUCCEEDED(hres)) {
+		goto cleanup;
+	}
+
+	IPersistFile* ppf;
+	n = snprintf(linkpath, sizeof(linkpath), "%s\\BINDCtrl.lnk", path);
+	if (n < 0 || (size_t)n >= sizeof(path)) {
+		goto cleanup;
+	}
+
+	n = snprintf(fileloc, sizeof(fileloc), "%s\\BINDCtrl.exe",
+		     (LPCTSTR) m_binDir);
+	if (n < 0 || (size_t)n >= sizeof(path)) {
+		goto cleanup;
+	}
+
+	psl->SetPath(fileloc);
+	psl->SetDescription("BIND Control Panel");
+
+	hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
+	if (SUCCEEDED(hres)) {
+		WCHAR wsz[MAX_PATH];
+
+		MultiByteToWideChar(CP_ACP, 0, linkpath, -1, wsz, MAX_PATH);
+		hres = ppf->Save(wsz, TRUE);
+		ppf->Release();
+	}
+
+	if (GetFileAttributes("readme.txt") == -1) {
+		goto cleanup;
+	}
+
+	n = snprintf(fileloc, sizeof(fileloc), "%s\\Readme.txt",
+		     (LPCTSTR) m_targetDir);
+	if (n < 0 || (size_t)n >= sizeof(fileloc)) {
+		goto cleanup;
+	}
+
+	n = snprintf(linkpath, sizeof(linkpath), "%s\\Readme.lnk", path);
+	if (n < 0 || (size_t)n >= sizeof(linkpath)) {
+		goto cleanup;
+	}
+
+	psl->SetPath(fileloc);
+	psl->SetDescription("BIND Readme");
+
+	hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
+	if (SUCCEEDED(hres)) {
+		WCHAR wsz[MAX_PATH];
+
+		MultiByteToWideChar(CP_ACP, 0, linkpath, -1, wsz, MAX_PATH);
+		hres = ppf->Save(wsz, TRUE);
+		ppf->Release();
+	}
+
+ cleanup:
+	if (psl)
+		psl->Release();
+	CoUninitialize();
+}
+
+void CBINDInstallDlg::ProgramGroupRemove(TCHAR *commonPath) {
+	HANDLE hFind;
+	TCHAR filename[MAX_PATH];
+	TCHAR path[MAX_PATH];
+	WIN32_FIND_DATA fd;
+	int n;
+
+	n = snprintf(path, sizeof(path), "%s\\ISC\\BIND", commonPath);
+	if (n < 0 || (size_t)n >= sizeof(path))
+		goto remove_isc;
+
+	n = snprintf(filename, sizeof(filename), "%s\\*.*", path);
+	if (n < 0 || (size_t)n >= sizeof(path))
+		goto remove_isc_bind;
+
+	hFind = FindFirstFile(filename, &fd);
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
+			if (strcmp(fd.cFileName, ".") == 0 ||
+			    strcmp(fd.cFileName, "..") == 0)
+				continue;
+			n = snprintf(filename, sizeof(filename), "%s\\%s",
+				     path, fd.cFileName);
+			if (n >= 0 && (size_t)n < sizeof(filename)) {
+				DeleteFile(filename);
+			}
+		} while (FindNextFile(hFind, &fd));
+		FindClose(hFind);
+	}
+
+ remove_isc_bind:
+	RemoveDirectory(path);
+
+ remove_isc:
+	n = snprintf(path, sizeof(path), "%s\\ISC", commonPath);
+	if (n >= 0 && (size_t)n < sizeof(path))
+		RemoveDirectory(path);
+}
+
+void CBINDInstallDlg::ProgramGroup(BOOL create) {
+	HRESULT hr;
+	ITEMIDLIST *itemList = NULL;
+	LPMALLOC pMalloc = NULL;
+	TCHAR commonPath[MAX_PATH];
+
+	hr = SHGetMalloc(&pMalloc);
 	if (hr != NOERROR) {
 		MessageBox("Could not get a handle to Shell memory object");
 		return;
 	}
 
-	hr = SHGetSpecialFolderLocation(m_hWnd, CSIDL_COMMON_PROGRAMS, &itemList);
+	hr = SHGetSpecialFolderLocation(m_hWnd, CSIDL_COMMON_PROGRAMS,
+					&itemList);
 	if (hr != NOERROR) {
-		MessageBox("Could not get a handle to the Common Programs folder");
+		MessageBox("Could not get a handle to the Common Programs "
+			   "folder");
 		if (itemList) {
 			pMalloc->Free(itemList);
 		}
 		return;
 	}
 
-	hr = SHGetPathFromIDList(itemList, commonPath);
+	if (SHGetPathFromIDList(itemList, commonPath)) {
+		if (create) {
+			ProgramGroupCreate(commonPath);
+		} else {
+			ProgramGroupRemove(commonPath);
+		}
+	} else {
+		MessageBox("SHGetPathFromIDList failed");
+	}
 	pMalloc->Free(itemList);
-
-	if (create) {
-		sprintf(path, "%s\\ISC", commonPath);
-		CreateDirectory(path, NULL);
-
-		sprintf(path, "%s\\ISC\\BIND", commonPath);
-		CreateDirectory(path, NULL);
-
-		hres = CoInitialize(NULL);
-
-		if (SUCCEEDED(hres)) {
-			// Get a pointer to the IShellLink interface.
-			hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID *)&psl);
-			if (SUCCEEDED(hres))
-			{
-				IPersistFile* ppf;
-				sprintf(linkpath, "%s\\BINDCtrl.lnk", path);
-				sprintf(fileloc, "%s\\BINDCtrl.exe", (LPCTSTR) m_binDir);
-
-				psl->SetPath(fileloc);
-				psl->SetDescription("BIND Control Panel");
-
-				hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
-				if (SUCCEEDED(hres)) {
-					WCHAR wsz[MAX_PATH];
-
-					MultiByteToWideChar(CP_ACP, 0, linkpath, -1, wsz, MAX_PATH);
-					hres = ppf->Save(wsz, TRUE);
-					ppf->Release();
-				}
-
-				if (GetFileAttributes("readme.txt") != -1) {
-					sprintf(fileloc, "%s\\Readme.txt", (LPCTSTR) m_targetDir);
-					sprintf(linkpath, "%s\\Readme.lnk", path);
-
-					psl->SetPath(fileloc);
-					psl->SetDescription("BIND Readme");
-
-					hres = psl->QueryInterface(IID_IPersistFile, (void **)&ppf);
-					if (SUCCEEDED(hres)) {
-						WCHAR wsz[MAX_PATH];
-
-						MultiByteToWideChar(CP_ACP, 0, linkpath, -1, wsz, MAX_PATH);
-						hres = ppf->Save(wsz, TRUE);
-						ppf->Release();
-					}
-					psl->Release();
-				}
-			}
-			CoUninitialize();
-		}
-	}
-	else {
-		TCHAR filename[MAX_PATH];
-		WIN32_FIND_DATA fd;
-
-		sprintf(path, "%s\\ISC\\BIND", commonPath);
-
-		sprintf(filename, "%s\\*.*", path);
-		HANDLE hFind = FindFirstFile(filename, &fd);
-		if (hFind != INVALID_HANDLE_VALUE) {
-			do {
-				if (strcmp(fd.cFileName, ".") && strcmp(fd.cFileName, "..")) {
-					sprintf(filename, "%s\\%s", path, fd.cFileName);
-					DeleteFile(filename);
-				}
-			} while (FindNextFile(hFind, &fd));
-			FindClose(hFind);
-		}
-		RemoveDirectory(path);
-		sprintf(path, "%s\\ISC", commonPath);
-		RemoveDirectory(path);
-	}
 }
 
 CString CBINDInstallDlg::DestDir(int destination) {

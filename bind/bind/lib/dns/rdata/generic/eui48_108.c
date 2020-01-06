@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_EUI48_108_C
@@ -29,7 +32,7 @@ fromtext_eui48(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	n = sscanf(DNS_AS_STR(token), "%2x-%2x-%2x-%2x-%2x-%2x",
 		   &l0, &l1, &l2, &l3, &l4, &l5);
 	if (n != 6 || l0 > 255U || l1 > 255U || l2 > 255U || l3 > 255U ||
@@ -110,7 +113,7 @@ fromstruct_eui48(ARGS_FROMSTRUCT) {
 	dns_rdata_eui48_t *eui48 = source;
 
 	REQUIRE(type == dns_rdatatype_eui48);
-	REQUIRE(source != NULL);
+	REQUIRE(eui48 != NULL);
 	REQUIRE(eui48->common.rdtype == type);
 	REQUIRE(eui48->common.rdclass == rdclass);
 
@@ -125,7 +128,7 @@ tostruct_eui48(ARGS_TOSTRUCT) {
 	dns_rdata_eui48_t *eui48 = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_eui48);
-	REQUIRE(target != NULL);
+	REQUIRE(eui48 != NULL);
 	REQUIRE(rdata->length == 6);
 
 	UNUSED(mctx);
@@ -142,7 +145,7 @@ static inline void
 freestruct_eui48(ARGS_FREESTRUCT) {
 	dns_rdata_eui48_t *eui48 = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(eui48 != NULL);
 	REQUIRE(eui48->common.rdtype == dns_rdatatype_eui48);
 
 	return;
@@ -173,7 +176,7 @@ digest_eui48(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_eui48(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_eui48);
@@ -183,10 +186,10 @@ checkowner_eui48(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_eui48(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_eui48);
@@ -196,7 +199,7 @@ checknames_eui48(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

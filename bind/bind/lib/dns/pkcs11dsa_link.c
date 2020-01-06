@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifdef PKCS11CRYPTO
@@ -15,6 +18,7 @@
 #ifndef PK11_DSA_DISABLE
 
 #include <string.h>
+#include <stdbool.h>
 
 #include <isc/entropy.h>
 #include <isc/mem.h>
@@ -103,7 +107,7 @@ pkcs11dsa_createctx_sign(dst_key_t *key, dst_context_t *dctx) {
 						  sizeof(*pk11_ctx));
 	if (pk11_ctx == NULL)
 		return (ISC_R_NOMEMORY);
-	ret = pk11_get_session(pk11_ctx, OP_DSA, ISC_TRUE, ISC_FALSE,
+	ret = pk11_get_session(pk11_ctx, OP_DSA, true, false,
 			       dsa->reqlogon, NULL,
 			       pk11_get_best_token(OP_DSA));
 	if (ret != ISC_R_SUCCESS)
@@ -161,7 +165,7 @@ pkcs11dsa_createctx_sign(dst_key_t *key, dst_context_t *dctx) {
 			break;
 		}
 	pk11_ctx->object = CK_INVALID_HANDLE;
-	pk11_ctx->ontoken = ISC_FALSE;
+	pk11_ctx->ontoken = false;
 	PK11_RET(pkcs_C_CreateObject,
 		 (pk11_ctx->session,
 		  keyTemplate, (CK_ULONG) 10,
@@ -178,8 +182,8 @@ pkcs11dsa_createctx_sign(dst_key_t *key, dst_context_t *dctx) {
 
 	for (i = 6; i <= 9; i++)
 		if (keyTemplate[i].pValue != NULL) {
-			memset(keyTemplate[i].pValue, 0,
-			       keyTemplate[i].ulValueLen);
+			isc_safe_memwipe(keyTemplate[i].pValue,
+					 keyTemplate[i].ulValueLen);
 			isc_mem_put(dctx->mctx,
 				    keyTemplate[i].pValue,
 				    keyTemplate[i].ulValueLen);
@@ -192,14 +196,14 @@ pkcs11dsa_createctx_sign(dst_key_t *key, dst_context_t *dctx) {
 		(void) pkcs_C_DestroyObject(pk11_ctx->session, pk11_ctx->object);
 	for (i = 6; i <= 9; i++)
 		if (keyTemplate[i].pValue != NULL) {
-			memset(keyTemplate[i].pValue, 0,
-			       keyTemplate[i].ulValueLen);
+			isc_safe_memwipe(keyTemplate[i].pValue,
+					 keyTemplate[i].ulValueLen);
 			isc_mem_put(dctx->mctx,
 				    keyTemplate[i].pValue,
 				    keyTemplate[i].ulValueLen);
 		}
 	pk11_return_session(pk11_ctx);
-	memset(pk11_ctx, 0, sizeof(*pk11_ctx));
+	isc_safe_memwipe(pk11_ctx, sizeof(*pk11_ctx));
 	isc_mem_put(dctx->mctx, pk11_ctx, sizeof(*pk11_ctx));
 
 	return (ret);
@@ -235,7 +239,7 @@ pkcs11dsa_createctx_verify(dst_key_t *key, dst_context_t *dctx) {
 						  sizeof(*pk11_ctx));
 	if (pk11_ctx == NULL)
 		return (ISC_R_NOMEMORY);
-	ret = pk11_get_session(pk11_ctx, OP_DSA, ISC_TRUE, ISC_FALSE,
+	ret = pk11_get_session(pk11_ctx, OP_DSA, true, false,
 			       dsa->reqlogon, NULL,
 			       pk11_get_best_token(OP_DSA));
 	if (ret != ISC_R_SUCCESS)
@@ -293,7 +297,7 @@ pkcs11dsa_createctx_verify(dst_key_t *key, dst_context_t *dctx) {
 			break;
 		}
 	pk11_ctx->object = CK_INVALID_HANDLE;
-	pk11_ctx->ontoken = ISC_FALSE;
+	pk11_ctx->ontoken = false;
 	PK11_RET(pkcs_C_CreateObject,
 		 (pk11_ctx->session,
 		  keyTemplate, (CK_ULONG) 9,
@@ -310,8 +314,8 @@ pkcs11dsa_createctx_verify(dst_key_t *key, dst_context_t *dctx) {
 
 	for (i = 5; i <= 8; i++)
 		if (keyTemplate[i].pValue != NULL) {
-			memset(keyTemplate[i].pValue, 0,
-			       keyTemplate[i].ulValueLen);
+			isc_safe_memwipe(keyTemplate[i].pValue,
+					 keyTemplate[i].ulValueLen);
 			isc_mem_put(dctx->mctx,
 				    keyTemplate[i].pValue,
 				    keyTemplate[i].ulValueLen);
@@ -324,14 +328,14 @@ pkcs11dsa_createctx_verify(dst_key_t *key, dst_context_t *dctx) {
 		(void) pkcs_C_DestroyObject(pk11_ctx->session, pk11_ctx->object);
 	for (i = 5; i <= 8; i++)
 		if (keyTemplate[i].pValue != NULL) {
-			memset(keyTemplate[i].pValue, 0,
-			       keyTemplate[i].ulValueLen);
+			isc_safe_memwipe(keyTemplate[i].pValue,
+					 keyTemplate[i].ulValueLen);
 			isc_mem_put(dctx->mctx,
 				    keyTemplate[i].pValue,
 				    keyTemplate[i].ulValueLen);
 		}
 	pk11_return_session(pk11_ctx);
-	memset(pk11_ctx, 0, sizeof(*pk11_ctx));
+	isc_safe_memwipe(pk11_ctx, sizeof(*pk11_ctx));
 	isc_mem_put(dctx->mctx, pk11_ctx, sizeof(*pk11_ctx));
 
 	return (ret);
@@ -355,7 +359,7 @@ pkcs11dsa_destroyctx(dst_context_t *dctx) {
 			(void) pkcs_C_DestroyObject(pk11_ctx->session,
 					       pk11_ctx->object);
 		pk11_return_session(pk11_ctx);
-		memset(pk11_ctx, 0, sizeof(*pk11_ctx));
+		isc_safe_memwipe(pk11_ctx, sizeof(*pk11_ctx));
 		isc_mem_put(dctx->mctx, pk11_ctx, sizeof(*pk11_ctx));
 		dctx->ctxdata.pk11_ctx = NULL;
 	}
@@ -425,7 +429,7 @@ pkcs11dsa_verify(dst_context_t *dctx, const isc_region_t *sig) {
 	return (ret);
 }
 
-static isc_boolean_t
+static bool
 pkcs11dsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	pk11_object_t *dsa1, *dsa2;
 	CK_ATTRIBUTE *attr1, *attr2;
@@ -434,49 +438,49 @@ pkcs11dsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	dsa2 = key2->keydata.pkey;
 
 	if ((dsa1 == NULL) && (dsa2 == NULL))
-		return (ISC_TRUE);
+		return (true);
 	else if ((dsa1 == NULL) || (dsa2 == NULL))
-		return (ISC_FALSE);
+		return (false);
 
 	attr1 = pk11_attribute_bytype(dsa1, CKA_PRIME);
 	attr2 = pk11_attribute_bytype(dsa2, CKA_PRIME);
 	if ((attr1 == NULL) && (attr2 == NULL))
-		return (ISC_TRUE);
+		return (true);
 	else if ((attr1 == NULL) || (attr2 == NULL) ||
 		 (attr1->ulValueLen != attr2->ulValueLen) ||
 		 !isc_safe_memequal(attr1->pValue, attr2->pValue,
 				    attr1->ulValueLen))
-		return (ISC_FALSE);
+		return (false);
 
 	attr1 = pk11_attribute_bytype(dsa1, CKA_SUBPRIME);
 	attr2 = pk11_attribute_bytype(dsa2, CKA_SUBPRIME);
 	if ((attr1 == NULL) && (attr2 == NULL))
-		return (ISC_TRUE);
+		return (true);
 	else if ((attr1 == NULL) || (attr2 == NULL) ||
 		 (attr1->ulValueLen != attr2->ulValueLen) ||
 		 !isc_safe_memequal(attr1->pValue, attr2->pValue,
 				    attr1->ulValueLen))
-		return (ISC_FALSE);
+		return (false);
 
 	attr1 = pk11_attribute_bytype(dsa1, CKA_BASE);
 	attr2 = pk11_attribute_bytype(dsa2, CKA_BASE);
 	if ((attr1 == NULL) && (attr2 == NULL))
-		return (ISC_TRUE);
+		return (true);
 	else if ((attr1 == NULL) || (attr2 == NULL) ||
 		 (attr1->ulValueLen != attr2->ulValueLen) ||
 		 !isc_safe_memequal(attr1->pValue, attr2->pValue,
 				    attr1->ulValueLen))
-		return (ISC_FALSE);
+		return (false);
 
 	attr1 = pk11_attribute_bytype(dsa1, CKA_VALUE);
 	attr2 = pk11_attribute_bytype(dsa2, CKA_VALUE);
 	if ((attr1 == NULL) && (attr2 == NULL))
-		return (ISC_TRUE);
+		return (true);
 	else if ((attr1 == NULL) || (attr2 == NULL) ||
 		 (attr1->ulValueLen != attr2->ulValueLen) ||
 		 !isc_safe_memequal(attr1->pValue, attr2->pValue,
 				    attr1->ulValueLen))
-		return (ISC_FALSE);
+		return (false);
 
 	attr1 = pk11_attribute_bytype(dsa1, CKA_VALUE2);
 	attr2 = pk11_attribute_bytype(dsa2, CKA_VALUE2);
@@ -485,15 +489,15 @@ pkcs11dsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	     (attr1->ulValueLen != attr2->ulValueLen) ||
 	     !isc_safe_memequal(attr1->pValue, attr2->pValue,
 				attr1->ulValueLen)))
-		return (ISC_FALSE);
+		return (false);
 
 	if (!dsa1->ontoken && !dsa2->ontoken)
-		return (ISC_TRUE);
+		return (true);
 	else if (dsa1->ontoken || dsa2->ontoken ||
 		 (dsa1->object != dsa2->object))
-		return (ISC_FALSE);
+		return (false);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static isc_result_t
@@ -550,8 +554,8 @@ pkcs11dsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 						  sizeof(*pk11_ctx));
 	if (pk11_ctx == NULL)
 		return (ISC_R_NOMEMORY);
-	ret = pk11_get_session(pk11_ctx, OP_DSA, ISC_TRUE, ISC_FALSE,
-			       ISC_FALSE, NULL, pk11_get_best_token(OP_DSA));
+	ret = pk11_get_session(pk11_ctx, OP_DSA, true, false,
+			       false, NULL, pk11_get_best_token(OP_DSA));
 	if (ret != ISC_R_SUCCESS)
 		goto err;
 
@@ -637,7 +641,7 @@ pkcs11dsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 	(void) pkcs_C_DestroyObject(pk11_ctx->session, pub);
 	(void) pkcs_C_DestroyObject(pk11_ctx->session, dp);
 	pk11_return_session(pk11_ctx);
-	memset(pk11_ctx, 0, sizeof(*pk11_ctx));
+	isc_safe_memwipe(pk11_ctx, sizeof(*pk11_ctx));
 	isc_mem_put(key->mctx, pk11_ctx, sizeof(*pk11_ctx));
 
 	return (ISC_R_SUCCESS);
@@ -651,21 +655,21 @@ pkcs11dsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 	if (dp != CK_INVALID_HANDLE)
 		(void) pkcs_C_DestroyObject(pk11_ctx->session, dp);
 	pk11_return_session(pk11_ctx);
-	memset(pk11_ctx, 0, sizeof(*pk11_ctx));
+	isc_safe_memwipe(pk11_ctx, sizeof(*pk11_ctx));
 	isc_mem_put(key->mctx, pk11_ctx, sizeof(*pk11_ctx));
 
 	return (ret);
 }
 
-static isc_boolean_t
+static bool
 pkcs11dsa_isprivate(const dst_key_t *key) {
 	pk11_object_t *dsa = key->keydata.pkey;
 	CK_ATTRIBUTE *attr;
 
 	if (dsa == NULL)
-		return (ISC_FALSE);
+		return (false);
 	attr = pk11_attribute_bytype(dsa, CKA_VALUE2);
-	return (ISC_TF((attr != NULL) || dsa->ontoken));
+	return (attr != NULL || dsa->ontoken);
 }
 
 static void
@@ -688,7 +692,8 @@ pkcs11dsa_destroy(dst_key_t *key) {
 		case CKA_VALUE:
 		case CKA_VALUE2:
 			if (attr->pValue != NULL) {
-				memset(attr->pValue, 0, attr->ulValueLen);
+				isc_safe_memwipe(attr->pValue,
+						 attr->ulValueLen);
 				isc_mem_put(key->mctx,
 					    attr->pValue,
 					    attr->ulValueLen);
@@ -696,12 +701,12 @@ pkcs11dsa_destroy(dst_key_t *key) {
 			break;
 		}
 	if (dsa->repr != NULL) {
-		memset(dsa->repr, 0, dsa->attrcnt * sizeof(*attr));
+		isc_safe_memwipe(dsa->repr, dsa->attrcnt * sizeof(*attr));
 		isc_mem_put(key->mctx,
 			    dsa->repr,
 			    dsa->attrcnt * sizeof(*attr));
 	}
-	memset(dsa, 0, sizeof(*dsa));
+	isc_safe_memwipe(dsa, sizeof(*dsa));
 	isc_mem_put(key->mctx, dsa, sizeof(*dsa));
 	key->keydata.pkey = NULL;
 }
@@ -799,14 +804,14 @@ pkcs11dsa_fromdns(dst_key_t *key, isc_buffer_t *data) {
 	t = (unsigned int) *r.base;
 	isc_region_consume(&r, 1);
 	if (t > 8) {
-		memset(dsa, 0, sizeof(*dsa));
+		isc_safe_memwipe(dsa, sizeof(*dsa));
 		isc_mem_put(key->mctx, dsa, sizeof(*dsa));
 		return (DST_R_INVALIDPUBLICKEY);
 	}
 	p_bytes = 64 + 8 * t;
 
 	if (r.length < ISC_SHA1_DIGESTLENGTH + 3 * p_bytes) {
-		memset(dsa, 0, sizeof(*dsa));
+		isc_safe_memwipe(dsa, sizeof(*dsa));
 		isc_mem_put(key->mctx, dsa, sizeof(*dsa));
 		return (DST_R_INVALIDPUBLICKEY);
 	}
@@ -876,7 +881,8 @@ pkcs11dsa_fromdns(dst_key_t *key, isc_buffer_t *data) {
 		case CKA_BASE:
 		case CKA_VALUE:
 			if (attr->pValue != NULL) {
-				memset(attr->pValue, 0, attr->ulValueLen);
+				isc_safe_memwipe(attr->pValue,
+						 attr->ulValueLen);
 				isc_mem_put(key->mctx,
 					    attr->pValue,
 					    attr->ulValueLen);
@@ -884,12 +890,12 @@ pkcs11dsa_fromdns(dst_key_t *key, isc_buffer_t *data) {
 			break;
 		}
 	if (dsa->repr != NULL) {
-		memset(dsa->repr, 0, dsa->attrcnt * sizeof(*attr));
+		isc_safe_memwipe(dsa->repr, dsa->attrcnt * sizeof(*attr));
 		isc_mem_put(key->mctx,
 			    dsa->repr,
 			    dsa->attrcnt * sizeof(*attr));
 	}
-	memset(dsa, 0, sizeof(*dsa));
+	isc_safe_memwipe(dsa, sizeof(*dsa));
 	isc_mem_put(key->mctx, dsa, sizeof(*dsa));
 	return (ISC_R_NOMEMORY);
 }
@@ -997,7 +1003,7 @@ pkcs11dsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		key->key_size = pub->key_size;
 
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 
 		return (ISC_R_SUCCESS);
 	}
@@ -1073,7 +1079,7 @@ pkcs11dsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
  err:
 	pkcs11dsa_destroy(key);
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ret);
 }
 

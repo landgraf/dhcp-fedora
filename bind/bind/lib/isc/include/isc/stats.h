@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 2009, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_STATS_H
 #define ISC_STATS_H 1
 
 /*! \file isc/stats.h */
+
+#include <inttypes.h>
 
 #include <isc/types.h>
 
@@ -25,7 +29,7 @@ ISC_LANG_BEGINDECLS
 /*%<
  * Dump callback type.
  */
-typedef void (*isc_stats_dumper_t)(isc_statscounter_t, isc_uint64_t, void *);
+typedef void (*isc_stats_dumper_t)(isc_statscounter_t, uint64_t, void *);
 
 isc_result_t
 isc_stats_create(isc_mem_t *mctx, isc_stats_t **statsp, int ncounters);
@@ -109,7 +113,7 @@ isc_stats_dump(isc_stats_t *stats, isc_stats_dumper_t dump_fn, void *arg,
  */
 
 void
-isc_stats_set(isc_stats_t *stats, isc_uint64_t val,
+isc_stats_set(isc_stats_t *stats, uint64_t val,
 	      isc_statscounter_t counter);
 /*%<
  * Set the given counter to the specfied value.
@@ -119,13 +123,38 @@ isc_stats_set(isc_stats_t *stats, isc_uint64_t val,
  */
 
 void
-isc_stats_set(isc_stats_t *stats, isc_uint64_t val,
+isc_stats_set(isc_stats_t *stats, uint64_t val,
 	      isc_statscounter_t counter);
 /*%<
  * Set the given counter to the specfied value.
  *
  * Requires:
  *\li	'stats' is a valid isc_stats_t.
+ */
+
+void isc_stats_update_if_greater(isc_stats_t *stats,
+				 isc_statscounter_t counter,
+				 uint64_t value);
+/*%<
+* Atomically assigns 'value' to 'counter' if value > counter.
+*
+* Requires:
+*\li	'stats' is a valid isc_stats_t.
+*
+*\li	counter is less than the maximum available ID for the stats specified
+*	on creation.
+*/
+
+uint64_t
+isc_stats_get_counter(isc_stats_t *stats, isc_statscounter_t counter);
+/*%<
+ * Returns value currently stored in counter.
+ *
+ * Requires:
+ *\li	'stats' is a valid isc_stats_t.
+ *
+ *\li	counter is less than the maximum available ID for the stats specified
+ *	on creation.
  */
 
 ISC_LANG_ENDDECLS

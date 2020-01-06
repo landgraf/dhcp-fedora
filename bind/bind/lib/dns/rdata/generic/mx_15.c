@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2001, 2003-2005, 2007, 2009, 2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: mx_15.c,v 1.58 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 18:05:46 PST 2000 by brister */
 
 #ifndef RDATA_GENERIC_MX_15_C
 #define RDATA_GENERIC_MX_15_C
@@ -21,22 +20,22 @@
 
 #define RRTYPE_MX_ATTRIBUTES (0)
 
-static isc_boolean_t
+static bool
 check_mx(isc_token_t *token) {
 	char tmp[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:123.123.123.123.")];
 	struct in_addr addr;
 	struct in6_addr addr6;
 
 	if (strlcpy(tmp, DNS_AS_STR(*token), sizeof(tmp)) >= sizeof(tmp))
-		return (ISC_TRUE);
+		return (true);
 
 	if (tmp[strlen(tmp) - 1] == '.')
 		tmp[strlen(tmp) - 1] = '\0';
 	if (inet_aton(tmp, &addr) == 1 ||
 	    inet_pton(AF_INET6, tmp, &addr6) == 1)
-		return (ISC_FALSE);
+		return (false);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline isc_result_t
@@ -44,7 +43,7 @@ fromtext_mx(ARGS_FROMTEXT) {
 	isc_token_t token;
 	dns_name_t name;
 	isc_buffer_t buffer;
-	isc_boolean_t ok;
+	bool ok;
 
 	REQUIRE(type == dns_rdatatype_mx);
 
@@ -52,15 +51,15 @@ fromtext_mx(ARGS_FROMTEXT) {
 	UNUSED(rdclass);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
-	ok = ISC_TRUE;
+	ok = true;
 	if ((options & DNS_RDATA_CHECKMX) != 0)
 		ok = check_mx(&token);
 	if (!ok && (options & DNS_RDATA_CHECKMXFAIL) != 0)
@@ -73,9 +72,9 @@ fromtext_mx(ARGS_FROMTEXT) {
 	if (origin == NULL)
 		origin = dns_rootname;
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
-	ok = ISC_TRUE;
+	ok = true;
 	if ((options & DNS_RDATA_CHECKNAMES) != 0)
-		ok = dns_name_ishostname(&name, ISC_FALSE);
+		ok = dns_name_ishostname(&name, false);
 	if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
 		RETTOK(DNS_R_BADNAME);
 	if (!ok && callbacks != NULL)
@@ -88,7 +87,7 @@ totext_mx(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 	char buf[sizeof("64000")];
 	unsigned short num;
 
@@ -101,7 +100,7 @@ totext_mx(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u", num);
+	snprintf(buf, sizeof(buf), "%u", num);
 	RETERR(str_totext(buf, target));
 
 	RETERR(str_totext(" ", target));
@@ -193,7 +192,7 @@ fromstruct_mx(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_mx);
-	REQUIRE(source != NULL);
+	REQUIRE(mx != NULL);
 	REQUIRE(mx->common.rdtype == type);
 	REQUIRE(mx->common.rdclass == rdclass);
 
@@ -212,7 +211,7 @@ tostruct_mx(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_mx);
-	REQUIRE(target != NULL);
+	REQUIRE(mx != NULL);
 	REQUIRE(rdata->length != 0);
 
 	mx->common.rdclass = rdata->rdclass;
@@ -234,7 +233,7 @@ static inline void
 freestruct_mx(ARGS_FREESTRUCT) {
 	dns_rdata_mx_t *mx = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(mx != NULL);
 	REQUIRE(mx->common.rdtype == dns_rdatatype_mx);
 
 	if (mx->mctx == NULL)
@@ -297,7 +296,7 @@ digest_mx(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_mx(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_mx);
@@ -308,7 +307,7 @@ checkowner_mx(ARGS_CHECKOWNER) {
 	return (dns_name_ishostname(name, wildcard));
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_mx(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -321,12 +320,12 @@ checknames_mx(ARGS_CHECKNAMES) {
 	isc_region_consume(&region, 2);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
-	if (!dns_name_ishostname(&name, ISC_FALSE)) {
+	if (!dns_name_ishostname(&name, false)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

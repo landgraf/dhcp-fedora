@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file */
 
@@ -96,7 +98,7 @@ isc_pool_create(isc_mem_t *mctx, unsigned int count,
 
 void *
 isc_pool_get(isc_pool_t *pool) {
-	isc_uint32_t i;
+	uint32_t i;
 	isc_random_get(&i);
 	return (pool->pool[i % pool->count]);
 }
@@ -131,19 +133,20 @@ isc_pool_expand(isc_pool_t **sourcep, unsigned int count,
 		newpool->init = pool->init;
 		newpool->initarg = pool->initarg;
 
+		/* Populate the new entries */
+		for (i = pool->count; i < count; i++) {
+			result = newpool->init(&newpool->pool[i],
+					       newpool->initarg);
+			if (result != ISC_R_SUCCESS) {
+				isc_pool_destroy(&newpool);
+				return (result);
+			}
+		}
+
 		/* Copy over the objects from the old pool */
 		for (i = 0; i < pool->count; i++) {
 			newpool->pool[i] = pool->pool[i];
 			pool->pool[i] = NULL;
-		}
-
-		/* Populate the new entries */
-		for (i = pool->count; i < count; i++) {
-			result = pool->init(&newpool->pool[i], pool->initarg);
-			if (result != ISC_R_SUCCESS) {
-				isc_pool_destroy(&pool);
-				return (result);
-			}
 		}
 
 		isc_pool_destroy(&pool);

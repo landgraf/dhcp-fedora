@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004-2007, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,12 +23,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: cc.h,v 1.11 2007/08/28 07:20:43 tbox Exp $ */
 
 #ifndef ISCCC_CC_H
 #define ISCCC_CC_H 1
 
 /*! \file isccc/cc.h */
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/buffer.h>
@@ -58,30 +63,30 @@ ISC_LANG_BEGINDECLS
 /*% Send to Wire */
 isc_result_t
 isccc_cc_towire(isccc_sexpr_t *alist, isc_buffer_t **buffer,
-		isc_uint32_t algorithm, isccc_region_t *secret);
+		uint32_t algorithm, isccc_region_t *secret);
 
 /*% Get From Wire */
 isc_result_t
 isccc_cc_fromwire(isccc_region_t *source, isccc_sexpr_t **alistp,
-		  isc_uint32_t algorithm, isccc_region_t *secret);
+		  uint32_t algorithm, isccc_region_t *secret);
 
 /*% Create Message */
 isc_result_t
-isccc_cc_createmessage(isc_uint32_t version, const char *from, const char *to,
-		       isc_uint32_t serial, isccc_time_t now,
+isccc_cc_createmessage(uint32_t version, const char *from, const char *to,
+		       uint32_t serial, isccc_time_t now,
 		       isccc_time_t expires, isccc_sexpr_t **alistp);
 
 /*% Create Acknowledgment */
 isc_result_t
-isccc_cc_createack(isccc_sexpr_t *message, isc_boolean_t ok,
+isccc_cc_createack(isccc_sexpr_t *message, bool ok,
 		   isccc_sexpr_t **ackp);
 
 /*% Is Ack? */
-isc_boolean_t
+bool
 isccc_cc_isack(isccc_sexpr_t *message);
 
 /*% Is Reply? */
-isc_boolean_t
+bool
 isccc_cc_isreply(isccc_sexpr_t *message);
 
 /*% Create Response */
@@ -95,7 +100,7 @@ isccc_cc_definestring(isccc_sexpr_t *alist, const char *key, const char *str);
 
 /*% Define uint 32 */
 isccc_sexpr_t *
-isccc_cc_defineuint32(isccc_sexpr_t *alist, const char *key, isc_uint32_t i);
+isccc_cc_defineuint32(isccc_sexpr_t *alist, const char *key, uint32_t i);
 
 /*% Lookup String */
 isc_result_t
@@ -104,7 +109,7 @@ isccc_cc_lookupstring(isccc_sexpr_t *alist, const char *key, char **strp);
 /*% Lookup uint 32 */
 isc_result_t
 isccc_cc_lookupuint32(isccc_sexpr_t *alist, const char *key,
-		      isc_uint32_t *uintp);
+		      uint32_t *uintp);
 
 /*% Create Symbol Table */
 isc_result_t

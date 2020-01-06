@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2005, 2007, 2008, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: atomic.h,v 1.10 2008/01/24 23:47:00 tbox Exp $ */
 
 #ifndef ISC_ATOMIC_H
 #define ISC_ATOMIC_H 1
+
+#include <inttypes.h>
 
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -19,9 +23,9 @@
  * This routine atomically increments the value stored in 'p' by 'val', and
  * returns the previous value.
  */
-static __inline__ isc_int32_t
-isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
-	isc_int32_t prev = val;
+static __inline__ int32_t
+isc_atomic_xadd(int32_t *p, int32_t val) {
+	int32_t prev = val;
 
 	__asm__ volatile(
 #ifdef ISC_PLATFORM_USETHREADS
@@ -36,9 +40,9 @@ isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
 }
 
 #ifdef ISC_PLATFORM_HAVEXADDQ
-static __inline__ isc_int64_t
-isc_atomic_xaddq(isc_int64_t *p, isc_int64_t val) {
-	isc_int64_t prev = val;
+static __inline__ int64_t
+isc_atomic_xaddq(int64_t *p, int64_t val) {
+	int64_t prev = val;
 
 	__asm__ volatile(
 #ifdef ISC_PLATFORM_USETHREADS
@@ -57,7 +61,7 @@ isc_atomic_xaddq(isc_int64_t *p, isc_int64_t val) {
  * This routine atomically stores the value 'val' in 'p' (32-bit version).
  */
 static __inline__ void
-isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
+isc_atomic_store(int32_t *p, int32_t val) {
 	__asm__ volatile(
 #ifdef ISC_PLATFORM_USETHREADS
 		/*
@@ -78,7 +82,7 @@ isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
  * This routine atomically stores the value 'val' in 'p' (64-bit version).
  */
 static __inline__ void
-isc_atomic_storeq(isc_int64_t *p, isc_int64_t val) {
+isc_atomic_storeq(int64_t *p, int64_t val) {
 	__asm__ volatile(
 #ifdef ISC_PLATFORM_USETHREADS
 		/*
@@ -100,8 +104,8 @@ isc_atomic_storeq(isc_int64_t *p, isc_int64_t val) {
  * original value is equal to 'cmpval'.  The original value is returned in any
  * case.
  */
-static __inline__ isc_int32_t
-isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val) {
+static __inline__ int32_t
+isc_atomic_cmpxchg(int32_t *p, int32_t cmpval, int32_t val) {
 	__asm__ volatile(
 #ifdef ISC_PLATFORM_USETHREADS
 		"lock;"
@@ -122,12 +126,10 @@ isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val) {
  * positions of the stack frame, which would not actually point to the
  * intended address in the embedded mnemonic.
  */
-#include <isc/util.h>		/* for 'UNUSED' macro */
-
-static isc_int32_t
-isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(val);
+static int32_t
+isc_atomic_xadd(int32_t *p, int32_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movl 8(%ebp), %ecx\n"
@@ -147,9 +149,9 @@ isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
 }
 
 static void
-isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(val);
+isc_atomic_store(int32_t *p, int32_t val) {
+	(void)(p);
+	(void)(val);
 
 	__asm (
 		"movl 8(%ebp), %ecx\n"
@@ -161,11 +163,11 @@ isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
 		);
 }
 
-static isc_int32_t
-isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val) {
-	UNUSED(p);
-	UNUSED(cmpval);
-	UNUSED(val);
+static int32_t
+isc_atomic_cmpxchg(int32_t *p, int32_t cmpval, int32_t val) {
+	(void)(p);
+	(void)(cmpval);
+	(void)(val);
 
 	__asm (
 		"movl 8(%ebp), %ecx\n"

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -30,8 +33,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
-
 /* sha1 [-m module] [-s $slot] [-n count] */
 
 /*! \file */
@@ -39,6 +40,7 @@
 #include <config.h>
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -72,10 +74,10 @@ clock_gettime(int32_t id, struct timespec *tp)
 	UNUSED(id);
 
 	result = gettimeofday(&tv, NULL);
-	if (result)
-		return (result);
-	tp->tv_sec = tv.tv_sec;
-	tp->tv_nsec = (long) tv.tv_usec * 1000;
+	if (result == 0) {
+		tp->tv_sec = tv.tv_sec;
+		tp->tv_nsec = (long) tv.tv_usec * 1000;
+	}
 	return (result);
 }
 #endif
@@ -139,8 +141,8 @@ main(int argc, char *argv[]) {
 	if (lib_name != NULL)
 		pk11_set_lib_name(lib_name);
 
-	result = pk11_get_session(&pctx, op_type, ISC_FALSE, ISC_FALSE,
-				  ISC_FALSE, NULL, slot);
+	result = pk11_get_session(&pctx, op_type, false, false,
+				  false, NULL, slot);
 	if ((result != ISC_R_SUCCESS) &&
 	    (result != PK11_R_NORANDOMSERVICE) &&
 	    (result != PK11_R_NOAESSERVICE)) {

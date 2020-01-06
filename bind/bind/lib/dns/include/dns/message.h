@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2010, 2012-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef DNS_MESSAGE_H
@@ -12,6 +15,9 @@
 /***
  ***	Imports
  ***/
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/magic.h>
@@ -93,11 +99,15 @@
 #define DNS_MESSAGEEXTFLAG_DO		0x8000U
 
 /*%< EDNS0 extended OPT codes */
+#define DNS_OPT_LLQ		1		/*%< LLQ opt code */
 #define DNS_OPT_NSID		3		/*%< NSID opt code */
 #define DNS_OPT_CLIENT_SUBNET	8		/*%< client subnet opt code */
 #define DNS_OPT_EXPIRE		9		/*%< EXPIRE opt code */
 #define DNS_OPT_COOKIE		10		/*%< COOKIE opt code */
 #define DNS_OPT_PAD		12		/*%< PAD opt code */
+#define DNS_OPT_KEY_TAG		14		/*%< Key tag opt code */
+#define DNS_OPT_CLIENT_TAG	16		/*%< Client tag opt code */
+#define DNS_OPT_SERVER_TAG	17		/*%< Server tag opt code */
 
 /*%< Experimental options [65001...65534] as per RFC6891 */
 
@@ -107,7 +117,7 @@
 #define DNS_MESSAGE_REPLYPRESERVE	(DNS_MESSAGEFLAG_RD|DNS_MESSAGEFLAG_CD)
 #define DNS_MESSAGEEXTFLAG_REPLYPRESERVE (DNS_MESSAGEEXTFLAG_DO)
 
-#define DNS_MESSAGE_HEADERLEN		12 /*%< 6 isc_uint16_t's */
+#define DNS_MESSAGE_HEADERLEN		12 /*%< 6 uint16_t's */
 
 #define DNS_MESSAGE_MAGIC		ISC_MAGIC('M','S','G','@')
 #define DNS_MESSAGE_VALID(msg)		ISC_MAGIC_VALID(msg, DNS_MESSAGE_MAGIC)
@@ -136,7 +146,6 @@ typedef int dns_messagetextflag_t;
 #define DNS_MESSAGETEXTFLAG_NOHEADERS	0x0002
 #define DNS_MESSAGETEXTFLAG_ONESOA	0x0004
 #define DNS_MESSAGETEXTFLAG_OMITSOA	0x0008
-#define DNS_MESSAGETEXTFLAG_COMMENTDATA	0x0010
 
 /*
  * Dynamic update names for these sections.
@@ -171,7 +180,7 @@ typedef int dns_messagetextflag_t;
 #define DNS_MESSAGERENDER_PARTIAL	0x0002	/*%< allow a partial rdataset */
 #define DNS_MESSAGERENDER_OMITDNSSEC	0x0004	/*%< omit DNSSEC records */
 #define DNS_MESSAGERENDER_PREFER_A	0x0008	/*%< prefer A records in
-						      additional section. */
+						     additional section. */
 #define DNS_MESSAGERENDER_PREFER_AAAA	0x0010	/*%< prefer AAAA records in
 						  additional section. */
 #ifdef ALLOW_FILTER_AAAA
@@ -255,8 +264,8 @@ struct dns_message {
 };
 
 struct dns_ednsopt {
-	isc_uint16_t			code;
-	isc_uint16_t			length;
+	uint16_t			code;
+	uint16_t			length;
 	unsigned char			*value;
 };
 
@@ -374,21 +383,20 @@ dns_message_totext(dns_message_t *msg, const dns_master_style_t *style,
 /*%<
  * Convert all sections of message 'msg' to a cleartext representation
  *
- * Notes:
- * \li     In flags, If #DNS_MESSAGETEXTFLAG_OMITDOT is set, then the
- *      final '.' in absolute names will not be emitted.  If
- *      #DNS_MESSAGETEXTFLAG_NOCOMMENTS is cleared, lines beginning
- *      with ";;" will be emitted indicating section name.  If
- *      #DNS_MESSAGETEXTFLAG_NOHEADERS is cleared, header lines will
- *      be emitted.
+ * Notes on flags:
+ *\li	If #DNS_MESSAGETEXTFLAG_NOCOMMENTS is cleared, lines beginning with
+ * 	";;" will be emitted indicating section name.
+ *\li	If #DNS_MESSAGETEXTFLAG_NOHEADERS is cleared, header lines will be
+ * 	emitted.
+ *\li   If #DNS_MESSAGETEXTFLAG_ONESOA is set then only print the first
+ *	SOA record in the answer section.
+ *\li	If *#DNS_MESSAGETEXTFLAG_OMITSOA is set don't print any SOA records
+ *	in the answer section.
  *
- *	If #DNS_MESSAGETEXTFLAG_ONESOA is set then only print the
- *	first SOA record in the answer section.  If
- *	#DNS_MESSAGETEXTFLAG_OMITSOA is set don't print any SOA records
- *	in the answer section.  These are useful for suppressing the
- *	display of the second SOA record in a AXFR by setting
- *	#DNS_MESSAGETEXTFLAG_ONESOA on the first message in a AXFR stream
- *	and #DNS_MESSAGETEXTFLAG_OMITSOA on subsequent messages.
+ * The SOA flags are useful for suppressing the display of the second
+ * SOA record in an AXFR by setting #DNS_MESSAGETEXTFLAG_ONESOA on the
+ * first message in an AXFR stream and #DNS_MESSAGETEXTFLAG_OMITSOA on
+ * subsequent messages.
  *
  * Requires:
  *
@@ -995,7 +1003,7 @@ dns_message_peekheader(isc_buffer_t *source, dns_messageid_t *idp,
  */
 
 isc_result_t
-dns_message_reply(dns_message_t *msg, isc_boolean_t want_question_section);
+dns_message_reply(dns_message_t *msg, bool want_question_section);
 /*%<
  * Start formatting a reply to the query in 'msg'.
  *
@@ -1019,7 +1027,7 @@ dns_message_reply(dns_message_t *msg, isc_boolean_t want_question_section);
  *\li	#DNS_R_FORMERR		-- the header or question section of the
  *				   message is invalid, replying is impossible.
  *				   If DNS_R_FORMERR is returned when
- *				   want_question_section is ISC_FALSE, then
+ *				   want_question_section is false, then
  *				   it's the header section that's bad;
  *				   otherwise either of the header or question
  *				   sections may be bad.
@@ -1401,7 +1409,7 @@ dns_message_logfmtpacket2(dns_message_t *message,
 
 isc_result_t
 dns_message_buildopt(dns_message_t *msg, dns_rdataset_t **opt,
-		     unsigned int version, isc_uint16_t udpsize,
+		     unsigned int version, uint16_t udpsize,
 		     unsigned int flags, dns_ednsopt_t *ednsopts, size_t count);
 /*%<
  * Built a opt record.

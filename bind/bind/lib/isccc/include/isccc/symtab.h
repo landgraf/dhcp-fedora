@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +23,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: symtab.h,v 1.10 2007/08/28 07:20:43 tbox Exp $ */
 
 #ifndef ISCCC_SYMTAB_H
 #define ISCCC_SYMTAB_H 1
@@ -69,6 +71,8 @@
  *** Imports.
  ***/
 
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isccc/types.h>
 
@@ -85,7 +89,7 @@ typedef union isccc_symvalue {
 typedef void (*isccc_symtabundefaction_t)(char *key, unsigned int type,
 					isccc_symvalue_t value, void *userarg);
 
-typedef isc_boolean_t (*isccc_symtabforeachaction_t)(char *key,
+typedef bool (*isccc_symtabforeachaction_t)(char *key,
 						   unsigned int type,
 						   isccc_symvalue_t value,
 						   void *userarg);
@@ -101,7 +105,7 @@ ISC_LANG_BEGINDECLS
 isc_result_t
 isccc_symtab_create(unsigned int size,
 		  isccc_symtabundefaction_t undefine_action, void *undefine_arg,
-		  isc_boolean_t case_sensitive, isccc_symtab_t **symtabp);
+		  bool case_sensitive, isccc_symtab_t **symtabp);
 
 void
 isccc_symtab_destroy(isccc_symtab_t **symtabp);

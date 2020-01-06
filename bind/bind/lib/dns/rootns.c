@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2008, 2010, 2012-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: rootns.c,v 1.40.476.1 2012/02/07 00:44:14 each Exp $ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/buffer.h>
 #include <isc/string.h>		/* Required for HP/UX (and others?) */
@@ -52,7 +56,7 @@ static char root_ns[] =
 ".                       518400  IN      NS      M.ROOT-SERVERS.NET.\n"
 "A.ROOT-SERVERS.NET.     3600000 IN      A       198.41.0.4\n"
 "A.ROOT-SERVERS.NET.     3600000 IN      AAAA    2001:503:BA3E::2:30\n"
-"B.ROOT-SERVERS.NET.     3600000 IN      A       192.228.79.201\n"
+"B.ROOT-SERVERS.NET.     3600000 IN      A       199.9.14.201\n"
 "B.ROOT-SERVERS.NET.     3600000 IN      AAAA    2001:500:200::b\n"
 "C.ROOT-SERVERS.NET.     3600000 IN      A       192.33.4.12\n"
 "C.ROOT-SERVERS.NET.     3600000 IN      AAAA    2001:500:2::c\n"
@@ -122,7 +126,7 @@ check_node(dns_rdataset_t *rootns, dns_name_t *name,
 		case dns_rdatatype_ns:
 			if (dns_name_compare(name, dns_rootname) == 0)
 				break;
-			/*FALLTHROUGH*/
+			/* FALLTHROUGH */
 		default:
 			result = ISC_R_FAILURE;
 			goto cleanup;
@@ -151,8 +155,7 @@ check_hints(dns_db_t *db) {
 
 	isc_stdtime_get(&now);
 
-	dns_fixedname_init(&fixname);
-	name = dns_fixedname_name(&fixname);
+	name = dns_fixedname_initname(&fixname);
 
 	dns_rdataset_init(&rootns);
 	(void)dns_db_find(db, dns_rootname, NULL, dns_rdatatype_ns, 0,
@@ -259,7 +262,7 @@ dns_rootns_create(isc_mem_t *mctx, dns_rdataclass_t rdclass,
 }
 
 static void
-report(dns_view_t *view, dns_name_t *name, isc_boolean_t missing,
+report(dns_view_t *view, dns_name_t *name, bool missing,
        dns_rdata_t *rdata)
 {
 	const char *viewname = "", *sep = "";
@@ -295,7 +298,7 @@ report(dns_view_t *view, dns_name_t *name, isc_boolean_t missing,
 			      databuf);
 }
 
-static isc_boolean_t
+static bool
 inrrset(dns_rdataset_t *rrset, dns_rdata_t *rdata) {
 	isc_result_t result;
 	dns_rdata_t current = DNS_RDATA_INIT;
@@ -304,11 +307,11 @@ inrrset(dns_rdataset_t *rrset, dns_rdata_t *rdata) {
 	while (result == ISC_R_SUCCESS) {
 		dns_rdataset_current(rrset, &current);
 		if (dns_rdata_compare(rdata, &current) == 0)
-			return (ISC_TRUE);
+			return (true);
 		dns_rdata_reset(&current);
 		result = dns_rdataset_next(rrset);
 	}
-	return (ISC_FALSE);
+	return (false);
 }
 
 /*
@@ -329,8 +332,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 
 	dns_rdataset_init(&hintrrset);
 	dns_rdataset_init(&rootrrset);
-	dns_fixedname_init(&fixed);
-	foundname = dns_fixedname_name(&fixed);
+	foundname = dns_fixedname_initname(&fixed);
 
 	hresult = dns_db_find(hints, name, NULL, dns_rdatatype_a, 0,
 			      now, NULL, foundname, &hintrrset, NULL);
@@ -344,7 +346,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&rootrrset, &rdata);
 			if (!inrrset(&hintrrset, &rdata))
-				report(view, name, ISC_TRUE, &rdata);
+				report(view, name, true, &rdata);
 			result = dns_rdataset_next(&rootrrset);
 		}
 		result = dns_rdataset_first(&hintrrset);
@@ -352,7 +354,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&hintrrset, &rdata);
 			if (!inrrset(&rootrrset, &rdata))
-				report(view, name, ISC_FALSE, &rdata);
+				report(view, name, false, &rdata);
 			result = dns_rdataset_next(&hintrrset);
 		}
 	}
@@ -362,7 +364,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 		while (result == ISC_R_SUCCESS) {
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&rootrrset, &rdata);
-			report(view, name, ISC_TRUE, &rdata);
+			report(view, name, true, &rdata);
 			result = dns_rdataset_next(&rootrrset);
 		}
 	}
@@ -386,7 +388,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&rootrrset, &rdata);
 			if (!inrrset(&hintrrset, &rdata))
-				report(view, name, ISC_TRUE, &rdata);
+				report(view, name, true, &rdata);
 			dns_rdata_reset(&rdata);
 			result = dns_rdataset_next(&rootrrset);
 		}
@@ -395,7 +397,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&hintrrset, &rdata);
 			if (!inrrset(&rootrrset, &rdata))
-				report(view, name, ISC_FALSE, &rdata);
+				report(view, name, false, &rdata);
 			dns_rdata_reset(&rdata);
 			result = dns_rdataset_next(&hintrrset);
 		}
@@ -406,7 +408,7 @@ check_address_records(dns_view_t *view, dns_db_t *hints, dns_db_t *db,
 		while (result == ISC_R_SUCCESS) {
 			dns_rdata_reset(&rdata);
 			dns_rdataset_current(&rootrrset, &rdata);
-			report(view, name, ISC_TRUE, &rdata);
+			report(view, name, true, &rdata);
 			dns_rdata_reset(&rdata);
 			result = dns_rdataset_next(&rootrrset);
 		}
@@ -442,8 +444,7 @@ dns_root_checkhints(dns_view_t *view, dns_db_t *hints, dns_db_t *db) {
 
 	dns_rdataset_init(&hintns);
 	dns_rdataset_init(&rootns);
-	dns_fixedname_init(&fixed);
-	name = dns_fixedname_name(&fixed);
+	name = dns_fixedname_initname(&fixed);
 
 	result = dns_db_find(hints, dns_rootname, NULL, dns_rdatatype_ns, 0,
 			     now, NULL, name, &hintns, NULL);

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004-2009, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id$ */
@@ -12,6 +15,8 @@
 #define DNS_STATS_H 1
 
 /*! \file dns/stats.h */
+
+#include <inttypes.h>
 
 #include <dns/types.h>
 
@@ -192,13 +197,13 @@ LIBDNS_EXTERNAL_DATA extern const char *dns_statscounter_names[];
 /*%<
  * Types of dump callbacks.
  */
-typedef void (*dns_generalstats_dumper_t)(isc_statscounter_t, isc_uint64_t,
+typedef void (*dns_generalstats_dumper_t)(isc_statscounter_t, uint64_t,
 					  void *);
-typedef void (*dns_rdatatypestats_dumper_t)(dns_rdatastatstype_t, isc_uint64_t,
+typedef void (*dns_rdatatypestats_dumper_t)(dns_rdatastatstype_t, uint64_t,
 					    void *);
-typedef void (*dns_opcodestats_dumper_t)(dns_opcode_t, isc_uint64_t, void *);
+typedef void (*dns_opcodestats_dumper_t)(dns_opcode_t, uint64_t, void *);
 
-typedef void (*dns_rcodestats_dumper_t)(dns_rcode_t, isc_uint64_t, void *);
+typedef void (*dns_rcodestats_dumper_t)(dns_rcode_t, uint64_t, void *);
 
 ISC_LANG_BEGINDECLS
 
@@ -439,7 +444,7 @@ dns_rcodestats_dump(dns_stats_t *stats, dns_rcodestats_dumper_t dump_fn,
  */
 
 isc_result_t
-dns_stats_alloccounters(isc_mem_t *mctx, isc_uint64_t **ctrp);
+dns_stats_alloccounters(isc_mem_t *mctx, uint64_t **ctrp);
 /*%<
  * Allocate an array of query statistics counters from the memory
  * context 'mctx'.
@@ -448,7 +453,7 @@ dns_stats_alloccounters(isc_mem_t *mctx, isc_uint64_t **ctrp);
  */
 
 void
-dns_stats_freecounters(isc_mem_t *mctx, isc_uint64_t **ctrp);
+dns_stats_freecounters(isc_mem_t *mctx, uint64_t **ctrp);
 /*%<
  * Free an array of query statistics counters allocated from the memory
  * context 'mctx'.

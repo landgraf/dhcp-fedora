@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2007-2009, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: interfaceiter.c,v 1.15 2009/01/18 23:48:14 tbox Exp $ */
 
 /*
  * Note that this code will need to be revisited to support IPv6 Interfaces.
@@ -18,6 +20,7 @@
 #include <ws2tcpip.h>
 #include <sys/types.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -61,8 +64,8 @@ struct isc_interfaceiter {
 	SOCKET_ADDRESS_LIST	*buf6;		/* Buffer for WSAIoctl data. */
 	unsigned int		buf6size;	/* Bytes allocated. */
 	unsigned int		pos6;		/* Which entry to process. */
-	isc_boolean_t		v6loop;		/* See IPv6 loop address. */
-	isc_boolean_t		pos6zero;	/* Done pos6 == 0. */
+	bool		v6loop;		/* See IPv6 loop address. */
+	bool		pos6zero;	/* Done pos6 == 0. */
 	isc_interface_t		current;	/* Current interface data. */
 	isc_result_t		result;		/* Last result code. */
 };
@@ -94,7 +97,7 @@ get_addr(unsigned int family, isc_netaddr_t *dst, struct sockaddr *src) {
 		break;
 	default:
 		INSIST(0);
-		break;
+		ISC_UNREACHABLE();
 	}
 }
 
@@ -121,8 +124,8 @@ isc_interfaceiter_create(isc_mem_t *mctx, isc_interfaceiter_t **iterp) {
 	iter->buf6 = NULL;
 	iter->pos4 = NULL;
 	iter->pos6 = 0;
-	iter->v6loop = ISC_TRUE;
-	iter->pos6zero = ISC_TRUE;
+	iter->v6loop = true;
+	iter->pos6zero = true;
 	iter->buf6size = 0;
 	iter->buf4size = 0;
 	iter->result = ISC_R_FAILURE;
@@ -377,7 +380,7 @@ internal_current6(isc_interfaceiter_t *iter) {
 
 	if (!iter->pos6zero) {
 		if (iter->pos6 == 0U)
-			iter->pos6zero = ISC_TRUE;
+			iter->pos6zero = true;
 		get_addr(AF_INET6, &iter->current.address,
 			 iter->buf6->Address[iter->pos6].lpSockaddr);
 
@@ -388,20 +391,20 @@ internal_current6(isc_interfaceiter_t *iter) {
 		iter->current.flags = INTERFACE_F_UP;
 
 		snprintf(iter->current.name, sizeof(iter->current.name),
-			 "TCP/IPv6 Interface %d", iter->pos6 + 1);
+			 "TCP/IPv6 Interface %u", iter->pos6 + 1);
 
 		for (i = 0; i < 16; i++)
 			iter->current.netmask.type.in6.s6_addr[i] = 0xff;
 		iter->current.netmask.family = AF_INET6;
 		if (IN6_IS_ADDR_LOOPBACK(&iter->current.address.type.in6))
-			   iter->v6loop = ISC_TRUE;
+			   iter->v6loop = true;
 	} else {
 		/*
 		 * See if we can bind to the ::1 and if so return ::1.
 		 */
 		struct sockaddr_in6 sin6;
 
-		iter->v6loop = ISC_TRUE;	/* So we don't loop forever. */
+		iter->v6loop = true;	/* So we don't loop forever. */
 
 		fd = socket(AF_INET6, SOCK_DGRAM, 0);
 		if (fd == INVALID_SOCKET)
@@ -488,8 +491,8 @@ isc_interfaceiter_first(isc_interfaceiter_t *iter) {
 
 	if (iter->buf6 != NULL) {
 		iter->pos6 = iter->buf6->iAddressCount;
-		iter->v6loop = ISC_FALSE;
-		iter->pos6zero = ISC_TF(iter->pos6 == 0U);
+		iter->v6loop = false;
+		iter->pos6zero = (iter->pos6 == 0U);
 	}
 	iter->result = ISC_R_SUCCESS;
 	return (isc_interfaceiter_next(iter));

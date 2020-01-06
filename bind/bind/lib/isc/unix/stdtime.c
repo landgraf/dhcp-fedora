@@ -1,17 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: stdtime.c,v 1.19 2007/06/19 23:47:18 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stddef.h>	/* NULL */
 #include <stdlib.h>	/* NULL */
 #include <syslog.h>
@@ -30,16 +33,16 @@
 #if ISC_FIX_TV_USEC
 static inline void
 fix_tv_usec(struct timeval *tv) {
-	isc_boolean_t fixed = ISC_FALSE;
+	bool fixed = false;
 
 	if (tv->tv_usec < 0) {
-		fixed = ISC_TRUE;
+		fixed = true;
 		do {
 			tv->tv_sec -= 1;
 			tv->tv_usec += US_PER_S;
 		} while (tv->tv_usec < 0);
 	} else if (tv->tv_usec >= US_PER_S) {
-		fixed = ISC_TRUE;
+		fixed = true;
 		do {
 			tv->tv_sec += 1;
 			tv->tv_usec -= US_PER_S;

@@ -1,16 +1,18 @@
 /*
- * Copyright (C) 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file isc/aes.c */
 
-#include "config.h"
+#include <config.h>
 
 #include <isc/assertions.h>
 #include <isc/aes.h>
@@ -25,7 +27,7 @@
 #include <openssl/opensslv.h>
 #include <openssl/evp.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define EVP_CIPHER_CTX_new() &(_context), EVP_CIPHER_CTX_init(&_context)
 #define EVP_CIPHER_CTX_free(c) RUNTIME_CHECK(EVP_CIPHER_CTX_cleanup(c) == 1)
 #endif
@@ -34,7 +36,7 @@ void
 isc_aes128_crypt(const unsigned char *key, const unsigned char *in,
 		 unsigned char *out)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	EVP_CIPHER_CTX _context;
 #endif
 	EVP_CIPHER_CTX *c;
@@ -54,7 +56,7 @@ void
 isc_aes192_crypt(const unsigned char *key, const unsigned char *in,
 		 unsigned char *out)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	EVP_CIPHER_CTX _context;
 #endif
 	EVP_CIPHER_CTX *c;
@@ -74,7 +76,7 @@ void
 isc_aes256_crypt(const unsigned char *key, const unsigned char *in,
 		 unsigned char *out)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	EVP_CIPHER_CTX _context;
 #endif
 	EVP_CIPHER_CTX *c;
@@ -178,8 +180,8 @@ isc_aes_crypt(const unsigned char *key, CK_ULONG keylen,
 	pk11_context_t ctx;
 
 	DE_CONST(key, keyTemplate[5].pValue);
-	RUNTIME_CHECK(pk11_get_session(&ctx, OP_AES, ISC_TRUE, ISC_FALSE,
-				       ISC_FALSE, NULL, 0) == ISC_R_SUCCESS);
+	RUNTIME_CHECK(pk11_get_session(&ctx, OP_AES, true, false,
+				       false, NULL, 0) == ISC_R_SUCCESS);
 	ctx.object = CK_INVALID_HANDLE;
 	PK11_FATALCHECK(pkcs_C_CreateObject,
 			(ctx.session, keyTemplate,

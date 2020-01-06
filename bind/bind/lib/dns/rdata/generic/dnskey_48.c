@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 2003-2005, 2007, 2009, 2011-2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-/* $Id$ */
-
-/*
- * Reviewed: Wed Mar 15 16:47:10 PST 2000 by halley.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* RFC2535 */
@@ -137,7 +134,7 @@ digest_dnskey(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_dnskey(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_dnskey);
@@ -147,10 +144,10 @@ checkowner_dnskey(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_dnskey(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata != NULL);
@@ -160,7 +157,7 @@ checknames_dnskey(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

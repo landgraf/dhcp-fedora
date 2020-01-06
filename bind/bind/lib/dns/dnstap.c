@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -46,6 +49,8 @@
 #error DNSTAP not configured.
 #endif /* HAVE_DNSTAP */
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/buffer.h>
@@ -69,8 +74,8 @@
 #include <dns/types.h>
 #include <dns/view.h>
 
-#include <dns/dnstap.pb-c.h>
 #include <protobuf-c/protobuf-c.h>
+#include "dnstap.pb-c.h"
 
 #define DTENV_MAGIC			ISC_MAGIC('D', 't', 'n', 'v')
 #define VALID_DTENV(env)		ISC_MAGIC_VALID(env, DTENV_MAGIC)
@@ -114,7 +119,7 @@ struct dns_dtenv {
 	} while (0)
 
 static isc_mutex_t dt_mutex;
-static isc_boolean_t dt_initialized = ISC_FALSE;
+static bool dt_initialized = false;
 static isc_thread_key_t dt_key;
 static isc_once_t mutex_once = ISC_ONCE_INIT;
 static isc_mem_t *dt_mctx = NULL;
@@ -155,11 +160,11 @@ dt_init(void) {
 		if (result != ISC_R_SUCCESS)
 			goto unlock;
 		isc_mem_setname(dt_mctx, "dt", NULL);
-		isc_mem_setdestroycheck(dt_mctx, ISC_FALSE);
+		isc_mem_setdestroycheck(dt_mctx, false);
 
 		ret = isc_thread_key_create(&dt_key, dtfree);
 		if (ret == 0)
-			dt_initialized = ISC_TRUE;
+			dt_initialized = true;
 		else
 			result = ISC_R_FAILURE;
 	}
@@ -342,7 +347,7 @@ dns_dt_reopen(dns_dtenv_t *env, int roll) {
 		file.stream = NULL;
 		file.versions = roll != 0 ? roll : ISC_LOG_ROLLINFINITE;
 		file.maximum_size = 0;
-		file.maximum_reached = ISC_FALSE;
+		file.maximum_reached = false;
 		result = isc_logfile_roll(&file);
 		isc_mem_free(env->mctx, filename);
 		CHECK(result);
@@ -590,13 +595,13 @@ init_msg(dns_dtenv_t *env, dns_dtmsg_t *dm, Dnstap__Message__Type mtype) {
 	if (env->identity.length != 0) {
 		dm->d.identity.data = env->identity.base;
 		dm->d.identity.len = env->identity.length;
-		dm->d.has_identity = ISC_TRUE;
+		dm->d.has_identity = true;
 	}
 
 	if (env->version.length != 0) {
 		dm->d.version.data = env->version.base;
 		dm->d.version.len = env->version.length;
-		dm->d.has_version = ISC_TRUE;
+		dm->d.has_version = true;
 	}
 }
 
@@ -629,6 +634,7 @@ dnstap_type(dns_dtmsgtype_t msgtype) {
 		return (DNSTAP__MESSAGE__TYPE__TOOL_RESPONSE);
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 }
 
@@ -640,9 +646,9 @@ cpbuf(isc_buffer_t *buf, ProtobufCBinaryData *p, protobuf_c_boolean *has) {
 }
 
 static void
-setaddr(dns_dtmsg_t *dm, isc_sockaddr_t *sa, isc_boolean_t tcp,
+setaddr(dns_dtmsg_t *dm, isc_sockaddr_t *sa, bool tcp,
 	ProtobufCBinaryData *addr, protobuf_c_boolean *has_addr,
-	isc_uint32_t *port, protobuf_c_boolean *has_port)
+	uint32_t *port, protobuf_c_boolean *has_port)
 {
 	int family = isc_sockaddr_pf(sa);
 
@@ -675,7 +681,7 @@ setaddr(dns_dtmsg_t *dm, isc_sockaddr_t *sa, isc_boolean_t tcp,
 void
 dns_dt_send(dns_view_t *view, dns_dtmsgtype_t msgtype,
 	    isc_sockaddr_t *qaddr, isc_sockaddr_t *raddr,
-	    isc_boolean_t tcp, isc_region_t *zone, isc_time_t *qtime,
+	    bool tcp, isc_region_t *zone, isc_time_t *qtime,
 	    isc_time_t *rtime, isc_buffer_t *buf)
 {
 	isc_time_t now, *t;
@@ -808,7 +814,7 @@ putaddr(isc_buffer_t **b, isc_region_t *ip) {
 	return (putstr(b, buf));
 }
 
-static isc_boolean_t
+static bool
 dnstap_file(struct fstrm_reader *r) {
 	fstrm_res res;
 	const struct fstrm_control *control = NULL;
@@ -818,25 +824,25 @@ dnstap_file(struct fstrm_reader *r) {
 
 	res = fstrm_reader_get_control(r, FSTRM_CONTROL_START, &control);
 	if (res != fstrm_res_success)
-		return (ISC_FALSE);
+		return (false);
 
 	res = fstrm_control_get_num_field_content_type(control, &n);
 	if (res != fstrm_res_success)
-		return (ISC_FALSE);
+		return (false);
 	if (n > 0) {
 		res = fstrm_control_get_field_content_type(control, 0,
 							   &rtype, &rlen);
 		if (res != fstrm_res_success)
-			return (ISC_FALSE);
+			return (false);
 
 		if (rlen != dlen)
-			return (ISC_FALSE);
+			return (false);
 
 		if (memcmp(DNSTAP_CONTENT_TYPE, rtype, dlen) == 0)
-			return (ISC_TRUE);
+			return (true);
 	}
 
-	return (ISC_FALSE);
+	return (false);
 }
 
 isc_result_t
@@ -880,6 +886,7 @@ dns_dt_open(const char *filename, dns_dtmode_t mode, isc_mem_t *mctx,
 		return (ISC_R_NOTIMPLEMENTED);
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	isc_mem_attach(mctx, &handle->mctx);
@@ -900,15 +907,15 @@ dns_dt_open(const char *filename, dns_dtmode_t mode, isc_mem_t *mctx,
 }
 
 isc_result_t
-dns_dt_getframe(dns_dthandle_t *handle, isc_uint8_t **bufp, size_t *sizep) {
-	const isc_uint8_t *data;
+dns_dt_getframe(dns_dthandle_t *handle, uint8_t **bufp, size_t *sizep) {
+	const uint8_t *data;
 	fstrm_res res;
 
 	REQUIRE(handle != NULL);
 	REQUIRE(bufp != NULL);
 	REQUIRE(sizep != NULL);
 
-	data = (const isc_uint8_t *) *bufp;
+	data = (const uint8_t *) *bufp;
 
 	res = fstrm_reader_read(handle->reader, &data, sizep);
 	switch (res) {
@@ -943,6 +950,7 @@ dns_dt_close(dns_dthandle_t **handlep) {
 isc_result_t
 dns_dt_parse(isc_mem_t *mctx, isc_region_t *src, dns_dtdata_t **destp) {
 	isc_result_t result;
+	Dnstap__Dnstap *frame;
 	Dnstap__Message *m;
 	dns_dtdata_t *d = NULL;
 	isc_buffer_t b;
@@ -961,10 +969,12 @@ dns_dt_parse(isc_mem_t *mctx, isc_region_t *src, dns_dtdata_t **destp) {
 	if (d->frame == NULL)
 		CHECK(ISC_R_NOMEMORY);
 
-	if (d->frame->type != DNSTAP__DNSTAP__TYPE__MESSAGE)
+	frame = (Dnstap__Dnstap *)d->frame;
+
+	if (frame->type != DNSTAP__DNSTAP__TYPE__MESSAGE)
 		CHECK(DNS_R_BADDNSTAP);
 
-	m = d->frame->message;
+	m = frame->message;
 
 	/* Message type */
 	switch (m->type) {
@@ -1010,9 +1020,9 @@ dns_dt_parse(isc_mem_t *mctx, isc_region_t *src, dns_dtdata_t **destp) {
 
 	/* Query? */
 	if ((d->type & DNS_DTTYPE_QUERY) != 0)
-		d->query = ISC_TRUE;
+		d->query = true;
 	else
-		d->query = ISC_FALSE;
+		d->query = false;
 
 	/* Parse DNS message */
 	if (d->query && m->has_query_message) {
@@ -1069,9 +1079,9 @@ dns_dt_parse(isc_mem_t *mctx, isc_region_t *src, dns_dtdata_t **destp) {
 				m->socket_protocol);
 		if (type != NULL &&
 		    type->value == DNSTAP__SOCKET_PROTOCOL__TCP)
-			d->tcp = ISC_TRUE;
+			d->tcp = true;
 		else
-			d->tcp = ISC_FALSE;
+			d->tcp = false;
 	}
 
 	/* Query tuple */
@@ -1195,7 +1205,7 @@ dns_dt_datatotext(dns_dtdata_t *d, isc_buffer_t **dest) {
 
 	/* Message size */
 	if (d->msgdata.base != NULL) {
-		snprintf(buf, sizeof(buf), "%zdb ", (size_t) d->msgdata.length);
+		snprintf(buf, sizeof(buf), "%zub ", (size_t) d->msgdata.length);
 		CHECK(putstr(dest, buf));
 	} else
 		CHECK(putstr(dest, "0b "));

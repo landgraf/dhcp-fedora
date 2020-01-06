@@ -1,15 +1,20 @@
 /*
- * Copyright (C) 2009-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -82,6 +87,11 @@ usage(void) {
 						     "deletion date\n");
 	fprintf(stderr, "    -D sync date/[+-]offset/none: set/unset "
 					"CDS and CDNSKEY deletion date\n");
+	fprintf(stderr, "    -S <key>: generate a successor to an existing "
+				      "key\n");
+	fprintf(stderr, "    -i <interval>: prepublication interval for "
+					   "successor key "
+					   "(default: 30 days)\n");
 	fprintf(stderr, "Printing options:\n");
 	fprintf(stderr, "    -p C/P/Psync/A/R/I/D/Dsync/all: print a "
 					"particular time value or values\n");
@@ -95,7 +105,7 @@ usage(void) {
 }
 
 static void
-printtime(dst_key_t *key, int type, const char *tag, isc_boolean_t epoch,
+printtime(dst_key_t *key, int type, const char *tag, bool epoch,
 	  FILE *stream)
 {
 	isc_result_t result;
@@ -139,29 +149,29 @@ main(int argc, char **argv) {
 	dns_name_t	*name = NULL;
 	dns_secalg_t 	alg = 0;
 	unsigned int 	size = 0;
-	isc_uint16_t	flags = 0;
+	uint16_t	flags = 0;
 	int		prepub = -1;
 	dns_ttl_t	ttl = 0;
 	isc_stdtime_t	now;
 	isc_stdtime_t	pub = 0, act = 0, rev = 0, inact = 0, del = 0;
 	isc_stdtime_t	prevact = 0, previnact = 0, prevdel = 0;
-	isc_boolean_t	setpub = ISC_FALSE, setact = ISC_FALSE;
-	isc_boolean_t	setrev = ISC_FALSE, setinact = ISC_FALSE;
-	isc_boolean_t	setdel = ISC_FALSE, setttl = ISC_FALSE;
-	isc_boolean_t	unsetpub = ISC_FALSE, unsetact = ISC_FALSE;
-	isc_boolean_t	unsetrev = ISC_FALSE, unsetinact = ISC_FALSE;
-	isc_boolean_t	unsetdel = ISC_FALSE;
-	isc_boolean_t	printcreate = ISC_FALSE, printpub = ISC_FALSE;
-	isc_boolean_t	printact = ISC_FALSE,  printrev = ISC_FALSE;
-	isc_boolean_t	printinact = ISC_FALSE, printdel = ISC_FALSE;
-	isc_boolean_t	force = ISC_FALSE;
-	isc_boolean_t   epoch = ISC_FALSE;
-	isc_boolean_t   changed = ISC_FALSE;
+	bool	setpub = false, setact = false;
+	bool	setrev = false, setinact = false;
+	bool	setdel = false, setttl = false;
+	bool	unsetpub = false, unsetact = false;
+	bool	unsetrev = false, unsetinact = false;
+	bool	unsetdel = false;
+	bool	printcreate = false, printpub = false;
+	bool	printact = false,  printrev = false;
+	bool	printinact = false, printdel = false;
+	bool	force = false;
+	bool   epoch = false;
+	bool   changed = false;
 	isc_log_t       *log = NULL;
 	isc_stdtime_t	syncadd = 0, syncdel = 0;
-	isc_boolean_t	unsetsyncadd = ISC_FALSE, setsyncadd = ISC_FALSE;
-	isc_boolean_t	unsetsyncdel = ISC_FALSE, setsyncdel = ISC_FALSE;
-	isc_boolean_t	printsyncadd = ISC_FALSE, printsyncdel = ISC_FALSE;
+	bool	unsetsyncadd = false, setsyncadd = false;
+	bool	unsetsyncdel = false, setsyncdel = false;
+	bool	printsyncadd = false, printsyncdel = false;
 
 	if (argc == 1)
 		usage();
@@ -177,73 +187,70 @@ main(int argc, char **argv) {
 #endif
 	dns_result_register();
 
-	isc_commandline_errprint = ISC_FALSE;
+	isc_commandline_errprint = false;
 
 	isc_stdtime_get(&now);
 
 #define CMDLINE_FLAGS "A:D:E:fhI:i:K:L:P:p:R:S:uv:V"
 	while ((ch = isc_commandline_parse(argc, argv, CMDLINE_FLAGS)) != -1) {
 		switch (ch) {
+		case 'A':
+			if (setact || unsetact)
+				fatal("-A specified more than once");
+
+			changed = true;
+			act = strtotime(isc_commandline_argument,
+					now, now, &setact);
+			unsetact = !setact;
+			break;
+		case 'D':
+			/* -Dsync ? */
+			if (isoptarg("sync", argv, usage)) {
+				if (unsetsyncdel || setsyncdel)
+					fatal("-D sync specified more than "
+					      "once");
+
+				changed = true;
+				syncdel = strtotime(isc_commandline_argument,
+						   now, now, &setsyncdel);
+				unsetsyncdel = !setsyncdel;
+				break;
+			}
+			/* -Ddnskey ? */
+			(void)isoptarg("dnskey", argv, usage);
+			if (setdel || unsetdel)
+				fatal("-D specified more than once");
+
+			changed = true;
+			del = strtotime(isc_commandline_argument,
+					now, now, &setdel);
+			unsetdel = !setdel;
+			break;
 		case 'E':
 			engine = isc_commandline_argument;
 			break;
 		case 'f':
-			force = ISC_TRUE;
+			force = true;
 			break;
-		case 'p':
-			p = isc_commandline_argument;
-			if (!strcasecmp(p, "all")) {
-				printcreate = ISC_TRUE;
-				printpub = ISC_TRUE;
-				printact = ISC_TRUE;
-				printrev = ISC_TRUE;
-				printinact = ISC_TRUE;
-				printdel = ISC_TRUE;
-				printsyncadd = ISC_TRUE;
-				printsyncdel = ISC_TRUE;
-				break;
-			}
+		case '?':
+			if (isc_commandline_option != '?')
+				fprintf(stderr, "%s: invalid argument -%c\n",
+					program, isc_commandline_option);
+			/* FALLTHROUGH */
+		case 'h':
+			/* Does not return. */
+			usage();
+		case 'I':
+			if (setinact || unsetinact)
+				fatal("-I specified more than once");
 
-			do {
-				switch (*p++) {
-				case 'C':
-					printcreate = ISC_TRUE;
-					break;
-				case 'P':
-					if (!strncmp(p, "sync", 4)) {
-						p += 4;
-						printsyncadd = ISC_TRUE;
-						break;
-					}
-					printpub = ISC_TRUE;
-					break;
-				case 'A':
-					printact = ISC_TRUE;
-					break;
-				case 'R':
-					printrev = ISC_TRUE;
-					break;
-				case 'I':
-					printinact = ISC_TRUE;
-					break;
-				case 'D':
-					if (!strncmp(p, "sync", 4)) {
-						p += 4;
-						printsyncdel = ISC_TRUE;
-						break;
-					}
-					printdel = ISC_TRUE;
-					break;
-				case ' ':
-					break;
-				default:
-					usage();
-					break;
-				}
-			} while (*p != '\0');
+			changed = true;
+			inact = strtotime(isc_commandline_argument,
+					now, now, &setinact);
+			unsetinact = !setinact;
 			break;
-		case 'u':
-			epoch = ISC_TRUE;
+		case 'i':
+			prepub = strtottl(isc_commandline_argument);
 			break;
 		case 'K':
 			/*
@@ -259,12 +266,7 @@ main(int argc, char **argv) {
 			break;
 		case 'L':
 			ttl = strtottl(isc_commandline_argument);
-			setttl = ISC_TRUE;
-			break;
-		case 'v':
-			verbose = strtol(isc_commandline_argument, &endp, 0);
-			if (*endp != '\0')
-				fatal("-v must be followed by a number");
+			setttl = true;
 			break;
 		case 'P':
 			/* -Psync ? */
@@ -273,7 +275,7 @@ main(int argc, char **argv) {
 					fatal("-P sync specified more than "
 					      "once");
 
-				changed = ISC_TRUE;
+				changed = true;
 				syncadd = strtotime(isc_commandline_argument,
 						   now, now, &setsyncadd);
 				unsetsyncadd = !setsyncadd;
@@ -283,80 +285,86 @@ main(int argc, char **argv) {
 			if (setpub || unsetpub)
 				fatal("-P specified more than once");
 
-			changed = ISC_TRUE;
+			changed = true;
 			pub = strtotime(isc_commandline_argument,
 					now, now, &setpub);
 			unsetpub = !setpub;
 			break;
-		case 'A':
-			if (setact || unsetact)
-				fatal("-A specified more than once");
+		case 'p':
+			p = isc_commandline_argument;
+			if (!strcasecmp(p, "all")) {
+				printcreate = true;
+				printpub = true;
+				printact = true;
+				printrev = true;
+				printinact = true;
+				printdel = true;
+				printsyncadd = true;
+				printsyncdel = true;
+				break;
+			}
 
-			changed = ISC_TRUE;
-			act = strtotime(isc_commandline_argument,
-					now, now, &setact);
-			unsetact = !setact;
+			do {
+				switch (*p++) {
+				case 'A':
+					printact = true;
+					break;
+				case 'C':
+					printcreate = true;
+					break;
+				case 'D':
+					if (!strncmp(p, "sync", 4)) {
+						p += 4;
+						printsyncdel = true;
+						break;
+					}
+					printdel = true;
+					break;
+				case 'I':
+					printinact = true;
+					break;
+				case 'P':
+					if (!strncmp(p, "sync", 4)) {
+						p += 4;
+						printsyncadd = true;
+						break;
+					}
+					printpub = true;
+					break;
+				case 'R':
+					printrev = true;
+					break;
+				case ' ':
+					break;
+				default:
+					usage();
+					break;
+				}
+			} while (*p != '\0');
 			break;
 		case 'R':
 			if (setrev || unsetrev)
 				fatal("-R specified more than once");
 
-			changed = ISC_TRUE;
+			changed = true;
 			rev = strtotime(isc_commandline_argument,
 					now, now, &setrev);
 			unsetrev = !setrev;
 			break;
-		case 'I':
-			if (setinact || unsetinact)
-				fatal("-I specified more than once");
-
-			changed = ISC_TRUE;
-			inact = strtotime(isc_commandline_argument,
-					now, now, &setinact);
-			unsetinact = !setinact;
-			break;
-		case 'D':
-			/* -Dsync ? */
-			if (isoptarg("sync", argv, usage)) {
-				if (unsetsyncdel || setsyncdel)
-					fatal("-D sync specified more than "
-					      "once");
-
-				changed = ISC_TRUE;
-				syncdel = strtotime(isc_commandline_argument,
-						   now, now, &setsyncdel);
-				unsetsyncdel = !setsyncdel;
-				break;
-			}
-			/* -Ddnskey ? */
-			(void)isoptarg("dnskey", argv, usage);
-			if (setdel || unsetdel)
-				fatal("-D specified more than once");
-
-			changed = ISC_TRUE;
-			del = strtotime(isc_commandline_argument,
-					now, now, &setdel);
-			unsetdel = !setdel;
-			break;
 		case 'S':
 			predecessor = isc_commandline_argument;
 			break;
-		case 'i':
-			prepub = strtottl(isc_commandline_argument);
+		case 'u':
+			epoch = true;
 			break;
-		case '?':
-			if (isc_commandline_option != '?')
-				fprintf(stderr, "%s: invalid argument -%c\n",
-					program, isc_commandline_option);
-			/* Falls into */
-		case 'h':
-			/* Does not return. */
-			usage();
-
 		case 'V':
 			/* Does not return. */
 			version(program);
-
+		case 'v':
+			verbose = strtol(isc_commandline_argument, &endp, 0);
+			if (*endp != '\0')
+				fatal("-v must be followed by a number");
+			break;
 		default:
 			fprintf(stderr, "%s: unhandled option -%c\n",
 				program, isc_commandline_option);
@@ -427,13 +435,16 @@ main(int argc, char **argv) {
 			      "You must set one before\n\t"
 			      "generating a successor.");
 
-		pub = prevact - prepub;
-		if (pub < now && prepub != 0)
-			fatal("Predecessor will become inactive before the\n\t"
-			      "prepublication period ends.  Either change "
-			      "its inactivation date,\n\t"
-			      "or use the -i option to set a shorter "
-			      "prepublication interval.");
+		pub = previnact - prepub;
+		act = previnact;
+
+		if ((previnact - prepub) < now && prepub != 0)
+			fatal("Time until predecessor inactivation is\n\t"
+			      "shorter than the prepublication interval.  "
+			      "Either change\n\t"
+			      "predecessor inactivation date, or use the -i "
+			      "option to set\n\t"
+			      "a shorter prepublication interval.");
 
 		result = dst_key_gettime(prevkey, DST_TIME_DELETE, &prevdel);
 		if (result != ISC_R_SUCCESS)
@@ -448,7 +459,7 @@ main(int argc, char **argv) {
 					"before it is scheduled to be "
 					"inactive.\n", program);
 
-		changed = setpub = setact = ISC_TRUE;
+		changed = setpub = setact = true;
 	} else {
 		if (prepub < 0)
 			prepub = 0;
@@ -460,10 +471,10 @@ main(int argc, char **argv) {
 				      "prepublication interval.");
 
 			if (setpub && !setact) {
-				setact = ISC_TRUE;
+				setact = true;
 				act = pub + prepub;
 			} else if (setact && !setpub) {
-				setpub = ISC_TRUE;
+				setpub = true;
 				pub = act - prepub;
 			}
 
@@ -516,7 +527,7 @@ main(int argc, char **argv) {
 			     &prevdel) == ISC_R_SUCCESS &&
 	     setinact && !setdel && !unsetdel && prevdel < inact) ||
 	    (!setdel && !unsetdel && !setinact && !unsetinact &&
-	     prevdel < previnact))
+	     prevdel != 0 && prevdel < previnact))
 		fprintf(stderr, "%s: warning: Key is scheduled to "
 				"be deleted before it is\n\t"
 				"scheduled to be inactive.\n",
@@ -594,11 +605,11 @@ main(int argc, char **argv) {
 	if (force && !changed) {
 		dst_key_settime(key, DST_TIME_PUBLISH, now);
 		dst_key_settime(key, DST_TIME_ACTIVATE, now);
-		changed = ISC_TRUE;
+		changed = true;
 	}
 
 	if (!changed && setttl)
-		changed = ISC_TRUE;
+		changed = true;
 
 	/*
 	 * Print out time values, if -p was used.

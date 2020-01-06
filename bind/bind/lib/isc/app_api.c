@@ -1,15 +1,18 @@
 /*
- * Copyright (C) 2009, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: app_api.c,v 1.5 2009/09/02 23:48:02 tbox Exp $ */
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <unistd.h>
 
 #include <isc/app.h>
@@ -21,13 +24,15 @@
 static isc_mutex_t createlock;
 static isc_once_t once = ISC_ONCE_INIT;
 static isc_appctxcreatefunc_t appctx_createfunc = NULL;
-static isc_boolean_t is_running = ISC_FALSE;
+static isc_mutex_t runninglock;
+static bool is_running = false;
 
 #define ISCAPI_APPMETHODS_VALID(m) ISC_MAGIC_VALID(m, ISCAPI_APPMETHODS_MAGIC)
 
 static void
 initialize(void) {
 	RUNTIME_CHECK(isc_mutex_init(&createlock) == ISC_R_SUCCESS);
+	RUNTIME_CHECK(isc_mutex_init(&runninglock) == ISC_R_SUCCESS);
 }
 
 isc_result_t
@@ -194,9 +199,15 @@ isc_app_run() {
 	if (isc_bind9) {
 		isc_result_t result;
 
-		is_running = ISC_TRUE;
+		RUNTIME_CHECK(isc_once_do(&once, initialize) == ISC_R_SUCCESS);
+
+		LOCK(&runninglock);
+		is_running = true;
+		UNLOCK(&runninglock);
 		result = isc__app_run();
-		is_running = ISC_FALSE;
+		LOCK(&runninglock);
+		is_running = false;
+		UNLOCK(&runninglock);
 
 		return (result);
 	}
@@ -204,9 +215,17 @@ isc_app_run() {
 	return (ISC_R_NOTIMPLEMENTED);
 }
 
-isc_boolean_t
+bool
 isc_app_isrunning() {
-	return (is_running);
+	bool running;
+
+	RUNTIME_CHECK(isc_once_do(&once, initialize) == ISC_R_SUCCESS);
+
+	LOCK(&runninglock);
+	running = is_running;
+	UNLOCK(&runninglock);
+
+	return (running);
 }
 
 isc_result_t

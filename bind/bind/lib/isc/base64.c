@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 1998-2001, 2003-2005, 2007, 2009, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: base64.c,v 1.34 2009/10/21 23:48:05 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/base64.h>
 #include <isc/buffer.h>
@@ -94,7 +98,7 @@ typedef struct {
 	int length;		/*%< Desired length of binary data or -1 */
 	isc_buffer_t *target;	/*%< Buffer for resulting binary data */
 	int digits;		/*%< Number of buffered base64 digits */
-	isc_boolean_t seen_end;	/*%< True if "=" end marker seen */
+	bool seen_end;	/*%< True if "=" end marker seen */
 	int val[4];
 } base64_decode_ctx_t;
 
@@ -102,7 +106,7 @@ static inline void
 base64_decode_init(base64_decode_ctx_t *ctx, int length, isc_buffer_t *target)
 {
 	ctx->digits = 0;
-	ctx->seen_end = ISC_FALSE;
+	ctx->seen_end = false;
 	ctx->length = length;
 	ctx->target = target;
 }
@@ -137,7 +141,7 @@ base64_decode_char(base64_decode_ctx_t *ctx, int c) {
 		n = (ctx->val[2] == 64) ? 1 :
 			(ctx->val[3] == 64) ? 2 : 3;
 		if (n != 3) {
-			ctx->seen_end = ISC_TRUE;
+			ctx->seen_end = true;
 			if (ctx->val[2] == 64)
 				ctx->val[2] = 0;
 			if (ctx->val[3] == 64)
@@ -169,31 +173,43 @@ base64_decode_finish(base64_decode_ctx_t *ctx) {
 
 isc_result_t
 isc_base64_tobuffer(isc_lex_t *lexer, isc_buffer_t *target, int length) {
+	unsigned int before, after;
 	base64_decode_ctx_t ctx;
 	isc_textregion_t *tr;
 	isc_token_t token;
-	isc_boolean_t eol;
+	bool eol;
+
+	REQUIRE(length >= -2);
 
 	base64_decode_init(&ctx, length, target);
 
+	before = isc_buffer_usedlength(target);
 	while (!ctx.seen_end && (ctx.length != 0)) {
 		unsigned int i;
 
-		if (length > 0)
-			eol = ISC_FALSE;
-		else
-			eol = ISC_TRUE;
+		if (length > 0) {
+			eol = false;
+		} else {
+			eol = true;
+		}
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_string, eol));
-		if (token.type != isc_tokentype_string)
+		if (token.type != isc_tokentype_string) {
 			break;
+		}
 		tr = &token.value.as_textregion;
-		for (i = 0; i < tr->length; i++)
+		for (i = 0; i < tr->length; i++) {
 			RETERR(base64_decode_char(&ctx, tr->base[i]));
+		}
 	}
-	if (ctx.length < 0 && !ctx.seen_end)
+	after = isc_buffer_usedlength(target);
+	if (ctx.length < 0 && !ctx.seen_end) {
 		isc_lex_ungettoken(lexer, &token);
+	}
 	RETERR(base64_decode_finish(&ctx));
+	if (length == -2 && before == after) {
+		return (ISC_R_UNEXPECTEDEND);
+	}
 	return (ISC_R_SUCCESS);
 }
 

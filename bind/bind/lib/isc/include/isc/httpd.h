@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 2006-2008, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: httpd.h,v 1.9 2008/08/08 05:06:49 marka Exp $ */
 
 #ifndef ISC_HTTPD_H
 #define ISC_HTTPD_H 1
 
 /*! \file */
+
+#include <stdbool.h>
 
 #include <isc/event.h>
 #include <isc/eventclass.h>
@@ -31,7 +35,7 @@ struct isc_httpdurl {
 	char			       *url;
 	isc_httpdaction_t	       *action;
 	void			       *action_arg;
-	isc_boolean_t			isstatic;
+	bool			isstatic;
 	isc_time_t			loadtime;
 	ISC_LINK(isc_httpdurl_t)	link;
 };
@@ -60,7 +64,7 @@ isc_httpdmgr_addurl(isc_httpdmgr_t *httpdmgr, const char *url,
 
 isc_result_t
 isc_httpdmgr_addurl2(isc_httpdmgr_t *httpdmgr, const char *url,
-		     isc_boolean_t isstatic,
+		     bool isstatic,
 		     isc_httpdaction_t *func, void *arg);
 
 isc_result_t

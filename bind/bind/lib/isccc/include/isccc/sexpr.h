@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,13 +23,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: sexpr.h,v 1.11 2007/08/28 07:20:43 tbox Exp $ */
 
 #ifndef ISCCC_SEXPR_H
 #define ISCCC_SEXPR_H 1
 
 /*! \file isccc/sexpr.h */
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include <isc/lang.h>
@@ -92,16 +95,16 @@ isccc_sexpr_setcdr(isccc_sexpr_t *pair, isccc_sexpr_t *cdr);
 isccc_sexpr_t *
 isccc_sexpr_addtolist(isccc_sexpr_t **l1p, isccc_sexpr_t *l2);
 
-isc_boolean_t
+bool
 isccc_sexpr_listp(isccc_sexpr_t *sexpr);
 
-isc_boolean_t
+bool
 isccc_sexpr_emptyp(isccc_sexpr_t *sexpr);
 
-isc_boolean_t
+bool
 isccc_sexpr_stringp(isccc_sexpr_t *sexpr);
 
-isc_boolean_t
+bool
 isccc_sexpr_binaryp(isccc_sexpr_t *sexpr);
 
 char *

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: nsap_22.c,v 1.44 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Fri Mar 17 10:41:07 PST 2000 by gson */
 
 /* RFC1706 */
 
@@ -22,7 +21,7 @@ fromtext_in_nsap(ARGS_FROMTEXT) {
 	isc_token_t token;
 	isc_textregion_t *sr;
 	int n;
-	isc_boolean_t valid = ISC_FALSE;
+	bool valid = false;
 	int digits = 0;
 	unsigned char c = 0;
 
@@ -37,7 +36,7 @@ fromtext_in_nsap(ARGS_FROMTEXT) {
 
 	/* 0x<hex.string.with.periods> */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	sr = &token.value.as_textregion;
 	if (sr->length < 2)
 		RETTOK(ISC_R_UNEXPECTEDEND);
@@ -55,7 +54,7 @@ fromtext_in_nsap(ARGS_FROMTEXT) {
 		c += n;
 		if (++digits == 2) {
 			RETERR(mem_tobuffer(target, &c, 1));
-			valid = ISC_TRUE;
+			valid = true;
 			digits = 0;
 			c = 0;
 		}
@@ -80,7 +79,7 @@ totext_in_nsap(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	RETERR(str_totext("0x", target));
 	while (region.length != 0) {
-		sprintf(buf, "%02x", region.base[0]);
+		snprintf(buf, sizeof(buf), "%02x", region.base[0]);
 		isc_region_consume(&region, 1);
 		RETERR(str_totext(buf, target));
 	}
@@ -142,7 +141,7 @@ fromstruct_in_nsap(ARGS_FROMSTRUCT) {
 
 	REQUIRE(type == dns_rdatatype_nsap);
 	REQUIRE(rdclass == dns_rdataclass_in);
-	REQUIRE(source != NULL);
+	REQUIRE(nsap != NULL);
 	REQUIRE(nsap->common.rdtype == type);
 	REQUIRE(nsap->common.rdclass == rdclass);
 	REQUIRE(nsap->nsap != NULL || nsap->nsap_len == 0);
@@ -160,7 +159,7 @@ tostruct_in_nsap(ARGS_TOSTRUCT) {
 
 	REQUIRE(rdata->type == dns_rdatatype_nsap);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-	REQUIRE(target != NULL);
+	REQUIRE(nsap != NULL);
 	REQUIRE(rdata->length != 0);
 
 	nsap->common.rdclass = rdata->rdclass;
@@ -181,7 +180,7 @@ static inline void
 freestruct_in_nsap(ARGS_FREESTRUCT) {
 	dns_rdata_in_nsap_t *nsap = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(nsap != NULL);
 	REQUIRE(nsap->common.rdclass == dns_rdataclass_in);
 	REQUIRE(nsap->common.rdtype == dns_rdatatype_nsap);
 
@@ -217,7 +216,7 @@ digest_in_nsap(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_in_nsap(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_nsap);
@@ -228,10 +227,10 @@ checkowner_in_nsap(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_in_nsap(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_nsap);
@@ -241,7 +240,7 @@ checknames_in_nsap(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

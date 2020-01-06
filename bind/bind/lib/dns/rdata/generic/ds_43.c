@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2002, 2004, 2005, 2007, 2009-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /* RFC3658 */
 
@@ -14,7 +16,8 @@
 #define RDATA_GENERIC_DS_43_C
 
 #define RRTYPE_DS_ATTRIBUTES \
-	(DNS_RDATATYPEATTR_DNSSEC|DNS_RDATATYPEATTR_ATPARENT)
+	( DNS_RDATATYPEATTR_DNSSEC | DNS_RDATATYPEATTR_ZONECUTAUTH | \
+	  DNS_RDATATYPEATTR_ATPARENT )
 
 #include <isc/sha1.h>
 #include <isc/sha2.h>
@@ -39,7 +42,7 @@ generic_fromtext_ds(ARGS_FROMTEXT) {
 	 * Key tag.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -48,7 +51,7 @@ generic_fromtext_ds(ARGS_FROMTEXT) {
 	 * Algorithm.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_secalg_fromtext(&c, &token.value.as_textregion));
 	RETERR(mem_tobuffer(target, &c, 1));
 
@@ -56,7 +59,7 @@ generic_fromtext_ds(ARGS_FROMTEXT) {
 	 * Digest type.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_dsdigest_fromtext(&c, &token.value.as_textregion));
 	RETERR(mem_tobuffer(target, &c, 1));
 
@@ -79,7 +82,7 @@ generic_fromtext_ds(ARGS_FROMTEXT) {
 		length = ISC_SHA384_DIGESTLENGTH;
 		break;
 	default:
-		length = -1;
+		length = -2;
 		break;
 	}
 	return (isc_hex_tobuffer(lexer, target, length));
@@ -111,7 +114,7 @@ generic_totext_ds(ARGS_TOTEXT) {
 	 */
 	n = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%u ", n);
+	snprintf(buf, sizeof(buf), "%u ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -119,7 +122,7 @@ generic_totext_ds(ARGS_TOTEXT) {
 	 */
 	n = uint8_fromregion(&sr);
 	isc_region_consume(&sr, 1);
-	sprintf(buf, "%u ", n);
+	snprintf(buf, sizeof(buf), "%u ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -127,7 +130,7 @@ generic_totext_ds(ARGS_TOTEXT) {
 	 */
 	n = uint8_fromregion(&sr);
 	isc_region_consume(&sr, 1);
-	sprintf(buf, "%u", n);
+	snprintf(buf, sizeof(buf), "%u", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -171,7 +174,7 @@ generic_fromwire_ds(ARGS_FROMWIRE) {
 	/*
 	 * Check digest lengths if we know them.
 	 */
-	if (sr.length < 4 ||
+	if (sr.length < 5 ||
 	    (sr.base[3] == DNS_DSDIGEST_SHA1 &&
 	     sr.length < 4 + ISC_SHA1_DIGESTLENGTH) ||
 	    (sr.base[3] == DNS_DSDIGEST_SHA256 &&
@@ -246,7 +249,7 @@ static inline isc_result_t
 generic_fromstruct_ds(ARGS_FROMSTRUCT) {
 	dns_rdata_ds_t *ds = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(ds != NULL);
 	REQUIRE(ds->common.rdtype == type);
 	REQUIRE(ds->common.rdclass == rdclass);
 
@@ -290,7 +293,7 @@ generic_tostruct_ds(ARGS_TOSTRUCT) {
 	dns_rdata_ds_t *ds = target;
 	isc_region_t region;
 
-	REQUIRE(target != NULL);
+	REQUIRE(ds != NULL);
 	REQUIRE(rdata->length != 0);
 	REQUIRE(ds->common.rdtype == rdata->type);
 	REQUIRE(ds->common.rdclass == rdata->rdclass);
@@ -319,7 +322,7 @@ tostruct_ds(ARGS_TOSTRUCT) {
 	dns_rdata_ds_t *ds = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_ds);
-	REQUIRE(target != NULL);
+	REQUIRE(ds != NULL);
 
 	ds->common.rdclass = rdata->rdclass;
 	ds->common.rdtype = rdata->type;
@@ -365,7 +368,7 @@ digest_ds(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_ds(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_ds);
@@ -375,10 +378,10 @@ checkowner_ds(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_ds(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_ds);
@@ -387,7 +390,7 @@ checknames_ds(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

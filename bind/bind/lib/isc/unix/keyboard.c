@@ -1,14 +1,18 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: keyboard.c,v 1.13 2007/06/19 23:47:18 tbox Exp $ */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <sys/param.h>
 #include <sys/types.h>
@@ -111,7 +115,7 @@ isc_keyboard_getchar(isc_keyboard_t *keyboard, unsigned char *cp) {
 	return (ISC_R_SUCCESS);
 }
 
-isc_boolean_t
+bool
 isc_keyboard_canceled(isc_keyboard_t *keyboard) {
-	return (ISC_TF(keyboard->result == ISC_R_CANCELED));
+	return (keyboard->result == ISC_R_CANCELED);
 }

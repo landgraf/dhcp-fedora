@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwres_gabn.c,v 1.33 2007/06/19 23:47:22 tbox Exp $ */
@@ -31,20 +34,20 @@ typedef struct lwres_addr lwres_addr_t;
 typedef LWRES_LIST(lwres_addr_t) lwres_addrlist_t;
 
 typedef struct {
-	lwres_uint32_t  flags;
-	lwres_uint32_t  addrtypes;
-	lwres_uint16_t  namelen;
+	uint32_t  flags;
+	uint32_t  addrtypes;
+	uint16_t  namelen;
 	char           *name;
 } lwres_gabnrequest_t;
 
 typedef struct {
-	lwres_uint32_t          flags;
-	lwres_uint16_t          naliases;
-	lwres_uint16_t          naddrs;
+	uint32_t          flags;
+	uint16_t          naliases;
+	uint16_t          naddrs;
 	char                   *realname;
 	char                  **aliases;
-	lwres_uint16_t          realnamelen;
-	lwres_uint16_t         *aliaslen;
+	uint16_t          realnamelen;
+	uint16_t         *aliaslen;
 	lwres_addrlist_t        addrs;
 	void                   *base;
 	size_t                  baselen;
@@ -96,6 +99,7 @@ typedef struct {
 #include <config.h>
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -116,7 +120,7 @@ lwres_gabnrequest_render(lwres_context_t *ctx, lwres_gabnrequest_t *req,
 	size_t buflen;
 	int ret;
 	size_t payload_length;
-	lwres_uint16_t datalen;
+	uint16_t datalen;
 
 	REQUIRE(ctx != NULL);
 	REQUIRE(req != NULL);
@@ -124,7 +128,7 @@ lwres_gabnrequest_render(lwres_context_t *ctx, lwres_gabnrequest_t *req,
 	REQUIRE(pkt != NULL);
 	REQUIRE(b != NULL);
 
-	datalen = (lwres_uint16_t) strlen(req->name);
+	datalen = (uint16_t) strlen(req->name);
 
 	payload_length = 4 + 4 + 2 + req->namelen + 1;
 
@@ -135,7 +139,7 @@ lwres_gabnrequest_render(lwres_context_t *ctx, lwres_gabnrequest_t *req,
 
 	lwres_buffer_init(b, buf, (unsigned int)buflen);
 
-	pkt->length = (lwres_uint32_t)buflen;
+	pkt->length = (uint32_t)buflen;
 	pkt->version = LWRES_LWPACKETVERSION_0;
 	pkt->pktflags &= ~LWRES_LWPACKETFLAG_RESPONSE;
 	pkt->opcode = LWRES_OPCODE_GETADDRSBYNAME;
@@ -183,7 +187,7 @@ lwres_gabnresponse_render(lwres_context_t *ctx, lwres_gabnresponse_t *req,
 	size_t buflen;
 	int ret;
 	size_t payload_length;
-	lwres_uint16_t datalen;
+	uint16_t datalen;
 	lwres_addr_t *addr;
 	int x;
 
@@ -216,7 +220,7 @@ lwres_gabnresponse_render(lwres_context_t *ctx, lwres_gabnresponse_t *req,
 		return (LWRES_R_NOMEMORY);
 	lwres_buffer_init(b, buf, (unsigned int)buflen);
 
-	pkt->length = (lwres_uint32_t)buflen;
+	pkt->length = (uint32_t)buflen;
 	pkt->version = LWRES_LWPACKETVERSION_0;
 	pkt->pktflags |= LWRES_LWPACKETFLAG_RESPONSE;
 	pkt->opcode = LWRES_OPCODE_GETADDRSBYNAME;
@@ -279,9 +283,9 @@ lwres_gabnrequest_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 	int ret;
 	char *name;
 	lwres_gabnrequest_t *gabn;
-	lwres_uint32_t addrtypes;
-	lwres_uint32_t flags;
-	lwres_uint16_t namelen;
+	uint32_t addrtypes;
+	uint32_t flags;
+	uint16_t namelen;
 
 	REQUIRE(ctx != NULL);
 	REQUIRE(pkt != NULL);
@@ -328,9 +332,9 @@ lwres_gabnresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 {
 	lwres_result_t ret;
 	unsigned int x;
-	lwres_uint32_t flags;
-	lwres_uint16_t naliases;
-	lwres_uint16_t naddrs;
+	uint32_t flags;
+	uint16_t naliases;
+	uint16_t naddrs;
 	lwres_gabnresponse_t *gabn;
 	lwres_addrlist_t addrlist;
 	lwres_addr_t *addr;
@@ -375,7 +379,7 @@ lwres_gabnresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 			goto out;
 		}
 
-		gabn->aliaslen = CTXMALLOC(sizeof(lwres_uint16_t) * naliases);
+		gabn->aliaslen = CTXMALLOC(sizeof(uint16_t) * naliases);
 		if (gabn->aliaslen == NULL) {
 			ret = LWRES_R_NOMEMORY;
 			goto out;
@@ -438,7 +442,7 @@ lwres_gabnresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 			CTXFREE(gabn->aliases, sizeof(char *) * naliases);
 		if (gabn->aliaslen != NULL)
 			CTXFREE(gabn->aliaslen,
-				sizeof(lwres_uint16_t) * naliases);
+				sizeof(uint16_t) * naliases);
 		addr = LWRES_LIST_HEAD(addrlist);
 		while (addr != NULL) {
 			LWRES_LIST_UNLINK(addrlist, addr, link);
@@ -482,7 +486,7 @@ lwres_gabnresponse_free(lwres_context_t *ctx, lwres_gabnresponse_t **structp)
 	if (gabn->naliases > 0) {
 		CTXFREE(gabn->aliases, sizeof(char *) * gabn->naliases);
 		CTXFREE(gabn->aliaslen,
-			sizeof(lwres_uint16_t) * gabn->naliases);
+			sizeof(uint16_t) * gabn->naliases);
 	}
 	addr = LWRES_LIST_HEAD(gabn->addrs);
 	while (addr != NULL) {

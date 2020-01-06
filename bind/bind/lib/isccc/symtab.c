@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 2001  Nominum, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) 2001 Nominum, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,13 +23,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id: symtab.c,v 1.11 2007/09/13 04:45:18 each Exp $ */
 
 /*! \file */
 
 #include <config.h>
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/assertions.h>
@@ -55,14 +58,14 @@ struct isccc_symtab {
 	eltlist_t *			table;
 	isccc_symtabundefaction_t		undefine_action;
 	void *				undefine_arg;
-	isc_boolean_t			case_sensitive;
+	bool			case_sensitive;
 };
 
 isc_result_t
 isccc_symtab_create(unsigned int size,
 		  isccc_symtabundefaction_t undefine_action,
 		  void *undefine_arg,
-		  isc_boolean_t case_sensitive,
+		  bool case_sensitive,
 		  isccc_symtab_t **symtabp)
 {
 	isccc_symtab_t *symtab;
@@ -127,7 +130,7 @@ isccc_symtab_destroy(isccc_symtab_t **symtabp) {
 }
 
 static inline unsigned int
-hash(const char *key, isc_boolean_t case_sensitive) {
+hash(const char *key, bool case_sensitive) {
 	const char *s;
 	unsigned int h = 0;
 	unsigned int g;

@@ -1,13 +1,21 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2011-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
+
+# Fake an unsupported key
+unsupportedkey=`$KEYGEN -q -r $RANDFILE -a $DEFAULT_ALGORITHM -b $DEFAULT_BITS -n zone unsupported`
+awk '$3 == "DNSKEY" { $6 = 255 } { print }' ${unsupportedkey}.key > ${unsupportedkey}.tmp
+mv ${unsupportedkey}.tmp ${unsupportedkey}.key
 
 zone=bits
 rm -f K${zone}.+*+*.key
@@ -43,7 +51,7 @@ rm -f K${zone}.+*+*.private
 keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
 keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -f KSK $zone`
 $DSFROMKEY -T 1200 $keyname >> ../ns1/root.db
-$SIGNER -S -O raw -L 2000042407 -o ${zone} ${zone}.db > /dev/null 2>&1
+$SIGNER -r $RANDFILE -S -O raw -L 2000042407 -o ${zone} ${zone}.db > /dev/null 2>&1
 cp master2.db.in updated.db
 
 # signatures are expired and should be regenerated on startup
@@ -53,7 +61,7 @@ rm -f K${zone}.+*+*.private
 keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 768 -n zone $zone`
 keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -f KSK $zone`
 $DSFROMKEY -T 1200 $keyname >> ../ns1/root.db
-$SIGNER -PS -s 20100101000000 -e 20110101000000 -O raw -L 2000042407 -o ${zone} ${zone}.db > /dev/null 2>&1
+$SIGNER -r $RANDFILE -PS -s 20100101000000 -e 20110101000000 -O raw -L 2000042407 -o ${zone} ${zone}.db > /dev/null 2>&1
 
 zone=retransfer
 rm -f K${zone}.+*+*.key
@@ -74,6 +82,44 @@ rm -f K${zone}.+*+*.private
 keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 768 -n zone $zone`
 keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -n zone -f KSK $zone`
 $DSFROMKEY -T 1200 $keyname >> ../ns1/root.db
+
+zone=inactiveksk
+rm -f K${zone}.+*+*.key
+rm -f K${zone}.+*+*.private
+keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -n zone -P now -A now+3600 -f KSK $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 1024 -n zone -f KSK $zone`
+$DSFROMKEY -T 1200 $keyname >> ../ns1/root.db
+
+zone=inactivezsk
+rm -f K${zone}.+*+*.key
+rm -f K${zone}.+*+*.private
+keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -n zone -P now -A now+3600 $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -n zone -f KSK $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA256 -b 1024 -n zone -f KSK $zone`
+$DSFROMKEY -T 1200 $keyname >> ../ns1/root.db
+
+zone=delayedkeys
+rm -f K${zone}.+*+*.key
+rm -f K${zone}.+*+*.private
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -f KSK $zone`
+# Keys for the "delayedkeys" zone should not be initially accessible.
+mv K${zone}.+*+*.* ../
+
+zone=removedkeys-primary
+rm -f K${zone}.+*+*.key
+rm -f K${zone}.+*+*.private
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -f KSK $zone`
+
+zone=removedkeys-secondary
+rm -f K${zone}.+*+*.key
+rm -f K${zone}.+*+*.private
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
+keyname=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -f KSK $zone`
 
 for s in a c d h k l m q z
 do

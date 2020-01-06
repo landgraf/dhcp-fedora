@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2003-2005, 2007, 2008, 2010-2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*! \file */
 
@@ -240,13 +242,16 @@ isc_result_t
 isc__rdatalist_getnoqname(dns_rdataset_t *rdataset, dns_name_t *name,
 			  dns_rdataset_t *neg, dns_rdataset_t *negsig)
 {
-	dns_rdataclass_t rdclass = rdataset->rdclass;
+	dns_rdataclass_t rdclass;
 	dns_rdataset_t *tneg = NULL;
 	dns_rdataset_t *tnegsig = NULL;
-	dns_name_t *noqname = rdataset->private6;
+	dns_name_t *noqname;
 
 	REQUIRE(rdataset != NULL);
 	REQUIRE((rdataset->attributes & DNS_RDATASETATTR_NOQNAME) != 0);
+
+	rdclass = rdataset->rdclass;
+	noqname = rdataset->private6;
 
 	(void)dns_name_dynamic(noqname);	/* Sanity Check. */
 
@@ -331,13 +336,16 @@ isc_result_t
 isc__rdatalist_getclosest(dns_rdataset_t *rdataset, dns_name_t *name,
 			  dns_rdataset_t *neg, dns_rdataset_t *negsig)
 {
-	dns_rdataclass_t rdclass = rdataset->rdclass;
+	dns_rdataclass_t rdclass;
 	dns_rdataset_t *tneg = NULL;
 	dns_rdataset_t *tnegsig = NULL;
-	dns_name_t *closest = rdataset->private7;
+	dns_name_t *closest;
 
 	REQUIRE(rdataset != NULL);
 	REQUIRE((rdataset->attributes & DNS_RDATASETATTR_CLOSEST) != 0);
+
+	rdclass = rdataset->rdclass;
+	closest = rdataset->private7;
 
 	(void)dns_name_dynamic(closest);	/* Sanity Check. */
 

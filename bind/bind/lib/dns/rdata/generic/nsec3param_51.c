@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2008, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: nsec3param_51.c,v 1.7 2009/12/04 21:09:34 marka Exp $ */
 
 /*
  * Copyright (C) 2004  Nominet, Ltd.
@@ -50,13 +52,13 @@ fromtext_nsec3param(ARGS_FROMTEXT) {
 
 	/* Hash. */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_hashalg_fromtext(&hashalg, &token.value.as_textregion));
 	RETERR(uint8_tobuffer(hashalg, target));
 
 	/* Flags. */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	flags = token.value.as_ulong;
 	if (flags > 255U)
 		RETTOK(ISC_R_RANGE);
@@ -64,14 +66,14 @@ fromtext_nsec3param(ARGS_FROMTEXT) {
 
 	/* Iterations. */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	/* Salt. */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_textregion.length > (255*2))
 		RETTOK(DNS_R_TEXTTOOLONG);
 	if (strcmp(DNS_AS_STR(token), "-") == 0) {
@@ -91,7 +93,7 @@ totext_nsec3param(ARGS_TOTEXT) {
 	unsigned char hash;
 	unsigned char flags;
 	char buf[sizeof("65535 ")];
-	isc_uint32_t iterations;
+	uint32_t iterations;
 
 	REQUIRE(rdata->type == dns_rdatatype_nsec3param);
 	REQUIRE(rdata->length != 0);
@@ -109,13 +111,13 @@ totext_nsec3param(ARGS_TOTEXT) {
 	iterations = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
 
-	sprintf(buf, "%u ", hash);
+	snprintf(buf, sizeof(buf), "%u ", hash);
 	RETERR(str_totext(buf, target));
 
-	sprintf(buf, "%u ", flags);
+	snprintf(buf, sizeof(buf), "%u ", flags);
 	RETERR(str_totext(buf, target));
 
-	sprintf(buf, "%u ", iterations);
+	snprintf(buf, sizeof(buf), "%u ", iterations);
 	RETERR(str_totext(buf, target));
 
 	j = uint8_fromregion(&sr);
@@ -196,7 +198,7 @@ fromstruct_nsec3param(ARGS_FROMSTRUCT) {
 	dns_rdata_nsec3param_t *nsec3param = source;
 
 	REQUIRE(type == dns_rdatatype_nsec3param);
-	REQUIRE(source != NULL);
+	REQUIRE(nsec3param != NULL);
 	REQUIRE(nsec3param->common.rdtype == type);
 	REQUIRE(nsec3param->common.rdclass == rdclass);
 
@@ -218,7 +220,7 @@ tostruct_nsec3param(ARGS_TOSTRUCT) {
 	dns_rdata_nsec3param_t *nsec3param = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_nsec3param);
-	REQUIRE(target != NULL);
+	REQUIRE(nsec3param != NULL);
 	REQUIRE(rdata->length != 0);
 
 	nsec3param->common.rdclass = rdata->rdclass;
@@ -246,7 +248,7 @@ static inline void
 freestruct_nsec3param(ARGS_FREESTRUCT) {
 	dns_rdata_nsec3param_t *nsec3param = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(nsec3param != NULL);
 	REQUIRE(nsec3param->common.rdtype == dns_rdatatype_nsec3param);
 
 	if (nsec3param->mctx == NULL)
@@ -278,7 +280,7 @@ digest_nsec3param(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_nsec3param(ARGS_CHECKOWNER) {
 
        REQUIRE(type == dns_rdatatype_nsec3param);
@@ -288,10 +290,10 @@ checkowner_nsec3param(ARGS_CHECKOWNER) {
        UNUSED(rdclass);
        UNUSED(wildcard);
 
-       return (ISC_TRUE);
+       return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_nsec3param(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_nsec3param);
@@ -300,7 +302,7 @@ checknames_nsec3param(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

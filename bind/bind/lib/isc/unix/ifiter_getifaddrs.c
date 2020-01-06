@@ -1,18 +1,21 @@
 /*
- * Copyright (C) 2003-2005, 2007-2009, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: ifiter_getifaddrs.c,v 1.13 2009/09/24 23:48:13 tbox Exp $ */
 
 /*! \file
  * \brief
  * Obtain the list of network interfaces using the getifaddrs(3) library.
  */
 
+#include <stdbool.h>
 #include <ifaddrs.h>
 
 /*% Iterator Magic */
@@ -21,7 +24,7 @@
 #define VALID_IFITER(t)		ISC_MAGIC_VALID(t, IFITER_MAGIC)
 
 #ifdef __linux
-static isc_boolean_t seenv6 = ISC_FALSE;
+static bool seenv6 = false;
 #endif
 
 /*% Iterator structure */
@@ -140,7 +143,7 @@ internal_current(isc_interfaceiter_t *iter) {
 
 #ifdef __linux
 	if (family == AF_INET6)
-		seenv6 = ISC_TRUE;
+		seenv6 = true;
 #endif
 
 	memset(&iter->current, 0, sizeof(iter->current));

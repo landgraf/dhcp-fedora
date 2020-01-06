@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: atomic.h,v 1.3 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_ATOMIC_H
 #define ISC_ATOMIC_H 1
+
+#include <inttypes.h>
 
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -19,9 +23,9 @@
  * This routine atomically increments the value stored in 'p' by 'val', and
  * returns the previous value.
  */
-static inline isc_int32_t
-isc_atomic_xadd(isc_int32_t *p, int val) {
-	isc_int32_t orig;
+static inline int32_t
+isc_atomic_xadd(int32_t *p, int val) {
+	int32_t orig;
 
 	__asm__ __volatile__ (
 	"	.set	push		\n"
@@ -45,7 +49,7 @@ isc_atomic_xadd(isc_int32_t *p, int val) {
  * This routine atomically stores the value 'val' in 'p'.
  */
 static inline void
-isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
+isc_atomic_store(int32_t *p, int32_t val) {
 	*p = val;
 }
 
@@ -54,10 +58,10 @@ isc_atomic_store(isc_int32_t *p, isc_int32_t val) {
  * original value is equal to 'cmpval'.  The original value is returned in any
  * case.
  */
-static inline isc_int32_t
-isc_atomic_cmpxchg(isc_int32_t *p, int cmpval, int val) {
-	isc_int32_t orig;
-	isc_int32_t tmp;
+static inline int32_t
+isc_atomic_cmpxchg(int32_t *p, int cmpval, int val) {
+	int32_t orig;
+	int32_t tmp;
 
 	__asm__ __volatile__ (
 	"	.set	push		\n"

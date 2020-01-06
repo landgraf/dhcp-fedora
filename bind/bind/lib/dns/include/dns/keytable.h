@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2009, 2010, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: keytable.h,v 1.23 2010/06/25 03:24:05 marka Exp $ */
 
 #ifndef DNS_KEYTABLE_H
 #define DNS_KEYTABLE_H 1
@@ -32,9 +34,10 @@
  *\li	No anticipated impact.
  */
 
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isc/magic.h>
-#include <isc/refcount.h>
 #include <isc/rwlock.h>
 #include <isc/stdtime.h>
 
@@ -101,7 +104,7 @@ dns_keytable_detach(dns_keytable_t **keytablep);
  */
 
 isc_result_t
-dns_keytable_add(dns_keytable_t *keytable, isc_boolean_t managed,
+dns_keytable_add(dns_keytable_t *keytable, bool managed,
 		 dst_key_t **keyp);
 /*%<
  * Add '*keyp' to 'keytable' (using the name in '*keyp').
@@ -350,7 +353,7 @@ dns_keytable_detachkeynode(dns_keytable_t *keytable,
 
 isc_result_t
 dns_keytable_issecuredomain(dns_keytable_t *keytable, dns_name_t *name,
-			    dns_name_t *foundname, isc_boolean_t *wantdnssecp);
+			    dns_name_t *foundname, bool *wantdnssecp);
 /*%<
  * Is 'name' at or beneath a trusted key?
  *
@@ -362,11 +365,11 @@ dns_keytable_issecuredomain(dns_keytable_t *keytable, dns_name_t *name,
  *
  *\li	'foundanme' is NULL or is a pointer to an initialized dns_name_t
  *
- *\li	'*wantsdnssecp' is a valid isc_boolean_t.
+ *\li	'*wantsdnssecp' is a valid bool.
 
  * Ensures:
  *
- *\li	On success, *wantsdnssecp will be ISC_TRUE if and only if 'name'
+ *\li	On success, *wantsdnssecp will be true if and only if 'name'
  *	is at or beneath a trusted key.  If 'foundname' is not NULL, then
  *	it will be updated to contain the name of the closest enclosing
  *	trust anchor.
@@ -396,7 +399,7 @@ dns_keynode_key(dns_keynode_t *keynode);
  * Get the DST key associated with keynode.
  */
 
-isc_boolean_t
+bool
 dns_keynode_managed(dns_keynode_t *keynode);
 /*%<
  * Is this flagged as a managed key?

@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: lfsr.h,v 1.17 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_LFSR_H
 #define ISC_LFSR_H 1
 
 /*! \file isc/lfsr.h */
+
+#include <inttypes.h>
 
 #include <isc/lang.h>
 #include <isc/types.h>
@@ -34,9 +38,9 @@ typedef void (*isc_lfsrreseed_t)(isc_lfsr_t *, void *);
  * needs to be taken to not change state once the lfsr is in operation.
  */
 struct isc_lfsr {
-	isc_uint32_t		state;	/*%< previous state */
+	uint32_t		state;	/*%< previous state */
 	unsigned int		bits;	/*%< length */
-	isc_uint32_t		tap;	/*%< bit taps */
+	uint32_t		tap;	/*%< bit taps */
 	unsigned int		count;	/*%< reseed count (in BITS!) */
 	isc_lfsrreseed_t	reseed;	/*%< reseed function */
 	void		       *arg;	/*%< reseed function argument */
@@ -46,8 +50,8 @@ ISC_LANG_BEGINDECLS
 
 
 void
-isc_lfsr_init(isc_lfsr_t *lfsr, isc_uint32_t state, unsigned int bits,
-		   isc_uint32_t tap, unsigned int count,
+isc_lfsr_init(isc_lfsr_t *lfsr, uint32_t state, unsigned int bits,
+		   uint32_t tap, unsigned int count,
 		   isc_lfsrreseed_t reseed, void *arg);
 /*%<
  * Initialize an LFSR.
@@ -90,7 +94,7 @@ isc_lfsr_skip(isc_lfsr_t *lfsr, unsigned int skip);
  *\li	lfsr be valid.
  */
 
-isc_uint32_t
+uint32_t
 isc_lfsr_generate32(isc_lfsr_t *lfsr1, isc_lfsr_t *lfsr2);
 /*%<
  * Given two LFSRs, use the current state from each to skip entries in the

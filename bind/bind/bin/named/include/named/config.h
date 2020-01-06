@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 2001, 2002, 2004-2007, 2009, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: config.h,v 1.16 2009/06/11 23:47:55 tbox Exp $ */
 
 #ifndef NAMED_CONFIG_H
 #define NAMED_CONFIG_H 1
 
 /*! \file */
+
+#include <inttypes.h>
 
 #include <isccfg/cfg.h>
 
@@ -47,11 +51,11 @@ isc_result_t
 ns_config_getiplist(const cfg_obj_t *config, const cfg_obj_t *list,
 		    in_port_t defport, isc_mem_t *mctx,
 		    isc_sockaddr_t **addrsp, isc_dscp_t **dscpsp,
-		    isc_uint32_t *countp);
+		    uint32_t *countp);
 
 void
 ns_config_putiplist(isc_mem_t *mctx, isc_sockaddr_t **addrsp,
-		    isc_dscp_t **dscpsp, isc_uint32_t count);
+		    isc_dscp_t **dscpsp, uint32_t count);
 
 isc_result_t
 ns_config_getipandkeylist(const cfg_obj_t *config, const cfg_obj_t *list,
@@ -62,10 +66,10 @@ ns_config_getport(const cfg_obj_t *config, in_port_t *portp);
 
 isc_result_t
 ns_config_getkeyalgorithm(const char *str, dns_name_t **name,
-			  isc_uint16_t *digestbits);
+			  uint16_t *digestbits);
 isc_result_t
 ns_config_getkeyalgorithm2(const char *str, dns_name_t **name,
-			   unsigned int *typep, isc_uint16_t *digestbits);
+			   unsigned int *typep, uint16_t *digestbits);
 
 isc_result_t
 ns_config_getdscp(const cfg_obj_t *config, isc_dscp_t *dscpp);

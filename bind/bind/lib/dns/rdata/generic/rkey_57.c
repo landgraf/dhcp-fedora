@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_RKEY_57_C
@@ -127,7 +130,7 @@ digest_rkey(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_rkey(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_rkey);
@@ -137,10 +140,10 @@ checkowner_rkey(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_rkey(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata != NULL);
@@ -150,7 +153,7 @@ checknames_rkey(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

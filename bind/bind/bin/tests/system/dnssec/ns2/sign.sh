@@ -1,33 +1,72 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2000-2004, 2006-2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
 
+# Sign child zones (served by ns3).
+( cd ../ns3 && $SHELL sign.sh )
+
+echo_i "ns2/sign.sh"
+
+# Get the DS records for the "trusted." and "managed." zones.
+for subdomain in secure unsupported
+do
+	cp ../ns3/dsset-$subdomain.managed$TP .
+	cp ../ns3/dsset-$subdomain.trusted$TP .
+done
+
+# Sign the "trusted." and "managed." zones.
+zone=managed.
+infile=key.db.in
+zonefile=managed.db
+
+keyname1=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone -f KSK $zone`
+keyname2=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone $zone`
+
+cat $infile $keyname1.key $keyname2.key > $zonefile
+
+$SIGNER -P -g -r $RANDFILE -o $zone -k $keyname1 $zonefile $keyname2 > /dev/null 2>&1
+
+zone=trusted.
+infile=key.db.in
+zonefile=trusted.db
+
+keyname1=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone -f KSK $zone`
+keyname2=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone $zone`
+
+cat $infile $keyname1.key $keyname2.key > $zonefile
+
+$SIGNER -P -g -r $RANDFILE -o $zone -k $keyname1 $zonefile $keyname2 > /dev/null 2>&1
+
+# The "example." zone.
 zone=example.
 infile=example.db.in
 zonefile=example.db
 
-# Have the child generate a zone key and pass it to us.
-
-( cd ../ns3 && $SHELL sign.sh )
-
+# Get the DS records for the "example." zone.
 for subdomain in secure badds bogus dynamic keyless nsec3 optout \
 	nsec3-unknown optout-unknown multiple rsasha256 rsasha512 \
 	kskonly update-nsec3 auto-nsec auto-nsec3 secure.below-cname \
 	ttlpatch split-dnssec split-smart expired expiring upper lower \
-	dnskey-unknown dnskey-nsec3-unknown managed-future revkey
+	dnskey-unknown dnskey-unsupported dnskey-unsupported-2 \
+	dnskey-nsec3-unknown managed-future revkey \
+	dname-at-apex-nsec3 occluded
 do
 	cp ../ns3/dsset-$subdomain.example$TP .
 done
 
-keyname1=`$KEYGEN -q -r $RANDFILE -a DSA -b 768 -n zone $zone`
-keyname2=`$KEYGEN -q -r $RANDFILE -a DSA -b 768 -n zone $zone`
+# Sign the "example." zone.
+keyname1=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone -f KSK $zone`
+keyname2=`$KEYGEN -q -r $RANDFILE -a $ALTERNATIVE_ALGORITHM -b $ALTERNATIVE_BITS -n zone $zone`
 
 cat $infile $keyname1.key $keyname2.key >$zonefile
 
@@ -38,6 +77,7 @@ $SIGNER -P -g -r $RANDFILE -o $zone -k $keyname1 $zonefile $keyname2 > /dev/null
 # changing the last 4 characters will lead to a bad base64 encoding.
 #
 $CHECKZONE -D -q -i local $zone $zonefile.signed |
+tr -d '\r' |
 awk '
 tolower($1) == "bad-cname.example." && $4 == "RRSIG" && $5 == "CNAME" {
 	for (i = 1; i <= NF; i++ ) {
@@ -94,7 +134,7 @@ $SIGNER -P -g -r $RANDFILE -o $zone -k $keyname1 $zonefile $keyname2 > /dev/null
 
 # Sign the privately secure file
 
-privzone=private.secure.example.
+privzone=private.secure.example
 privinfile=private.secure.example.db.in
 privzonefile=private.secure.example.db
 
@@ -110,7 +150,7 @@ $SIGNER -P -g -r $RANDFILE -o $privzone -l dlv $privzonefile > /dev/null
 dlvzone=dlv.
 dlvinfile=dlv.db.in
 dlvzonefile=dlv.db
-dlvsetfile=dlvset-`echo $privzone |sed -e "s/\.$//g"`$TP
+dlvsetfile=dlvset-${privzone}${TP}
 
 dlvkeyname=`$KEYGEN -q -r $RANDFILE -a RSAMD5 -b 768 -n zone $dlvzone`
 
@@ -207,8 +247,8 @@ infile=cds-auto.secure.db.in
 zonefile=cds-auto.secure.db
 key1=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -fk $zone`
 key2=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
-$DSFROMKEY -C $key1.key > $key1.cds
-cat $infile $key1.cds > $zonefile.signed
+$SETTIME -P sync now "$key1" > /dev/null
+cat "$infile" > "$zonefile.signed"
 
 zone=cdnskey.secure
 infile=cdnskey.secure.db.in
@@ -232,5 +272,22 @@ infile=cdnskey-auto.secure.db.in
 zonefile=cdnskey-auto.secure.db
 key1=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -fk $zone`
 key2=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
-sed 's/DNSKEY/CDNSKEY/' $key1.key > $key1.cds
-cat $infile $key1.cds > $zonefile.signed
+$SETTIME -P sync now "$key1" > /dev/null
+cat "$infile" > "$zonefile.signed"
+
+zone=updatecheck-kskonly.secure
+infile=template.secure.db.in
+zonefile=${zone}.db
+key1=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone -fk $zone`
+key2=`$KEYGEN -q -r $RANDFILE -a RSASHA1 -b 1024 -n zone $zone`
+# Save key id's for checking active key usage
+keyfile_to_key_id "$key1" > $zone.ksk.id
+keyfile_to_key_id "$key2" > $zone.zsk.id
+echo ${key1} > $zone.ksk.key
+echo ${key2} > $zone.zsk.key
+# Add CDS and CDNSKEY records
+sed 's/DNSKEY/CDNSKEY/' $key1.key > $key1.cdnskey
+$DSFROMKEY -C $key1.key > $key1.cds
+cat $infile $key1.key $key2.key $key1.cdnskey $key1.cds > $zonefile
+# Don't sign, let auto-dnssec maintain do it.
+mv $zonefile $zonefile.signed

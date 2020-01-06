@@ -1,12 +1,13 @@
 /*
- * Portions Copyright (C) 2001, 2002, 2004, 2007, 2009, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: AccountInfo.cpp,v 1.10 2009/09/29 23:48:04 tbox Exp $ */
 
 /* Compiled with UNICODE */
 
@@ -106,6 +107,7 @@ GetAccountPrivileges(char *name, wchar_t **PrivList, unsigned int *PrivCount,
 	NTSTATUS Status;
 	isc_result_t istatus;
 	int iRetVal = RTN_ERROR;	/* assume error from main */
+	int n;
 
 	/*
 	 * Open the policy on the target machine.
@@ -118,18 +120,29 @@ GetAccountPrivileges(char *name, wchar_t **PrivList, unsigned int *PrivCount,
 	/*
 	 * Let's see if the account exists. Return if not
 	 */
-	wsprintf(AccountName, TEXT("%hS"), name);
-	if (!GetAccountSid(NULL, AccountName, &pSid))
+	n = wnsprintf(AccountName, sizeof(AccountName), TEXT("%hS"), name);
+	if (n < 0 || (size_t)n >= sizeof(AccountName)) {
+		LsaClose(PolicyHandle);
+		return (RTN_ERROR);
+	}
+
+	if (!GetAccountSid(NULL, AccountName, &pSid)) {
+		LsaClose(PolicyHandle);
 		return (RTN_NOACCOUNT);
+	}
+
 	/*
 	 * Find out what groups the account belongs to
 	 */
 	istatus = isc_ntsecurity_getaccountgroups(name, Accounts, maxAccounts,
 						  totalAccounts);
-	if (istatus == ISC_R_NOMEMORY)
+	if (istatus == ISC_R_NOMEMORY) {
+		LsaClose(PolicyHandle);
 		return (RTN_NOMEMORY);
-	else if (istatus != ISC_R_SUCCESS)
+	} else if (istatus != ISC_R_SUCCESS) {
+		LsaClose(PolicyHandle);
 		return (RTN_ERROR);
+	}
 
 	Accounts[*totalAccounts] = name; /* Add the account to the list */
 	(*totalAccounts)++;
@@ -138,10 +151,17 @@ GetAccountPrivileges(char *name, wchar_t **PrivList, unsigned int *PrivCount,
 	 * Loop through each Account to get the list of privileges
 	 */
 	for (i = 0; i < *totalAccounts; i++) {
-		wsprintf(AccountName, TEXT("%hS"), Accounts[i]);
-		 /* Obtain the SID of the user/group. */
-		if (!GetAccountSid(NULL, AccountName, &pSid))
+		n = wnsprintf(AccountName, sizeof(AccountName), TEXT("%hS"),
+			      Accounts[i]);
+		if (n < 0 || (size_t)n >= sizeof(AccountName)) {
+			continue;
+		}
+
+		/* Obtain the SID of the user/group. */
+		if (!GetAccountSid(NULL, AccountName, &pSid)) {
 			continue;	/* Try the next one */
+		}
+
 		/* Get the Privileges allocated to this SID */
 		if ((Status = GetPrivilegesOnAccount(PolicyHandle, pSid,
 			PrivList, PrivCount)) == STATUS_SUCCESS)
@@ -155,6 +175,7 @@ GetAccountPrivileges(char *name, wchar_t **PrivList, unsigned int *PrivCount,
 			continue;	/* Try the next one */
 		}
 	}
+
 	/*
 	 * Close the policy handle.
 	 */
@@ -194,15 +215,20 @@ CreateServiceAccount(char *name, char *password) {
 	ui.usri1_flags = UF_PASSWD_CANT_CHANGE | UF_DONT_EXPIRE_PASSWD |
 			 UF_SCRIPT;
 	ui.usri1_script_path = NULL;
+
 	/*
 	 * Call the NetUserAdd function, specifying level 1.
 	 */
 	nStatus = NetUserAdd(NULL, dwLevel, (LPBYTE)&ui, &dwError);
-
-	if (nStatus != NERR_Success)
+	if (nStatus != NERR_Success) {
 		return (FALSE);
+	}
 
 	retstat = AddPrivilegeToAcccount(name, SE_SERVICE_LOGON_PRIV);
+	if (retstat != RTN_OK) {
+		return (FALSE);
+	}
+
 	return (TRUE);
 }
 
@@ -213,29 +239,39 @@ AddPrivilegeToAcccount(LPTSTR name, LPWSTR PrivilegeName) {
 	PSID pSid;
 	NTSTATUS Status;
 	unsigned long err;
+	int n;
 
 	/*
 	 * Open the policy on the target machine.
 	 */
-	if ((Status = OpenPolicy(NULL, POLICY_ALL_ACCESS, &PolicyHandle))
-		!= STATUS_SUCCESS)
+	Status = OpenPolicy(NULL, POLICY_ALL_ACCESS, &PolicyHandle);
+	if (Status != STATUS_SUCCESS) {
 		return (RTN_ERROR);
+	}
 
 	/*
 	 * Let's see if the account exists. Return if not
 	 */
-	wsprintf(AccountName, TEXT("%hS"), name);
-	if (!GetAccountSid(NULL, AccountName, &pSid))
+	n = wnsprintf(AccountName, sizeof(AccountName), TEXT("%hS"), name);
+	if (n < 0 || (size_t)n >= sizeof(AccountName)) {
+		LsaClose(PolicyHandle);
+		return (RTN_ERROR);
+	}
+
+	if (!GetAccountSid(NULL, AccountName, &pSid)) {
+		LsaClose(PolicyHandle);
 		return (RTN_NOACCOUNT);
+	}
 
 	err = LsaNtStatusToWinError(SetPrivilegeOnAccount(PolicyHandle,
-		pSid, PrivilegeName, TRUE));
+				    pSid, PrivilegeName, TRUE));
 
 	LsaClose(PolicyHandle);
-	if (err == ERROR_SUCCESS)
+	if (err == ERROR_SUCCESS) {
 		return (RTN_OK);
-	else
+	} else {
 		return (err);
+	}
 }
 
 void
@@ -364,7 +400,6 @@ GetPrivilegesOnAccount(LSA_HANDLE PolicyHandle, PSID AccountSid,
 	NTSTATUS Status;
 	LSA_UNICODE_STRING *UserRights;
 	ULONG CountOfRights;
-	unsigned int retlen = 0;
 	DWORD i, j;
 	int found;
 
@@ -375,6 +410,7 @@ GetPrivilegesOnAccount(LSA_HANDLE PolicyHandle, PSID AccountSid,
 		return (Status);
 
 	for (i = 0; i < CountOfRights; i++) {
+		unsigned int retlen;
 		found = -1;
 		retlen = UserRights[i].Length/sizeof(wchar_t);
 		for (j = 0; j < *PrivCount; j++) {

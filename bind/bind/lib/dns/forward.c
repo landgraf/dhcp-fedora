@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2009, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
@@ -178,7 +181,7 @@ dns_fwdtable_delete(dns_fwdtable_t *fwdtable, dns_name_t *name) {
 	REQUIRE(VALID_FWDTABLE(fwdtable));
 
 	RWLOCK(&fwdtable->rwlock, isc_rwlocktype_write);
-	result = dns_rbt_deletename(fwdtable->table, name, ISC_FALSE);
+	result = dns_rbt_deletename(fwdtable->table, name, false);
 	RWUNLOCK(&fwdtable->rwlock, isc_rwlocktype_write);
 
 	if (result == DNS_R_PARTIALMATCH)

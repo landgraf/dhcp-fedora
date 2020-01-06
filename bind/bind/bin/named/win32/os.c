@@ -1,13 +1,17 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007-2009, 2012-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -51,7 +55,6 @@ ns_paths_init(void) {
 	if (!Initialized)
 		isc_ntpaths_init();
 
-	ns_g_conffile = isc_ntpaths_get(NAMED_CONF_PATH);
 	lwresd_g_conffile = isc_ntpaths_get(LWRES_CONF_PATH);
 	lwresd_g_resolvconffile = isc_ntpaths_get(RESOLV_CONF_PATH);
 	ns_g_conffile = isc_ntpaths_get(NAMED_CONF_PATH);
@@ -60,7 +63,6 @@ ns_paths_init(void) {
 	ns_g_defaultlockfile = isc_ntpaths_get(NAMED_LOCK_PATH);
 	ns_g_keyfile = isc_ntpaths_get(RNDC_KEY_PATH);
 	ns_g_defaultsessionkeyfile = isc_ntpaths_get(SESSION_KEY_PATH);
-	ns_g_defaultdnstap = NULL;
 
 	Initialized = TRUE;
 }
@@ -110,6 +112,16 @@ ns_os_init(const char *progname) {
 	 * ntservice_init();
 	 */
 	version_check(progname);
+	/*
+	 * If running in a Cygwin environment, clear the SEM_NOGPFAULTERRORBOX
+	 * bit in the process error mode to prevent Cygwin from concealing
+	 * non-abort() crashes, giving Windows Error Reporting a chance to
+	 * handle such crashes.  This is done to ensure all crashes triggered
+	 * by system tests can be detected.
+	 */
+	if (getenv("CYGWIN") != NULL) {
+		SetErrorMode(SetErrorMode(0) & ~SEM_NOGPFAULTERRORBOX);
+	}
 }
 
 void
@@ -177,7 +189,7 @@ ns_os_minprivs(void) {
 }
 
 static int
-safe_open(const char *filename, int mode, isc_boolean_t append) {
+safe_open(const char *filename, int mode, bool append) {
 	int fd;
 	struct stat sb;
 
@@ -222,13 +234,13 @@ cleanup_lockfile(void) {
 }
 
 FILE *
-ns_os_openfile(const char *filename, int mode, isc_boolean_t switch_user) {
+ns_os_openfile(const char *filename, int mode, bool switch_user) {
 	char strbuf[ISC_STRERRORSIZE];
 	FILE *fp;
 	int fd;
 
 	UNUSED(switch_user);
-	fd = safe_open(filename, mode, ISC_FALSE);
+	fd = safe_open(filename, mode, false);
 	if (fd < 0) {
 		isc__strerror(errno, strbuf, sizeof(strbuf));
 		ns_main_earlywarning("could not open file '%s': %s",
@@ -248,7 +260,7 @@ ns_os_openfile(const char *filename, int mode, isc_boolean_t switch_user) {
 }
 
 void
-ns_os_writepidfile(const char *filename, isc_boolean_t first_time) {
+ns_os_writepidfile(const char *filename, bool first_time) {
 	FILE *pidlockfile;
 	pid_t pid;
 	char strbuf[ISC_STRERRORSIZE];
@@ -273,7 +285,7 @@ ns_os_writepidfile(const char *filename, isc_boolean_t first_time) {
 	}
 
 	pidlockfile = ns_os_openfile(filename, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH,
-				     ISC_FALSE);
+				     false);
 	if (pidlockfile == NULL) {
 		free(pidfile);
 		pidfile = NULL;
@@ -297,16 +309,16 @@ ns_os_writepidfile(const char *filename, isc_boolean_t first_time) {
 	(void)fclose(pidlockfile);
 }
 
-isc_boolean_t
+bool
 ns_os_issingleton(const char *filename) {
 	char strbuf[ISC_STRERRORSIZE];
 	OVERLAPPED o;
 
 	if (lockfilefd != -1)
-		return (ISC_TRUE);
+		return (true);
 
 	if (strcasecmp(filename, "none") == 0)
-		return (ISC_TRUE);
+		return (true);
 
 	lockfile = strdup(filename);
 	if (lockfile == NULL) {
@@ -323,7 +335,7 @@ ns_os_issingleton(const char *filename) {
 			  S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 	if (lockfilefd == -1) {
 		cleanup_lockfile();
-		return (ISC_FALSE);
+		return (false);
 	}
 
 	memset(&o, 0, sizeof(o));
@@ -332,10 +344,10 @@ ns_os_issingleton(const char *filename) {
 			LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY,
 			0, 0, 1, &o)) {
 		cleanup_lockfile();
-		return (ISC_FALSE);
+		return (false);
 	}
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 
@@ -347,9 +359,9 @@ ns_os_shutdown(void) {
 	if (lockfilefd != -1) {
 		(void) UnlockFile((HANDLE) _get_osfhandle(lockfilefd),
 				  0, 0, 0, 1);
-		close(lockfilefd);
-		lockfilefd = -1;
 	}
+	cleanup_lockfile();
+
 	ntservice_shutdown();	/* This MUST be the last thing done */
 }
 

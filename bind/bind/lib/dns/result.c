@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1998-2005, 2007-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
@@ -154,7 +157,7 @@ static const char *text[DNS_R_NRESULTS] = {
 	"bad EUI",			       /*%< 109 DNS_R_BADEUI */
 
 	"covered by negative trust anchor",    /*%< 110 DNS_R_NTACOVERED */
-	"bad CDS",			       /*%< 111 DNS_R_BADCSD */
+	"bad CDS",			       /*%< 111 DNS_R_BADCDS */
 	"bad CDNSKEY",			       /*%< 112 DNS_R_BADCDNSKEY */
 	"malformed OPT option",		       /*%< 113 DNS_R_OPTERR */
 	"malformed DNSTAP data",	       /*%< 114 DNS_R_BADDNSTAP */
@@ -280,12 +283,13 @@ static const char *ids[DNS_R_NRESULTS] = {
 	"DNS_R_NOTDYNAMIC",
 	"DNS_R_BADEUI",
 	"DNS_R_NTACOVERED",
-	"DNS_R_BADCSD",
+	"DNS_R_BADCDS",
 	"DNS_R_BADCDNSKEY",
 	"DNS_R_OPTERR",
 	"DNS_R_BADDNSTAP",
 	"DNS_R_BADTSIG",
 	"DNS_R_BADSIG0",
+	"DNS_R_TOOMANYRECORDS",
 };
 
 static const char *rcode_text[DNS_R_NRCODERESULTS] = {
@@ -401,7 +405,6 @@ dns_result_torcode(isc_result_t result) {
 		rcode = dns_rcode_noerror;
 		break;
 	case ISC_R_BADBASE64:
-	case ISC_R_NOSPACE:
 	case ISC_R_RANGE:
 	case ISC_R_UNEXPECTEDEND:
 	case DNS_R_BADAAAA:

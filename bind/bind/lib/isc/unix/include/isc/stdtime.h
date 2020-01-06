@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2011, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_STDTIME_H
 #define ISC_STDTIME_H 1
@@ -14,24 +16,14 @@
 /*! \file */
 
 #include <isc/lang.h>
-#include <isc/int.h>
+#include <inttypes.h>
 
 /*%
  * It's public information that 'isc_stdtime_t' is an unsigned integral type.
  * Applications that want maximum portability should not assume anything
  * about its size.
  */
-typedef isc_uint32_t isc_stdtime_t;
-
-/* but this flag helps... */
-#define STDTIME_ON_32BITS	1
-
-/*
- * isc_stdtime32_t is a 32-bit version of isc_stdtime_t.  A variable of this
- * type should only be used as an opaque integer (e.g.,) to compare two
- * time values.
- */
-typedef isc_uint32_t isc_stdtime32_t;
+typedef uint32_t isc_stdtime_t;
 
 ISC_LANG_BEGINDECLS
 /* */

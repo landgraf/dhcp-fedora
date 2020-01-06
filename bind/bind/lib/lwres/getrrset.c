@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2000-2005, 2007, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: getrrset.c,v 1.18 2007/06/19 23:47:22 tbox Exp $ */
 
 /*! \file */
 
@@ -80,6 +81,7 @@
 
 #include <config.h>
 
+#include <inttypes.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -115,6 +117,7 @@ static void *
 sane_malloc(size_t size) {
 	if (size == 0U)
 		size = 1;
+	/* cppcheck-suppress leakNoVarFunctionCall */
 	return (malloc(size));
 }
 
@@ -170,8 +173,8 @@ lwres_getrrsetbyname(const char *hostname, unsigned int rdclass,
 	lwflags = 0;
 
 	lwresult = lwres_getrdatabyname(lwrctx, hostname,
-					(lwres_uint16_t)rdclass,
-					(lwres_uint16_t)rdtype,
+					(uint16_t)rdclass,
+					(uint16_t)rdtype,
 					lwflags, &response);
 	if (lwresult != LWRES_R_SUCCESS) {
 		result = lwresult_to_result(lwresult);

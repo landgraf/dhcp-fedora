@@ -1,12 +1,15 @@
 /*
- * Copyright (C) 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-#include "config.h"
+#include <config.h>
 
 #ifndef HAVE_LMDB
 #error This program requires the LMDB library.
@@ -15,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <lmdb.h>
+
+#include <dns/view.h>
 
 #include <isc/print.h>
 
@@ -36,42 +41,44 @@ main (int argc, char *argv[]) {
 	path = argv[1];
 
 	status = mdb_env_create(&env);
-	if (status != 0) {
+	if (status != MDB_SUCCESS) {
 		fprintf(stderr, "named-nzd2nzf: mdb_env_create: %s",
 			mdb_strerror(status));
 		exit(1);
 	}
 
-	status = mdb_env_open(env, path,
-			      MDB_RDONLY|MDB_NOTLS|MDB_NOSUBDIR, 0600);
-	if (status != 0) {
+	status = mdb_env_open(env, path, DNS_LMDB_FLAGS, 0600);
+	if (status != MDB_SUCCESS) {
 		fprintf(stderr, "named-nzd2nzf: mdb_env_open: %s",
 			mdb_strerror(status));
 		exit(1);
 	}
 
 	status = mdb_txn_begin(env, 0, MDB_RDONLY, &txn);
-	if (status != 0) {
+	if (status != MDB_SUCCESS) {
 		fprintf(stderr, "named-nzd2nzf: mdb_txn_begin: %s",
 			mdb_strerror(status));
 		exit(1);
 	}
 
 	status = mdb_dbi_open(txn, NULL, 0, &dbi);
-	if (status != 0) {
+	if (status != MDB_SUCCESS) {
 		fprintf(stderr, "named-nzd2nzf: mdb_dbi_open: %s",
 			mdb_strerror(status));
 		exit(1);
 	}
 
 	status = mdb_cursor_open(txn, dbi, &cursor);
-	if (status != 0) {
+	if (status != MDB_SUCCESS) {
 		fprintf(stderr, "named-nzd2nzf: mdb_cursor_open: %s",
 			mdb_strerror(status));
 		exit(1);
 	}
 
-	while (mdb_cursor_get(cursor, &key, &data, MDB_NEXT) == 0) {
+	for (status = mdb_cursor_get(cursor, &key, &data, MDB_FIRST);
+	     status == MDB_SUCCESS;
+	     status = mdb_cursor_get(cursor, &key, &data, MDB_NEXT))
+	{
 		if (key.mv_data == NULL || key.mv_size == 0 ||
 		    data.mv_data == NULL || data.mv_size == 0)
 		{

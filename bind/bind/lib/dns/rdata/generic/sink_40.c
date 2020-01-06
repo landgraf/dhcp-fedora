@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_SINK_40_C
@@ -27,21 +30,21 @@ fromtext_sink(ARGS_FROMTEXT) {
 
 	/* meaning */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint8_tobuffer(token.value.as_ulong, target));
 
 	/* coding */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint8_tobuffer(token.value.as_ulong, target));
 
 	/* subcoding */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint8_tobuffer(token.value.as_ulong, target));
@@ -53,7 +56,7 @@ static inline isc_result_t
 totext_sink(ARGS_TOTEXT) {
 	isc_region_t sr;
 	char buf[sizeof("255 255 255")];
-	isc_uint8_t meaning, coding, subcoding;
+	uint8_t meaning, coding, subcoding;
 
 	REQUIRE(rdata->type == dns_rdatatype_sink);
 	REQUIRE(rdata->length >= 3);
@@ -67,7 +70,7 @@ totext_sink(ARGS_TOTEXT) {
 	isc_region_consume(&sr, 1);
 	subcoding = uint8_fromregion(&sr);
 	isc_region_consume(&sr, 1);
-	sprintf(buf, "%u %u %u", meaning, coding, subcoding);
+	snprintf(buf, sizeof(buf), "%u %u %u", meaning, coding, subcoding);
 	RETERR(str_totext(buf, target));
 
 	if (sr.length == 0U)
@@ -143,7 +146,7 @@ fromstruct_sink(ARGS_FROMSTRUCT) {
 	dns_rdata_sink_t *sink = source;
 
 	REQUIRE(type == dns_rdatatype_sink);
-	REQUIRE(source != NULL);
+	REQUIRE(sink != NULL);
 	REQUIRE(sink->common.rdtype == type);
 	REQUIRE(sink->common.rdclass == rdclass);
 
@@ -169,7 +172,7 @@ tostruct_sink(ARGS_TOSTRUCT) {
 	isc_region_t sr;
 
 	REQUIRE(rdata->type == dns_rdatatype_sink);
-	REQUIRE(target != NULL);
+	REQUIRE(sink != NULL);
 	REQUIRE(rdata->length >= 3);
 
 	sink->common.rdclass = rdata->rdclass;
@@ -210,7 +213,7 @@ static inline void
 freestruct_sink(ARGS_FREESTRUCT) {
 	dns_rdata_sink_t *sink = (dns_rdata_sink_t *) source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(sink != NULL);
 	REQUIRE(sink->common.rdtype == dns_rdatatype_sink);
 
 	if (sink->mctx == NULL)
@@ -243,7 +246,7 @@ digest_sink(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_sink(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_sink);
@@ -253,10 +256,10 @@ checkowner_sink(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_sink(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_sink);
@@ -265,7 +268,7 @@ checknames_sink(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

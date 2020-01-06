@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004-2007, 2009, 2011, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: sdb.h,v 1.25 2011/10/11 23:46:45 tbox Exp $ */
 
 #ifndef DNS_SDB_H
 #define DNS_SDB_H 1
@@ -23,6 +25,8 @@
 /***
  *** Imports
  ***/
+
+#include <inttypes.h>
 
 #include <isc/lang.h>
 
@@ -195,7 +199,7 @@ dns_sdb_putnamedrdata(dns_sdballnodes_t *allnodes, const char *name,
 
 isc_result_t
 dns_sdb_putsoa(dns_sdblookup_t *lookup, const char *mname, const char *rname,
-	       isc_uint32_t serial);
+	       uint32_t serial);
 /*%<
  * This function may optionally be called from the 'authority' callback
  * to simplify construction of the SOA record for 'zone'.  It will

@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: dbiterator.c,v 1.18 2007/06/19 23:47:16 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/util.h>
 
@@ -127,7 +131,7 @@ dns_dbiterator_origin(dns_dbiterator_t *iterator, dns_name_t *name) {
 }
 
 void
-dns_dbiterator_setcleanmode(dns_dbiterator_t *iterator, isc_boolean_t mode) {
+dns_dbiterator_setcleanmode(dns_dbiterator_t *iterator, bool mode) {
 	REQUIRE(DNS_DBITERATOR_VALID(iterator));
 
 	iterator->cleaning = mode;

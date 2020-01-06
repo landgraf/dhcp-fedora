@@ -1,17 +1,21 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2009-2011, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: tsig.h,v 1.59 2011/01/11 23:47:13 tbox Exp $ */
 
 #ifndef DNS_TSIG_H
 #define DNS_TSIG_H 1
 
 /*! \file dns/tsig.h */
+
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/refcount.h>
@@ -76,7 +80,7 @@ struct dns_tsigkey {
 	dns_name_t		name;		/*%< Key name */
 	dns_name_t		*algorithm;	/*%< Algorithm name */
 	dns_name_t		*creator;	/*%< name that created secret */
-	isc_boolean_t		generated;	/*%< was this generated? */
+	bool		generated;	/*%< was this generated? */
 	isc_stdtime_t		inception;	/*%< start of validity period */
 	isc_stdtime_t		expire;		/*%< end of validity period */
 	dns_tsig_keyring_t	*ring;		/*%< the enclosing keyring */
@@ -84,23 +88,31 @@ struct dns_tsigkey {
 	ISC_LINK(dns_tsigkey_t) link;
 };
 
-#define dns_tsigkey_identity(tsigkey) \
-	((tsigkey) == NULL ? NULL : \
-	 (tsigkey)->generated ? ((tsigkey)->creator) : \
-	 (&((tsigkey)->name)))
-
 ISC_LANG_BEGINDECLS
+
+const dns_name_t *
+dns_tsigkey_identity(const dns_tsigkey_t *tsigkey);
+/*%<
+ *	Returns the identity of the provided TSIG key.
+ *
+ *	Requires:
+ *\li		'tsigkey' is a valid TSIG key or NULL
+ *
+ *	Returns:
+ *\li		NULL if 'tsigkey' was NULL
+ *\li		identity of the provided TSIG key
+ */
 
 isc_result_t
 dns_tsigkey_create(dns_name_t *name, dns_name_t *algorithm,
-		   unsigned char *secret, int length, isc_boolean_t generated,
+		   unsigned char *secret, int length, bool generated,
 		   dns_name_t *creator, isc_stdtime_t inception,
 		   isc_stdtime_t expire, isc_mem_t *mctx,
 		   dns_tsig_keyring_t *ring, dns_tsigkey_t **key);
 
 isc_result_t
 dns_tsigkey_createfromkey(dns_name_t *name, dns_name_t *algorithm,
-			  dst_key_t *dstkey, isc_boolean_t generated,
+			  dst_key_t *dstkey, bool generated,
 			  dns_name_t *creator, isc_stdtime_t inception,
 			  isc_stdtime_t expire, isc_mem_t *mctx,
 			  dns_tsig_keyring_t *ring, dns_tsigkey_t **key);

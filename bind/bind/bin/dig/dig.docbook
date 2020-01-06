@@ -1,11 +1,14 @@
 <!DOCTYPE book [
 <!ENTITY mdash "&#8212;">]>
 <!--
- - Copyright (C) 2000-2011, 2013-2017  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  -
  - This Source Code Form is subject to the terms of the Mozilla Public
  - License, v. 2.0. If a copy of the MPL was not distributed with this
  - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ -
+ - See the COPYRIGHT file distributed with this work for additional
+ - information regarding copyright ownership.
 -->
 
 <!-- Converted by db4-upgrade version 1.0 -->
@@ -48,6 +51,8 @@
       <year>2015</year>
       <year>2016</year>
       <year>2017</year>
+      <year>2018</year>
+      <year>2019</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -67,8 +72,10 @@
       <arg choice="opt" rep="norepeat"><option>-v</option></arg>
       <arg choice="opt" rep="norepeat"><option>-x <replaceable class="parameter">addr</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-y <replaceable class="parameter"><optional>hmac:</optional>name:key</replaceable></option></arg>
-      <arg choice="opt" rep="norepeat"><option>-4</option></arg>
-      <arg choice="opt" rep="norepeat"><option>-6</option></arg>
+      <group choice="opt" rep="norepeat">
+	<arg choice="opt" rep="norepeat"><option>-4</option></arg>
+	<arg choice="opt" rep="norepeat"><option>-6</option></arg>
+      </group>
       <arg choice="opt" rep="norepeat">name</arg>
       <arg choice="opt" rep="norepeat">type</arg>
       <arg choice="opt" rep="norepeat">class</arg>
@@ -89,8 +96,7 @@
 
   <refsection><info><title>DESCRIPTION</title></info>
 
-    <para><command>dig</command>
-      (domain information groper) is a flexible tool
+    <para><command>dig</command> is a flexible tool
       for interrogating DNS name servers.  It performs DNS lookups and
       displays the answers that are returned from the name server(s) that
       were queried.  Most DNS administrators use <command>dig</command> to
@@ -126,9 +132,10 @@
 
     <para>
       It is possible to set per-user defaults for <command>dig</command> via
-      <filename>${HOME}/.digrc</filename>.  This file is read and
-      any options in it
-      are applied before the command line arguments.
+      <filename>${HOME}/.digrc</filename>. This file is read and any
+      options in it are applied before the command line arguments.
+      The <option>-r</option> option disables this feature, for
+      scripts that need predictable behaviour.
     </para>
 
     <para>
@@ -270,9 +277,9 @@
 	<term>-i</term>
 	<listitem>
 	  <para>
-	    Do reverse IPv6 lookups using the obsolete RFC1886 IP6.INT
+	    Do reverse IPv6 lookups using the obsolete RFC 1886 IP6.INT
 	    domain, which is no longer in use. Obsolete bit string
-	    label queries (RFC2874) are not attempted.
+	    label queries (RFC 2874) are not attempted.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -330,20 +337,46 @@
       </varlistentry>
 
       <varlistentry>
+	<term>-r</term>
+	<listitem>
+	  <para>
+	    Do not read options from <filename>${HOME}/.digrc</filename>.
+	    This is useful for scripts that need predictable behaviour.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
 	<term>-t <replaceable class="parameter">type</replaceable></term>
 	<listitem>
 	  <para>
-	    The resource record type to query. It can be any valid query type
-	    which is
-	    supported in BIND 9.  The default query type is "A", unless the
-	    <option>-x</option> option is supplied to indicate a reverse lookup.
-	    A zone transfer can be requested by specifying a type of AXFR.  When
+	    The resource record type to query. It can be any valid query
+	    type.  If it is a resource record type supported in BIND 9, it
+	    can be given by the type mnemonic (such as "NS" or "AAAA").
+	    The default query type is "A", unless the <option>-x</option>
+	    option is supplied to indicate a reverse lookup.  A zone
+	    transfer can be requested by specifying a type of AXFR.  When
 	    an incremental zone transfer (IXFR) is required, set the
 	    <parameter>type</parameter> to <literal>ixfr=N</literal>.
 	    The incremental zone transfer will contain the changes
 	    made to the zone since the serial number in the zone's SOA
 	    record was
 	    <parameter>N</parameter>.
+	  </para>
+	  <para>
+	    All resource record types can be expressed as "TYPEnn", where
+	    "nn" is the number of the type. If the resource record type is
+	    not supported in BIND 9, the result will be displayed as
+	    described in RFC 3597.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>-u</term>
+	<listitem>
+	  <para>
+	    Print query times in microseconds instead of milliseconds.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -572,9 +605,11 @@
 	  <listitem>
 	    <para>
 	      Toggles the printing of the initial comment in the
-	      output identifying the version of <command>dig</command>
-	      and the query options that have been applied.  This
-	      comment is printed by default.
+	      output, identifying the version of <command>dig</command>
+	      and the query options that have been applied.  This option
+	      always has global effect; it cannot be set globally
+	      and then overridden on a per-lookup basis.  The default
+	      is to print this comment.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -583,8 +618,18 @@
 	  <term><option>+[no]comments</option></term>
 	  <listitem>
 	    <para>
-	      Toggle the display of comment lines in the output.
-	      The default is to print comments.
+	      Toggles the display of some comment lines in the output,
+	      containing information about the packet header and
+	      OPT pseudosection, and the names of the response
+	      section.  The default is to print these comments.
+	    </para>
+	    <para>
+	      Other types of comments in the output are not affected by
+	      this option, but can be controlled using other command
+	      line switches. These include <command>+[no]cmd</command>,
+	      <command>+[no]question</command>,
+	      <command>+[no]stats</command>, and
+	      <command>+[no]rrcomments</command>.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -763,12 +808,35 @@
 	</varlistentry>
 
 	<varlistentry>
+	  <term><option>+[no]idnin</option></term>
+	  <listitem>
+	    <para>
+	      Process [do not process] IDN domain names on input.
+	      This requires IDN SUPPORT to have been enabled at
+	      compile time.
+	    </para>
+	    <para>
+	      The default is to process IDN input when standard output
+	      is a tty.  The IDN processing on input is disabled when
+	      dig output is redirected to files, pipes, and other
+	      non-tty file descriptors.
+	    </para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
 	  <term><option>+[no]idnout</option></term>
 	  <listitem>
 	    <para>
 	      Convert [do not convert] puny code on output.
 	      This requires IDN SUPPORT to have been enabled at
-	      compile time.  The default is to convert output.
+	      compile time.
+	    </para>
+	    <para>
+	      The default is to process puny code on output when
+	      standard output is a tty.  The puny code processing on
+	      output is disabled when dig output is redirected to
+	      files, pipes, and other non-tty file descriptors.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -884,8 +952,8 @@
 	  <term><option>+[no]qr</option></term>
 	  <listitem>
 	    <para>
-	      Print [do not print] the query as it is sent.  By
-	      default, the query is not printed.
+	      Toggles the display of the query message as it is sent.
+	      By default, the query is not printed.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -894,7 +962,7 @@
 	  <term><option>+[no]question</option></term>
 	  <listitem>
 	    <para>
-	      Print [do not print] the question section of a query
+	      Toggles the display of the question section of a query
 	      when an answer is returned.  The default is to print
 	      the question section as a comment.
 	    </para>
@@ -918,8 +986,10 @@
 	      in the query.  This bit is set by default, which means
 	      <command>dig</command> normally sends recursive
 	      queries.  Recursion is automatically disabled when
-	      the <parameter>+nssearch</parameter> or
-	      <parameter>+trace</parameter> query options are used.
+	      using the <parameter>+nssearch</parameter> option, and
+	      when using <parameter>+trace</parameter> except for
+	      an initial recursive query to get the list of root
+	      servers.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -972,7 +1042,9 @@
 	  <listitem>
 	    <para>
 	      Provide a terse answer.  The default is to print the
-	      answer in a verbose form.
+	      answer in a verbose form.  This option always has global
+	      effect; it cannot be set globally and then overridden on
+	      a per-lookup basis.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -1018,10 +1090,9 @@
 	  <term><option>+[no]stats</option></term>
 	  <listitem>
 	    <para>
-	      This query option toggles the printing of statistics:
-	      when the query was made, the size of the reply and
-	      so on.  The default behavior is to print the query
-	      statistics.
+	      Toggles the printing of statistics: when the query was made,
+	      the size of the reply and so on.  The default behavior is to
+	      print the query statistics as a comment after each lookup.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -1254,10 +1325,9 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
       <command>dig</command> appropriately converts character encoding of
       domain name before sending a request to DNS server or displaying a
       reply from the server.
-      If you'd like to turn off the IDN support for some reason, defines
-      the <envar>IDN_DISABLE</envar> environment variable.
-      The IDN support is disabled if the variable is set when
-      <command>dig</command> runs.
+      If you'd like to turn off the IDN support for some reason, use
+      parameters <parameter>+noidnin</parameter> and
+      <parameter>+noidnout</parameter>.
     </para>
   </refsection>
 
@@ -1283,7 +1353,7 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
       <citerefentry>
 	<refentrytitle>dnssec-keygen</refentrytitle><manvolnum>8</manvolnum>
       </citerefentry>,
-      <citetitle>RFC1035</citetitle>.
+      <citetitle>RFC 1035</citetitle>.
     </para>
   </refsection>
 

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="@TOOLS_VERSION@" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|@PLATFORM@">
       <Configuration>Debug</Configuration>
@@ -14,18 +14,21 @@
     <ProjectGuid>{5FEBFD4E-CCB0-48B9-B733-E15EEB85C16A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>libdns</RootNamespace>
+    @WINDOWS_TARGET_PLATFORM_VERSION@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|@PLATFORM@'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    @PLATFORM_TOOLSET@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|@PLATFORM@'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    @PLATFORM_TOOLSET@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -54,7 +57,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>BIND9;WIN32;USE_MD5;@CRYPTO@@USE_GSSAPI@@USE_ISC_SPNEGO@_DEBUG;_WINDOWS;_USRDLL;LIBDNS_EXPORTS;%(PreprocessorDefinitions);%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\;include;..\include;..\..\isc\win32;..\..\isc\win32\include;..\..\isc\include;@LIBXML2_INC@@OPENSSL_INC@@GSSAPI_INC@@GEOIP_INC@%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\;include;..\include;..\..\isc;..\..\isc\win32;..\..\isc\win32\include;..\..\isc\include;@LIBXML2_INC@@OPENSSL_INC@@GSSAPI_INC@@GEOIP_INC@%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeaderOutputFile>.\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
       <AssemblerListingLocation>.\$(Configuration)\</AssemblerListingLocation>
@@ -82,7 +85,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>@INTRINSIC@</IntrinsicFunctions>
       <PreprocessorDefinitions>BIND9;WIN32;USE_MD5;@CRYPTO@@USE_GSSAPI@@USE_ISC_SPNEGO@NDEBUG;_WINDOWS;_USRDLL;LIBDNS_EXPORTS;%(PreprocessorDefinitions);%(PreprocessorDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\;include;..\include;..\..\isc\win32;..\..\isc\win32\include;..\..\isc\include;@LIBXML2_INC@@OPENSSL_INC@@GSSAPI_INC@@GEOIP_INC@%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\;include;..\include;..\..\isc;..\..\isc\win32;..\..\isc\win32\include;..\..\isc\include;@LIBXML2_INC@@OPENSSL_INC@@GSSAPI_INC@@GEOIP_INC@%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <StringPooling>true</StringPooling>
       <PrecompiledHeaderOutputFile>.\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
@@ -135,10 +138,14 @@
     <ClCompile Include="..\dst_result.c" />
     <ClCompile Include="..\dyndb.c" />
     <ClCompile Include="..\ecdb.c" />
+    <ClCompile Include="..\fixedname.c" />
     <ClCompile Include="..\forward.c" />
 @IF GEOIP
-    <ClCompile Include="..\geoip.c" />
+    <ClCompile Include="..\geoip2.c" />
 @END GEOIP
+@IF GEOIPLEGACY
+    <ClCompile Include="..\geoip.c" />
+@END GEOIPLEGACY
     <ClCompile Include="..\gssapictx.c" />
     <ClCompile Include="..\gssapi_link.c" />
     <ClCompile Include="..\hmac_link.c" />
@@ -163,6 +170,7 @@
     <ClCompile Include="..\openssldh_link.c" />
     <ClCompile Include="..\openssldsa_link.c" />
     <ClCompile Include="..\opensslecdsa_link.c" />
+    <ClCompile Include="..\openssleddsa_link.c" />
     <ClCompile Include="..\opensslgost_link.c" />
     <ClCompile Include="..\opensslrsa_link.c" />
     <ClCompile Include="..\openssl_link.c" />
@@ -174,6 +182,7 @@
     <ClCompile Include="..\pkcs11dh_link.c" />
     <ClCompile Include="..\pkcs11dsa_link.c" />
     <ClCompile Include="..\pkcs11ecdsa_link.c" />
+    <ClCompile Include="..\pkcs11eddsa_link.c" />
     <ClCompile Include="..\pkcs11gost_link.c" />
     <ClCompile Include="..\pkcs11rsa_link.c" />
 @END PKCS11
@@ -265,6 +274,9 @@
 @IF GEOIP
     <ClInclude Include="..\include\dns\geoip.h" />
 @END GEOIP
+@IF GEOIPLEGACY
+    <ClInclude Include="..\include\dns\geoip.h" />
+@END GEOIPLEGACY
     <ClInclude Include="..\include\dns\ipkeylist.h" />
     <ClInclude Include="..\include\dns\iptable.h" />
     <ClInclude Include="..\include\dns\journal.h" />

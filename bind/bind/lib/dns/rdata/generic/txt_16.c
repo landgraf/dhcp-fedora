@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2007-2009, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* Reviewed: Thu Mar 16 15:40:00 PST 2000 by bwelling */
 
 #ifndef RDATA_GENERIC_TXT_16_C
 #define RDATA_GENERIC_TXT_16_C
@@ -35,7 +36,7 @@ generic_fromtext_txt(ARGS_FROMTEXT) {
 	for (;;) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_qstring,
-					      ISC_TRUE));
+					      true));
 		if (token.type != isc_tokentype_qstring &&
 		    token.type != isc_tokentype_string)
 			break;
@@ -56,7 +57,7 @@ generic_totext_txt(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 
 	while (region.length > 0) {
-		RETERR(txt_totext(&region, ISC_TRUE, target));
+		RETERR(txt_totext(&region, true, target));
 		if (region.length > 0)
 			RETERR(str_totext(" ", target));
 	}
@@ -135,9 +136,9 @@ static inline isc_result_t
 generic_fromstruct_txt(ARGS_FROMSTRUCT) {
 	dns_rdata_txt_t *txt = source;
 	isc_region_t region;
-	isc_uint8_t length;
+	uint8_t length;
 
-	REQUIRE(source != NULL);
+	REQUIRE(txt != NULL);
 	REQUIRE(txt->common.rdtype == type);
 	REQUIRE(txt->common.rdclass == rdclass);
 	REQUIRE(txt->txt != NULL && txt->txt_len != 0);
@@ -163,7 +164,7 @@ generic_tostruct_txt(ARGS_TOSTRUCT) {
 	dns_rdata_txt_t *txt = target;
 	isc_region_t r;
 
-	REQUIRE(target != NULL);
+	REQUIRE(txt != NULL);
 	REQUIRE(txt->common.rdclass == rdata->rdclass);
 	REQUIRE(txt->common.rdtype == rdata->type);
 	REQUIRE(!ISC_LINK_LINKED(&txt->common, link));
@@ -183,7 +184,7 @@ static inline void
 generic_freestruct_txt(ARGS_FREESTRUCT) {
 	dns_rdata_txt_t *txt = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(txt != NULL);
 
 	if (txt->mctx == NULL)
 		return;
@@ -206,7 +207,7 @@ tostruct_txt(ARGS_TOSTRUCT) {
 	dns_rdata_txt_t *txt = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_txt);
-	REQUIRE(target != NULL);
+	REQUIRE(txt != NULL);
 
 	txt->common.rdclass = rdata->rdclass;
 	txt->common.rdtype = rdata->type;
@@ -219,7 +220,7 @@ static inline void
 freestruct_txt(ARGS_FREESTRUCT) {
 	dns_rdata_txt_t *txt = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(txt != NULL);
 	REQUIRE(txt->common.rdtype == dns_rdatatype_txt);
 
 	generic_freestruct_txt(source);
@@ -247,7 +248,7 @@ digest_txt(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_txt(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_txt);
@@ -257,10 +258,10 @@ checkowner_txt(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_txt(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_txt);
@@ -269,10 +270,10 @@ checknames_txt(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_result_t
+static inline int
 casecompare_txt(ARGS_COMPARE) {
 	return (compare_txt(rdata1, rdata2));
 }
@@ -293,7 +294,7 @@ generic_txt_first(dns_rdata_txt_t *txt) {
 static isc_result_t
 generic_txt_next(dns_rdata_txt_t *txt) {
 	isc_region_t r;
-	isc_uint8_t length;
+	uint8_t length;
 
 	REQUIRE(txt != NULL);
 	REQUIRE(txt->txt != NULL && txt->txt_len != 0);

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2001, 2004-2007, 2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: getaddresses.h,v 1.11 2009/01/17 23:47:42 tbox Exp $ */
 
 #ifndef BIND9_GETADDRESSES_H
 #define BIND9_GETADDRESSES_H 1
@@ -43,7 +45,7 @@ bind9_getaddresses(const char *hostname, in_port_t port,
  * Returns:
  *\li	#ISC_R_SUCCESS
  *\li	#ISC_R_NOTFOUND
- *\li	#ISC_R_NOFAMILYSUPPORT - 'hostname' is an IPv6 address, and IPv6 is
+ *\li	#ISC_R_FAMILYNOSUPPORT - 'hostname' is an IPv6 address, and IPv6 is
  *		not supported.
  */
 

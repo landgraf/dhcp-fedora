@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2007-2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /*
  * This source was adapted from MRT's RCS Ids:
@@ -16,10 +18,14 @@
 
 #include <config.h>
 
+#include <inttypes.h>
+
 #include <isc/mem.h>
 #include <isc/types.h>
 #include <isc/util.h>
 #include <isc/radix.h>
+
+#define BIT_TEST(f, b)  (((f) & (b)) != 0)
 
 static isc_result_t
 _new_prefix(isc_mem_t *mctx, isc_prefix_t **target, int family,
@@ -62,7 +68,7 @@ _new_prefix(isc_mem_t *mctx, isc_prefix_t **target, int family, void *dest,
 	}
 
 	prefix->family = family;
-	prefix->ecs = ISC_FALSE;
+	prefix->ecs = false;
 	prefix->mctx = NULL;
 	isc_mem_attach(mctx, &prefix->mctx);
 
@@ -161,7 +167,6 @@ isc_radix_create(isc_mem_t *mctx, isc_radix_tree_t **target, int maxbits) {
 
 static void
 _clear_radix(isc_radix_tree_t *radix, isc_radix_destroyfunc_t func) {
-
 	REQUIRE(radix != NULL);
 
 	if (radix->head != NULL) {
@@ -178,10 +183,10 @@ _clear_radix(isc_radix_tree_t *radix, isc_radix_destroyfunc_t func) {
 				if (func != NULL)
 					func(Xrn->data);
 			} else {
-				INSIST(Xrn->data[0] == NULL &&
-				       Xrn->data[1] == NULL &&
-				       Xrn->data[2] == NULL &&
-				       Xrn->data[3] == NULL);
+				INSIST(Xrn->data[RADIX_V4] == NULL &&
+				       Xrn->data[RADIX_V6] == NULL &&
+				       Xrn->data[RADIX_V4_ECS] == NULL &&
+				       Xrn->data[RADIX_V6_ECS] == NULL);
 			}
 
 			isc_mem_put(radix->mctx, Xrn, sizeof(*Xrn));
@@ -235,8 +240,8 @@ isc_radix_search(isc_radix_tree_t *radix, isc_radix_node_t **target,
 	isc_radix_node_t *node;
 	isc_radix_node_t *stack[RADIX_MAXBITS + 1];
 	u_char *addr;
-	isc_uint32_t bitlen;
-	int toff = -1, cnt = 0;
+	uint32_t bitlen;
+	int tfam = -1, cnt = 0;
 
 	REQUIRE(radix != NULL);
 	REQUIRE(prefix != NULL);
@@ -279,13 +284,13 @@ isc_radix_search(isc_radix_tree_t *radix, isc_radix_node_t **target,
 				    isc_prefix_tochar(prefix),
 				    node->prefix->bitlen))
 		{
-			int off = ISC_RADIX_OFF(prefix);
-			if (node->node_num[off] != -1 &&
+			int fam = ISC_RADIX_FAMILY(prefix);
+			if (node->node_num[fam] != -1 &&
 			    ((*target == NULL) ||
-			     (*target)->node_num[toff] > node->node_num[off]))
+			     (*target)->node_num[tfam] > node->node_num[fam]))
 			{
 				*target = node;
-				toff = off;
+				tfam = fam;
 			}
 		}
 	}
@@ -303,8 +308,8 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 {
 	isc_radix_node_t *node, *new_node, *parent, *glue = NULL;
 	u_char *addr, *test_addr;
-	isc_uint32_t bitlen, fam, check_bit, differ_bit;
-	isc_uint32_t i, j, r;
+	uint32_t bitlen, fam, check_bit, differ_bit;
+	uint32_t i, j, r;
 	isc_result_t result;
 
 	REQUIRE(radix != NULL);
@@ -325,8 +330,9 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 		if (node == NULL)
 			return (ISC_R_NOMEMORY);
 		node->bit = bitlen;
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < RADIX_FAMILIES; i++) {
 			node->node_num[i] = -1;
+		}
 		node->prefix = NULL;
 		result = _ref_prefix(radix->mctx, &node->prefix, prefix);
 		if (result != ISC_R_SUCCESS) {
@@ -345,21 +351,23 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 			 * added to num_added_node at the end of
 			 * the merge operation--we don't do it here.
 			 */
-			for (i = 0; i < 4; i++) {
-				if (source->node_num[i] != -1)
+			for (i = 0; i < RADIX_FAMILIES; i++) {
+				if (source->node_num[i] != -1) {
 					node->node_num[i] =
 						radix->num_added_node +
 						source->node_num[i];
+				}
 				node->data[i] = source->data[i];
 			}
 		} else {
 			int next = ++radix->num_added_node;
 			if (fam == AF_UNSPEC) {
 				/* "any" or "none" */
-				for (i = 0; i < 4; i++)
+				for (i = 0; i < RADIX_FAMILIES; i++) {
 					node->node_num[i] = next;
+				}
 			} else {
-				node->node_num[ISC_RADIX_OFF(prefix)] = next;
+				node->node_num[ISC_RADIX_FAMILY(prefix)] = next;
 			}
 
 			memset(node->data, 0, sizeof(node->data));
@@ -395,14 +403,14 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 	/* Find the first bit different. */
 	check_bit = (node->bit < bitlen) ? node->bit : bitlen;
 	differ_bit = 0;
-	for (i = 0; i*8 < check_bit; i++) {
+	for (i = 0; i * 8 < check_bit; i++) {
 		if ((r = (addr[i] ^ test_addr[i])) == 0) {
 			differ_bit = (i + 1) * 8;
 			continue;
 		}
 		/* I know the better way, but for now. */
 		for (j = 0; j < 8; j++) {
-			if (BIT_TEST (r, (0x80 >> j)))
+			if (BIT_TEST(r, (0x80 >> j)))
 				break;
 		}
 		/* Must be found. */
@@ -425,7 +433,7 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 			/* Set node_num only if it hasn't been set before */
 			if (source != NULL) {
 				/* Merging nodes */
-				for (i = 0; i < 4; i++) {
+				for (i = 0; i < RADIX_FAMILIES; i++) {
 					if (node->node_num[i] == -1 &&
 					    source->node_num[i] != -1) {
 						node->node_num[i] =
@@ -438,7 +446,7 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 				if (fam == AF_UNSPEC) {
 					/* "any" or "none" */
 					int next = radix->num_added_node + 1;
-					for (i = 0; i < 4; i++)  {
+					for (i = 0; i < RADIX_FAMILIES; i++) {
 						if (node->node_num[i] == -1) {
 							node->node_num[i] =
 								next;
@@ -447,10 +455,11 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 						}
 					}
 				} else {
-					int off = ISC_RADIX_OFF(prefix);
-					if (node->node_num[off] == -1)
-						node->node_num[off] =
+					int foff = ISC_RADIX_FAMILY(prefix);
+					if (node->node_num[foff] == -1) {
+						node->node_num[foff] =
 							++radix->num_added_node;
+					}
 				}
 			}
 			*target = node;
@@ -461,13 +470,20 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 			if (result != ISC_R_SUCCESS)
 				return (result);
 		}
-		INSIST(node->data[0] == NULL && node->node_num[0] == -1 &&
-		       node->data[1] == NULL && node->node_num[1] == -1 &&
-		       node->data[2] == NULL && node->node_num[2] == -1 &&
-		       node->data[3] == NULL && node->node_num[3] == -1);
+
+		/* Check everything is null and empty before we proceed */
+		INSIST(node->data[RADIX_V4] == NULL &&
+		       node->node_num[RADIX_V4] == -1 &&
+		       node->data[RADIX_V6] == NULL &&
+		       node->node_num[RADIX_V6] == -1 &&
+		       node->data[RADIX_V4_ECS] == NULL &&
+		       node->node_num[RADIX_V4_ECS] == -1 &&
+		       node->data[RADIX_V6_ECS] == NULL &&
+		       node->node_num[RADIX_V6_ECS] == -1);
+
 		if (source != NULL) {
 			/* Merging node */
-			for (i = 0; i < 4; i++) {
+			for (i = 0; i < RADIX_FAMILIES; i++) {
 				int cur = radix->num_added_node;
 				if (source->node_num[i] != -1) {
 					node->node_num[i] =
@@ -479,10 +495,11 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 			int next = ++radix->num_added_node;
 			if (fam == AF_UNSPEC) {
 				/* "any" or "none" */
-				for (i = 0; i < 4; i++)
+				for (i = 0; i < RADIX_FAMILIES; i++) {
 					node->node_num[i] = next;
+				}
 			} else {
-				node->node_num[ISC_RADIX_OFF(prefix)] = next;
+				node->node_num[ISC_RADIX_FAMILY(prefix)] = next;
 			}
 		}
 		*target = node;
@@ -512,7 +529,7 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 	}
 	new_node->parent = NULL;
 	new_node->l = new_node->r = NULL;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < RADIX_FAMILIES; i++) {
 		new_node->node_num[i] = -1;
 		new_node->data[i] = NULL;
 	}
@@ -520,7 +537,7 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 
 	if (source != NULL) {
 		/* Merging node */
-		for (i = 0; i < 4; i++) {
+		for (i = 0; i < RADIX_FAMILIES; i++) {
 			int cur = radix->num_added_node;
 			if (source->node_num[i] != -1) {
 				new_node->node_num[i] =
@@ -532,10 +549,11 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 		int next = ++radix->num_added_node;
 		if (fam == AF_UNSPEC) {
 			/* "any" or "none" */
-			for (i = 0; i < 4; i++)
+			for (i = 0; i < RADIX_FAMILIES; i++) {
 				new_node->node_num[i] = next;
+			}
 		} else {
-			new_node->node_num[ISC_RADIX_OFF(prefix)] = next;
+			new_node->node_num[ISC_RADIX_FAMILY(prefix)] = next;
 		}
 		memset(new_node->data, 0, sizeof(new_node->data));
 	}
@@ -579,7 +597,7 @@ isc_radix_insert(isc_radix_tree_t *radix, isc_radix_node_t **target,
 		glue->bit = differ_bit;
 		glue->prefix = NULL;
 		glue->parent = node->parent;
-		for (i = 0; i < 4; i++) {
+		for (i = 0; i < RADIX_FAMILIES; i++) {
 			glue->data[i] = NULL;
 			glue->node_num[i] = -1;
 		}

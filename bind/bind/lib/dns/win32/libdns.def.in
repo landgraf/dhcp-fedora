@@ -3,6 +3,12 @@ LIBRARY libdns
 ; Exported Functions
 EXPORTS
 
+dns__rbt_getheight
+dns__rbt_checkproperties
+dns__rbtnode_getdistance
+dns__zone_findkeys
+dns__zone_loadpending
+dns__zone_updatesigs
 dns_acache_attach
 dns_acache_attachentry
 dns_acache_cancelentry
@@ -387,6 +393,10 @@ dns_dyndb_createctx
 dns_dyndb_destroyctx
 dns_ecdb_register
 dns_ecdb_unregister
+dns_fixedname_init
+dns_fixedname_invalidate
+dns_fixedname_name
+dns_fixedname_initname
 dns_fwdtable_add
 dns_fwdtable_addfwd
 dns_fwdtable_create
@@ -599,6 +609,7 @@ dns_name_ishostname
 dns_name_ismailbox
 dns_name_isrfc1918
 dns_name_issubdomain
+dns_name_istat
 dns_name_isula
 dns_name_isvalid
 dns_name_iswildcard
@@ -639,6 +650,7 @@ dns_nsec3_supportedhash
 dns_nsec3_typepresent
 dns_nsec3param_deletechains
 dns_nsec3param_fromprivate
+dns_nsec3param_salttotext
 dns_nsec3param_toprivate
 dns_nsec_build
 dns_nsec_buildrdata
@@ -853,6 +865,7 @@ dns_rdataslab_merge
 dns_rdataslab_size
 dns_rdataslab_subtract
 dns_rdataslab_tordataset
+dns_rdatatype_atcname
 dns_rdatatype_atparent
 dns_rdatatype_attributes
 dns_rdatatype_format
@@ -1002,9 +1015,11 @@ dns_soa_setrefresh
 dns_soa_setretry
 dns_soa_setserial
 dns_ssu_external_match
+dns_ssu_mtypefromstring
 dns_ssutable_addrule
 dns_ssutable_attach
 dns_ssutable_checkrules
+dns_ssutable_checkrules2
 dns_ssutable_create
 dns_ssutable_createdlz
 dns_ssutable_detach
@@ -1046,6 +1061,7 @@ dns_tsigkey_create
 dns_tsigkey_createfromkey
 dns_tsigkey_detach
 dns_tsigkey_find
+dns_tsigkey_identity
 dns_tsigkey_setdeleted
 dns_tsigkeyring_add
 dns_tsigkeyring_attach
@@ -1067,6 +1083,7 @@ dns_validator_send
 dns_view_adddelegationonly
 dns_view_addzone
 dns_view_asyncload
+dns_view_asyncload2
 dns_view_attach
 dns_view_checksig
 dns_view_create
@@ -1122,6 +1139,8 @@ dns_view_setnewzones
 dns_view_setresquerystats
 dns_view_setresstats
 dns_view_setrootdelonly
+dns_view_setviewcommit
+dns_view_setviewrevert
 dns_view_simplefind
 dns_view_thaw
 dns_view_untrust
@@ -1137,6 +1156,7 @@ dns_xfrin_detach
 dns_xfrin_shutdown
 dns_zone_addnsec3chain
 dns_zone_asyncload
+dns_zone_asyncload2
 dns_zone_attach
 dns_zone_catz_enable
 dns_zone_catz_enable_db
@@ -1241,6 +1261,7 @@ dns_zone_loadandthaw
 dns_zone_loadnew
 dns_zone_log
 dns_zone_logc
+dns_zone_logv
 dns_zone_maintenance
 dns_zone_markdirty
 dns_zone_name
@@ -1248,6 +1269,7 @@ dns_zone_nameonly
 dns_zone_next
 dns_zone_notify
 dns_zone_notifyreceive
+dns_zone_notifyreceive2
 dns_zone_nscheck
 dns_zone_refresh
 dns_zone_rekey
@@ -1330,6 +1352,8 @@ dns_zone_settype
 dns_zone_setupdateacl
 dns_zone_setupdatedisabled
 dns_zone_setview
+dns_zone_setviewcommit
+dns_zone_setviewrevert
 dns_zone_setxfracl
 dns_zone_setxfrsource4
 dns_zone_setxfrsource4dscp
@@ -1369,6 +1393,7 @@ dns_zonemgr_unreachabledel
 dns_zt_apply
 dns_zt_apply2
 dns_zt_asyncload
+dns_zt_asyncload2
 dns_zt_attach
 dns_zt_create
 dns_zt_detach
@@ -1378,6 +1403,8 @@ dns_zt_freezezones
 dns_zt_load
 dns_zt_loadnew
 dns_zt_mount
+dns_zt_setviewcommit
+dns_zt_setviewrevert
 dns_zt_unmount
 dst_algorithm_supported
 dst_context_adddata

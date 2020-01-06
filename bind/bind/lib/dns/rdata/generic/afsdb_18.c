@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2001, 2003-2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: afsdb_18.c,v 1.49 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Wed Mar 15 14:59:00 PST 2000 by explorer */
 
 /* RFC1183 */
 
@@ -22,7 +21,7 @@ fromtext_afsdb(ARGS_FROMTEXT) {
 	isc_token_t token;
 	isc_buffer_t buffer;
 	dns_name_t name;
-	isc_boolean_t ok;
+	bool ok;
 
 	REQUIRE(type == dns_rdatatype_afsdb);
 
@@ -34,7 +33,7 @@ fromtext_afsdb(ARGS_FROMTEXT) {
 	 * Subtype.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -43,15 +42,15 @@ fromtext_afsdb(ARGS_FROMTEXT) {
 	 * Hostname.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	if (origin == NULL)
 		origin = dns_rootname;
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
-	ok = ISC_TRUE;
+	ok = true;
 	if ((options & DNS_RDATA_CHECKNAMES) != 0)
-		ok = dns_name_ishostname(&name, ISC_FALSE);
+		ok = dns_name_ishostname(&name, false);
 	if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
 		RETTOK(DNS_R_BADNAME);
 	if (!ok && callbacks != NULL)
@@ -65,7 +64,7 @@ totext_afsdb(ARGS_TOTEXT) {
 	dns_name_t prefix;
 	isc_region_t region;
 	char buf[sizeof("64000 ")];
-	isc_boolean_t sub;
+	bool sub;
 	unsigned int num;
 
 	REQUIRE(rdata->type == dns_rdatatype_afsdb);
@@ -77,7 +76,7 @@ totext_afsdb(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u ", num);
+	snprintf(buf, sizeof(buf), "%u ", num);
 	RETERR(str_totext(buf, target));
 	dns_name_fromregion(&name, &region);
 	sub = name_prefix(&name, tctx->origin, &prefix);
@@ -175,7 +174,7 @@ fromstruct_afsdb(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_afsdb);
-	REQUIRE(source != NULL);
+	REQUIRE(afsdb != NULL);
 	REQUIRE(afsdb->common.rdclass == rdclass);
 	REQUIRE(afsdb->common.rdtype == type);
 
@@ -194,7 +193,7 @@ tostruct_afsdb(ARGS_TOSTRUCT) {
 	dns_name_t name;
 
 	REQUIRE(rdata->type == dns_rdatatype_afsdb);
-	REQUIRE(target != NULL);
+	REQUIRE(afsdb != NULL);
 	REQUIRE(rdata->length != 0);
 
 	afsdb->common.rdclass = rdata->rdclass;
@@ -220,7 +219,7 @@ static inline void
 freestruct_afsdb(ARGS_FREESTRUCT) {
 	dns_rdata_afsdb_t *afsdb = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(afsdb != NULL);
 	REQUIRE(afsdb->common.rdtype == dns_rdatatype_afsdb);
 
 	if (afsdb->mctx == NULL)
@@ -264,7 +263,7 @@ digest_afsdb(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_afsdb(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_afsdb);
@@ -274,10 +273,10 @@ checkowner_afsdb(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_afsdb(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -290,12 +289,12 @@ checknames_afsdb(ARGS_CHECKNAMES) {
 	isc_region_consume(&region, 2);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
-	if (!dns_name_ishostname(&name, ISC_FALSE)) {
+	if (!dns_name_ishostname(&name, false)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

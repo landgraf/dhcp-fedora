@@ -1,16 +1,18 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2007, 2008, 2012, 2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: lwtest.c,v 1.32 2008/04/02 02:37:42 marka Exp $ */
 
 #include <config.h>
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 #include <isc/net.h>
@@ -38,7 +40,7 @@ static int fails = 0;
 static void
 CHECK(lwres_result_t val, const char *msg) {
 	if (val != 0) {
-		printf("I:%s returned %d\n", msg, val);
+		printf("I:%s returned %u\n", msg, val);
 		exit(1);
 	}
 }
@@ -121,7 +123,7 @@ test_noop(void) {
 
 static void
 test_gabn(const char *target, lwres_result_t expected, const char *address,
-	  lwres_uint32_t af)
+	  uint32_t af)
 {
 	lwres_gabnresponse_t *res;
 	unsigned char addrbuf[16];
@@ -135,7 +137,7 @@ test_gabn(const char *target, lwres_result_t expected, const char *address,
 				   LWRES_ADDRTYPE_V4 | LWRES_ADDRTYPE_V6,
 				   &res);
 	if (ret != expected) {
-		printf("I:gabn(%s) failed: %d\n", target, ret);
+		printf("I:gabn(%s) failed: %u\n", target, ret);
 		if (res != NULL)
 			lwres_gabnresponse_free(ctx, &res);
 		fails++;
@@ -182,7 +184,7 @@ test_gabn(const char *target, lwres_result_t expected, const char *address,
 }
 
 static void
-test_gnba(const char *target, lwres_uint32_t af, lwres_result_t expected,
+test_gnba(const char *target, uint32_t af, lwres_result_t expected,
 	  const char *name)
 {
 	lwres_gnbaresponse_t *res;
@@ -203,7 +205,7 @@ test_gnba(const char *target, lwres_uint32_t af, lwres_result_t expected,
 	res = NULL;
 	ret = lwres_getnamebyaddr(ctx, af, len, addrbuf, &res);
 	if (ret != expected) {
-		printf("I:gnba(%s) failed: %d\n", target, ret);
+		printf("I:gnba(%s) failed: %u\n", target, ret);
 		if (res != NULL)
 			lwres_gnbaresponse_free(ctx, &res);
 		fails++;
@@ -618,12 +620,12 @@ test_getrrsetbyname(const char *name, int rdclass, int rdtype,
 	} else if (ret != 0)
 		return;
 	if (rrinfo->rri_nrdatas != nrdatas) {
-		printf("I:getrrsetbyname(%s, %d): got %d rr, expected %d\n",
+		printf("I:getrrsetbyname(%s, %d): got %u rr, expected %u\n",
 			name, rdtype, rrinfo->rri_nrdatas, nrdatas);
 		fails++;
 	}
 	if (rrinfo->rri_nsigs != nsigs) {
-		printf("I:getrrsetbyname(%s, %d): got %d sig, expected %d\n",
+		printf("I:getrrsetbyname(%s, %d): got %u sig, expected %u\n",
 			name, rdtype, rrinfo->rri_nsigs, nsigs);
 		fails++;
 	}

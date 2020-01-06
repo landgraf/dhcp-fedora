@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2005, 2007, 2008, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwdgnba.c,v 1.22 2008/01/14 23:46:56 tbox Exp $ */
@@ -38,7 +41,7 @@ byaddr_done(isc_task_t *task, isc_event_t *event) {
 	isc_region_t r;
 	isc_buffer_t b;
 	lwres_gnbaresponse_t *gnba;
-	isc_uint16_t naliases;
+	uint16_t naliases;
 
 	UNUSED(task);
 
@@ -88,7 +91,7 @@ byaddr_done(isc_task_t *task, isc_event_t *event) {
 	{
 		b = client->recv_buffer;
 
-		result = dns_name_totext(name, ISC_TRUE, &client->recv_buffer);
+		result = dns_name_totext(name, true, &client->recv_buffer);
 		if (result != ISC_R_SUCCESS)
 			goto out;
 		ns_lwdclient_log(50, "found name '%.*s'",

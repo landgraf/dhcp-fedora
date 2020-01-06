@@ -1,24 +1,30 @@
 #!/bin/sh
 #
-# Copyright (C) 2000, 2001, 2004, 2007, 2009-2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=..
 . $SYSTEMTESTTOP/conf.sh
 
-test -r $RANDFILE || $GENRANDOM 400 $RANDFILE
+test -r $RANDFILE || $GENRANDOM $RANDOMSIZE $RANDFILE
 
-#
-# jnl and database files MUST be removed before we start
-#
+copy_setports ns1/named.conf.in ns1/named.conf
+copy_setports ns2/named.conf.in ns2/named.conf
+copy_setports ns3/named.conf.in ns3/named.conf
+copy_setports ns5/named.conf.in ns5/named.conf
+copy_setports ns6/named.conf.in ns6/named.conf
+copy_setports ns7/named.conf.in ns7/named.conf
+copy_setports ns8/named.conf.in ns8/named.conf
+copy_setports ns9/named.conf.in ns9/named.conf
+copy_setports ns10/named.conf.in ns10/named.conf
 
-rm -f ns1/*.jnl ns1/example.db ns2/*.jnl ns2/example.bk
-rm -f ns2/update.bk ns2/update.alt.bk
-rm -f ns3/example.db.jnl
-rm -f ns3/too-big.test.db.jnl
+copy_setports verylarge.in verylarge
 
 cp -f ns1/example1.db ns1/example.db
 sed 's/example.nil/other.nil/g' ns1/example1.db > ns1/other.db
@@ -57,7 +63,17 @@ $DDNSCONFGEN -q -r $RANDFILE -a hmac-sha512 -k sha512-key -z keytests.nil > ns1/
 (cd ns3; $SHELL -e sign.sh)
 
 cp -f ns1/many.test.db.in ns1/many.test.db
-rm -f ns1/many.test.db.jnl
 
 cp ns1/sample.db.in ns1/sample.db
 cp ns2/sample.db.in ns2/sample.db
+
+cp -f ns5/local.db.in ns5/local.db
+cp -f ns6/in-addr.db.in ns6/in-addr.db
+cp -f ns7/in-addr.db.in ns7/in-addr.db
+cp -f ns7/example.com.db.in ns7/example.com.db
+cp -f ns8/in-addr.db.in ns8/in-addr.db
+cp -f ns8/example.com.db.in ns8/example.com.db
+cp -f ns9/in-addr.db.in ns9/in-addr.db
+cp -f ns9/example.com.db.in ns9/example.com.db
+cp -f ns10/in-addr.db.in ns10/in-addr.db
+cp -f ns10/example.com.db.in ns10/example.com.db

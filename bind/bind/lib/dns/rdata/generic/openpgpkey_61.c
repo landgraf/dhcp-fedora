@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_OPENPGPKEY_61_C
@@ -25,7 +28,7 @@ fromtext_openpgpkey(ARGS_FROMTEXT) {
 	/*
 	 * Keyring.
 	 */
-	return (isc_base64_tobuffer(lexer, target, -1));
+	return (isc_base64_tobuffer(lexer, target, -2));
 }
 
 static inline isc_result_t
@@ -113,7 +116,7 @@ fromstruct_openpgpkey(ARGS_FROMSTRUCT) {
 	dns_rdata_openpgpkey_t *sig = source;
 
 	REQUIRE(type == dns_rdatatype_openpgpkey);
-	REQUIRE(source != NULL);
+	REQUIRE(sig != NULL);
 	REQUIRE(sig->common.rdtype == type);
 	REQUIRE(sig->common.rdclass == rdclass);
 	REQUIRE(sig->keyring != NULL && sig->length != 0);
@@ -133,7 +136,7 @@ tostruct_openpgpkey(ARGS_TOSTRUCT) {
 	dns_rdata_openpgpkey_t *sig = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_openpgpkey);
-	REQUIRE(target != NULL);
+	REQUIRE(sig != NULL);
 	REQUIRE(rdata->length != 0);
 
 	sig->common.rdclass = rdata->rdclass;
@@ -161,7 +164,7 @@ static inline void
 freestruct_openpgpkey(ARGS_FREESTRUCT) {
 	dns_rdata_openpgpkey_t *sig = (dns_rdata_openpgpkey_t *) source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(sig != NULL);
 	REQUIRE(sig->common.rdtype == dns_rdatatype_openpgpkey);
 
 	if (sig->mctx == NULL)
@@ -194,7 +197,7 @@ digest_openpgpkey(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_openpgpkey(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_openpgpkey);
@@ -204,10 +207,10 @@ checkowner_openpgpkey(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_openpgpkey(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_openpgpkey);
@@ -216,7 +219,7 @@ checknames_openpgpkey(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

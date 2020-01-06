@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2001, 2002, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: parseint.h,v 1.9 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_PARSEINT_H
 #define ISC_PARSEINT_H 1
+
+#include <inttypes.h>
 
 #include <isc/lang.h>
 #include <isc/types.h>
@@ -25,13 +29,13 @@
 ISC_LANG_BEGINDECLS
 
 isc_result_t
-isc_parse_uint32(isc_uint32_t *uip, const char *string, int base);
+isc_parse_uint32(uint32_t *uip, const char *string, int base);
 
 isc_result_t
-isc_parse_uint16(isc_uint16_t *uip, const char *string, int base);
+isc_parse_uint16(uint16_t *uip, const char *string, int base);
 
 isc_result_t
-isc_parse_uint8(isc_uint8_t *uip, const char *string, int base);
+isc_parse_uint8(uint8_t *uip, const char *string, int base);
 /*%<
  * Parse the null-terminated string 'string' containing a base 'base'
  * integer, storing the result in '*uip'.

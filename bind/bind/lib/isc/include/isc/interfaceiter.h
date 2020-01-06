@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: interfaceiter.h,v 1.17 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_INTERFACEITER_H
 #define ISC_INTERFACEITER_H 1
@@ -31,6 +33,8 @@
  *** Imports
  ***/
 
+#include <inttypes.h>
+
 #include <isc/lang.h>
 #include <isc/netaddr.h>
 #include <isc/types.h>
@@ -45,7 +49,7 @@ struct isc_interface {
 	isc_netaddr_t address;		/*%< Local address. */
 	isc_netaddr_t netmask;		/*%< Network mask. */
 	isc_netaddr_t dstaddress; 	/*%< Destination address (point-to-point only). */
-	isc_uint32_t flags;		/*%< Flags; see INTERFACE flags. */
+	uint32_t flags;		/*%< Flags; see INTERFACE flags. */
 };
 
 /*@{*/

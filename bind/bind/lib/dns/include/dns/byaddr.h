@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: byaddr.h,v 1.22 2007/06/19 23:47:16 tbox Exp $ */
 
 #ifndef DNS_BYADDR_H
 #define DNS_BYADDR_H 1
@@ -37,6 +39,8 @@
  *\li	RFCs:	1034, 1035, 2181, TBS
  *\li	Drafts:	TBS
  */
+
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/event.h>
@@ -138,7 +142,7 @@ dns_byaddr_destroy(dns_byaddr_t **byaddrp);
  */
 
 isc_result_t
-dns_byaddr_createptrname(isc_netaddr_t *address, isc_boolean_t nibble,
+dns_byaddr_createptrname(isc_netaddr_t *address, bool nibble,
 			 dns_name_t *name);
 
 isc_result_t

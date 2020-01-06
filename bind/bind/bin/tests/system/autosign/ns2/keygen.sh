@@ -1,10 +1,13 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2009-2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
@@ -12,7 +15,8 @@ SYSTEMTESTTOP=../..
 # Have the child generate subdomain keys and pass DS sets to us.
 ( cd ../ns3 && $SHELL keygen.sh )
 
-for subdomain in secure nsec3 autonsec3 optout rsasha256 rsasha512 nsec3-to-nsec oldsigs sync
+for subdomain in secure nsec3 autonsec3 optout rsasha256 rsasha512 nsec3-to-nsec oldsigs sync \
+    dname-at-apex-nsec3
 do
 	cp ../ns3/dsset-$subdomain.example$TP .
 done

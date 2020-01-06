@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2001, 2003-2005, 2007-2009, 2011, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: rndc-confgen.c,v 1.7 2011/03/12 04:59:46 tbox Exp $ */
@@ -21,6 +24,7 @@
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
@@ -57,7 +61,7 @@
 static char program[256];
 const char *progname;
 
-isc_boolean_t verbose = ISC_FALSE;
+bool verbose = false;
 
 const char *keyfile, *keydef;
 
@@ -106,7 +110,7 @@ Usage:\n\
 
 int
 main(int argc, char **argv) {
-	isc_boolean_t show_final_mem = ISC_FALSE;
+	bool show_final_mem = false;
 	isc_buffer_t key_txtbuffer;
 	char key_txtsecret[256];
 	isc_mem_t *mctx = NULL;
@@ -124,7 +128,7 @@ main(int argc, char **argv) {
 	struct in6_addr addr6_dummy;
 	char *chrootdir = NULL;
 	char *user = NULL;
-	isc_boolean_t keyonly = ISC_FALSE;
+	bool keyonly = false;
 	int len;
 
 	keydef = keyfile = RNDC_KEYFILE;
@@ -143,14 +147,14 @@ main(int argc, char **argv) {
 	serveraddr = DEFAULT_SERVER;
 	port = DEFAULT_PORT;
 
-	isc_commandline_errprint = ISC_FALSE;
+	isc_commandline_errprint = false;
 
 	while ((ch = isc_commandline_parse(argc, argv,
 					   "aA:b:c:hk:Mmp:r:s:t:u:Vy")) != -1)
 	{
 		switch (ch) {
 		case 'a':
-			keyonly = ISC_TRUE;
+			keyonly = true;
 			break;
 		case 'A':
 			algname = isc_commandline_argument;
@@ -177,7 +181,7 @@ main(int argc, char **argv) {
 			break;
 
 		case 'm':
-			show_final_mem = ISC_TRUE;
+			show_final_mem = true;
 			break;
 		case 'p':
 			port = strtol(isc_commandline_argument, &p, 10);
@@ -201,7 +205,7 @@ main(int argc, char **argv) {
 			user = isc_commandline_argument;
 			break;
 		case 'V':
-			verbose = ISC_TRUE;
+			verbose = true;
 			break;
 		case '?':
 			if (isc_commandline_option != '?') {

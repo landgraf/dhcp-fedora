@@ -1,8 +1,11 @@
-# Copyright (C) 1998-2004, 2007-2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 srcdir =	@srcdir@
 VPATH =		@srcdir@
@@ -30,7 +33,7 @@ HEADERS =	acache.h acl.h adb.h badcache.h bit.h byaddr.h \
 		update.h validator.h version.h view.h xfrin.h \
 		zone.h zonekey.h zt.h
 
-GENHEADERS =	@DNSTAP_PB_C_H@ enumclass.h enumtype.h rdatastruct.h
+GENHEADERS =	enumclass.h enumtype.h rdatastruct.h
 
 SUBDIRS =
 TARGETS =
@@ -42,16 +45,16 @@ installdirs:
 
 install:: installdirs
 	for i in ${HEADERS}; do \
-		${INSTALL_DATA} ${srcdir}/$$i ${DESTDIR}${includedir}/dns ; \
+		${INSTALL_DATA} ${srcdir}/$$i ${DESTDIR}${includedir}/dns || exit 1; \
 	done
 	for i in ${GENHEADERS}; do \
-		${INSTALL_DATA} $$i ${DESTDIR}${includedir}/dns ; \
+		${INSTALL_DATA} $$i ${DESTDIR}${includedir}/dns || exit 1; \
 	done
 
 uninstall::
 	for i in ${GENHEADERS}; do \
-		rm -f ${DESTDIR}${includedir}/dns/$$i ; \
+		rm -f ${DESTDIR}${includedir}/dns/$$i || exit 1; \
 	done
 	for i in ${HEADERS}; do \
-		rm -f ${DESTDIR}${includedir}/dns/$$i ; \
+		rm -f ${DESTDIR}${includedir}/dns/$$i || exit 1; \
 	done

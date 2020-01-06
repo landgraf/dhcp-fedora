@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 1999-2005, 2007, 2009, 2011-2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-/* $Id$ */
-
-/*
- * Reviewed: Wed Mar 15 16:47:10 PST 2000 by halley.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* RFC2535 */
@@ -19,7 +16,31 @@
 
 #include <dst/dst.h>
 
-#define RRTYPE_KEY_ATTRIBUTES (0)
+#define RRTYPE_KEY_ATTRIBUTES \
+	( DNS_RDATATYPEATTR_ATCNAME | DNS_RDATATYPEATTR_ZONECUTAUTH )
+
+/*
+ * RFC 2535 section 3.1.2 says that if bits 0-1 of the Flags field are
+ * both set, it means there is no key information and the RR stops after
+ * the algorithm octet.  However, this only applies to KEY records, as
+ * indicated by the specifications of the RR types based on KEY:
+ *
+ *     CDNSKEY - RFC 7344
+ *     DNSKEY - RFC 4034
+ *     RKEY - draft-reid-dnsext-rkey-00
+ */
+static inline bool
+generic_key_nokey(dns_rdatatype_t type, unsigned int flags) {
+	switch (type) {
+	case dns_rdatatype_cdnskey:
+	case dns_rdatatype_dnskey:
+	case dns_rdatatype_rkey:
+		return (false);
+	case dns_rdatatype_key:
+	default:
+		return ((flags & DNS_KEYFLAG_TYPEMASK) == DNS_KEYTYPE_NOKEY);
+	}
+}
 
 static inline isc_result_t
 generic_fromtext_key(ARGS_FROMTEXT) {
@@ -29,7 +50,6 @@ generic_fromtext_key(ARGS_FROMTEXT) {
 	dns_secproto_t proto;
 	dns_keyflags_t flags;
 
-	UNUSED(type);
 	UNUSED(rdclass);
 	UNUSED(origin);
 	UNUSED(options);
@@ -37,27 +57,31 @@ generic_fromtext_key(ARGS_FROMTEXT) {
 
 	/* flags */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_keyflags_fromtext(&flags, &token.value.as_textregion));
+	if (type == dns_rdatatype_rkey && flags != 0U) {
+		RETTOK(DNS_R_FORMERR);
+	}
 	RETERR(uint16_tobuffer(flags, target));
 
 	/* protocol */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_secproto_fromtext(&proto, &token.value.as_textregion));
 	RETERR(mem_tobuffer(target, &proto, 1));
 
 	/* algorithm */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_secalg_fromtext(&alg, &token.value.as_textregion));
 	RETERR(mem_tobuffer(target, &alg, 1));
 
 	/* No Key? */
-	if ((flags & 0xc000) == 0xc000)
+	if (generic_key_nokey(type, flags)) {
 		return (ISC_R_SUCCESS);
+	}
 
-	result = isc_base64_tobuffer(lexer, target, -1);
+	result = isc_base64_tobuffer(lexer, target, -2);
 	if (result != ISC_R_SUCCESS)
 		return (result);
 
@@ -85,7 +109,7 @@ generic_totext_key(ARGS_TOTEXT) {
 	/* flags */
 	flags = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%u", flags);
+	snprintf(buf, sizeof(buf), "%u", flags);
 	RETERR(str_totext(buf, target));
 	RETERR(str_totext(" ", target));
 	if ((flags & DNS_KEYFLAG_KSK) != 0) {
@@ -98,20 +122,21 @@ generic_totext_key(ARGS_TOTEXT) {
 
 
 	/* protocol */
-	sprintf(buf, "%u", sr.base[0]);
+	snprintf(buf, sizeof(buf), "%u", sr.base[0]);
 	isc_region_consume(&sr, 1);
 	RETERR(str_totext(buf, target));
 	RETERR(str_totext(" ", target));
 
 	/* algorithm */
 	algorithm = sr.base[0];
-	sprintf(buf, "%u", algorithm);
+	snprintf(buf, sizeof(buf), "%u", algorithm);
 	isc_region_consume(&sr, 1);
 	RETERR(str_totext(buf, target));
 
 	/* No Key? */
-	if ((flags & 0xc000) == 0xc000)
+	if (generic_key_nokey(rdata->type, flags)) {
 		return (ISC_R_SUCCESS);
+	}
 
 	if ((tctx->flags & DNS_STYLEFLAG_RRCOMMENT) != 0 &&
 	     algorithm == DNS_KEYALG_PRIVATEDNS) {
@@ -161,7 +186,8 @@ generic_totext_key(ARGS_TOTEXT) {
 		RETERR(str_totext(algbuf, target));
 		RETERR(str_totext(" ; key id = ", target));
 		dns_rdata_toregion(rdata, &tmpr);
-		sprintf(buf, "%u", dst_region_computeid(&tmpr, algorithm));
+		snprintf(buf, sizeof(buf), "%u",
+			 dst_region_computeid(&tmpr, algorithm));
 		RETERR(str_totext(buf, target));
 	}
 	return (ISC_R_SUCCESS);
@@ -170,21 +196,34 @@ generic_totext_key(ARGS_TOTEXT) {
 static inline isc_result_t
 generic_fromwire_key(ARGS_FROMWIRE) {
 	unsigned char algorithm;
+	uint16_t flags;
 	isc_region_t sr;
 
-	UNUSED(type);
 	UNUSED(rdclass);
 	UNUSED(dctx);
 	UNUSED(options);
 
 	isc_buffer_activeregion(source, &sr);
-	if (sr.length < 4)
+	if (sr.length < 4) {
 		return (ISC_R_UNEXPECTEDEND);
+	}
+	flags = (sr.base[0] << 8) | sr.base[1];
+
+	if (type == dns_rdatatype_rkey && flags != 0U) {
+		return (DNS_R_FORMERR);
+	}
 
 	algorithm = sr.base[3];
 	RETERR(mem_tobuffer(target, sr.base, 4));
 	isc_region_consume(&sr, 4);
 	isc_buffer_forward(source, 4);
+
+	if (generic_key_nokey(type, flags)) {
+		return (ISC_R_SUCCESS);
+	}
+	if (sr.length == 0) {
+		return (ISC_R_UNEXPECTEDEND);
+	}
 
 	if (algorithm == DNS_KEYALG_PRIVATEDNS) {
 		dns_name_t name;
@@ -276,6 +315,10 @@ generic_fromstruct_key(ARGS_FROMSTRUCT) {
 	UNUSED(type);
 	UNUSED(rdclass);
 
+	if (type == dns_rdatatype_rkey) {
+		INSIST(key->flags == 0U);
+	}
+
 	/* Flags */
 	RETERR(uint16_tobuffer(key->flags, target));
 
@@ -294,7 +337,7 @@ generic_tostruct_key(ARGS_TOSTRUCT) {
 	dns_rdata_key_t *key = target;
 	isc_region_t sr;
 
-	REQUIRE(rdata != NULL);
+	REQUIRE(key != NULL);
 	REQUIRE(rdata->length != 0);
 
 	REQUIRE(key != NULL);
@@ -404,7 +447,7 @@ digest_key(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_key(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_key);
@@ -414,10 +457,10 @@ checkowner_key(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_key(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata != NULL);
@@ -427,7 +470,7 @@ checknames_key(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

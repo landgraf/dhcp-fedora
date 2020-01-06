@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_SMIMEA_53_C
@@ -76,24 +79,25 @@ fromstruct_smimea(ARGS_FROMSTRUCT) {
 
 static inline isc_result_t
 tostruct_smimea(ARGS_TOSTRUCT) {
-	dns_rdata_txt_t *txt = target;
+	dns_rdata_smimea_t *smimea = target;
 
+	REQUIRE(rdata != NULL);
 	REQUIRE(rdata->type == dns_rdatatype_smimea);
-	REQUIRE(target != NULL);
+	REQUIRE(smimea != NULL);
 
-	txt->common.rdclass = rdata->rdclass;
-	txt->common.rdtype = rdata->type;
-	ISC_LINK_INIT(&txt->common, link);
+	smimea->common.rdclass = rdata->rdclass;
+	smimea->common.rdtype = rdata->type;
+	ISC_LINK_INIT(&smimea->common, link);
 
 	return (generic_tostruct_tlsa(rdata, target, mctx));
 }
 
 static inline void
 freestruct_smimea(ARGS_FREESTRUCT) {
-	dns_rdata_txt_t *txt = source;
+	dns_rdata_smimea_t *smimea = source;
 
-	REQUIRE(source != NULL);
-	REQUIRE(txt->common.rdtype == dns_rdatatype_smimea);
+	REQUIRE(smimea != NULL);
+	REQUIRE(smimea->common.rdtype == dns_rdatatype_smimea);
 
 	generic_freestruct_tlsa(source);
 }
@@ -120,7 +124,7 @@ digest_smimea(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_smimea(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_smimea);
@@ -130,10 +134,10 @@ checkowner_smimea(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_smimea(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_smimea);
@@ -142,7 +146,7 @@ checknames_smimea(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

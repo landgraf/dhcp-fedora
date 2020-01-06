@@ -1,9 +1,12 @@
 /*
- * Portions Copyright (C) 1999-2001, 2004, 2005, 2007, 2008, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -35,7 +38,6 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: commandline.c,v 1.22 2008/09/25 04:02:39 tbox Exp $ */
 
 /*! \file
  * This file was adapted from the NetBSD project's source tree, RCS ID:
@@ -45,13 +47,9 @@
  * and format in the ISC coding style.
  */
 
-/*
- * \author Principal Authors: Computer Systems Research Group at UC Berkeley
- * \author Principal ISC caretaker: DCL
- */
-
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include <isc/commandline.h>
@@ -70,9 +68,9 @@ LIBISC_EXTERNAL_DATA char *isc_commandline_argument;
 /*% For printing error messages. */
 LIBISC_EXTERNAL_DATA char *isc_commandline_progname;
 /*% Print error messages. */
-LIBISC_EXTERNAL_DATA isc_boolean_t isc_commandline_errprint = ISC_TRUE;
+LIBISC_EXTERNAL_DATA bool isc_commandline_errprint = true;
 /*% Reset processing. */
-LIBISC_EXTERNAL_DATA isc_boolean_t isc_commandline_reset = ISC_TRUE;
+LIBISC_EXTERNAL_DATA bool isc_commandline_reset = true;
 
 static char endopt = '\0';
 
@@ -98,7 +96,7 @@ isc_commandline_parse(int argc, char * const *argv, const char *options) {
 	if (isc_commandline_reset || *place == '\0') {
 		if (isc_commandline_reset) {
 			isc_commandline_index = 1;
-			isc_commandline_reset = ISC_FALSE;
+			isc_commandline_reset = false;
 		}
 
 		if (isc_commandline_progname == NULL)

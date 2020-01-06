@@ -1,18 +1,22 @@
 /*
- * Copyright (C) 1998-2001, 2003, 2004, 2006-2009, 2012-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: time.c,v 1.52 2009/08/14 07:51:08 marka Exp $ */
 
 #include <config.h>
 
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -20,6 +24,7 @@
 #include <windows.h>
 
 #include <isc/assertions.h>
+#include <isc/string.h>
 #include <isc/time.h>
 #include <isc/tm.h>
 #include <isc/util.h>
@@ -33,7 +38,6 @@
 #define NS_PER_S 	1000000000
 #define NS_INTERVAL	100
 #define INTERVALS_PER_S (NS_PER_S / NS_INTERVAL)
-#define UINT64_MAX	_UI64_MAX
 
 /***
  *** Absolute Times
@@ -63,13 +67,13 @@ isc_interval_set(isc_interval_t *i, unsigned int seconds,
 		+ (nanoseconds + NS_INTERVAL - 1) / NS_INTERVAL;
 }
 
-isc_boolean_t
+bool
 isc_interval_iszero(const isc_interval_t *i) {
 	REQUIRE(i != NULL);
 	if (i->interval == 0)
-		return (ISC_TRUE);
+		return (true);
 
-	return (ISC_FALSE);
+	return (false);
 }
 
 void
@@ -86,7 +90,9 @@ isc_time_set(isc_time_t *t, unsigned int seconds, unsigned int nanoseconds) {
 	i1.LowPart = temp.dwLowDateTime;
 	i1.HighPart = temp.dwHighDateTime;
 
+	/* cppcheck-suppress unreadVariable */
 	i1.QuadPart += (unsigned __int64)nanoseconds/100;
+	/* cppcheck-suppress unreadVariable */
 	i1.QuadPart += (unsigned __int64)seconds*10000000;
 
 	t->absolute.dwLowDateTime = i1.LowPart;
@@ -101,15 +107,15 @@ isc_time_settoepoch(isc_time_t *t) {
 	t->absolute.dwHighDateTime = 0;
 }
 
-isc_boolean_t
+bool
 isc_time_isepoch(const isc_time_t *t) {
 	REQUIRE(t != NULL);
 
 	if (t->absolute.dwLowDateTime == 0 &&
 	    t->absolute.dwHighDateTime == 0)
-		return (ISC_TRUE);
+		return (true);
 
-	return (ISC_FALSE);
+	return (false);
 }
 
 isc_result_t
@@ -136,6 +142,7 @@ isc_time_nowplusinterval(isc_time_t *t, const isc_interval_t *i) {
 	if (UINT64_MAX - i1.QuadPart < (unsigned __int64)i->interval)
 		return (ISC_R_RANGE);
 
+	/* cppcheck-suppress unreadVariable */
 	i1.QuadPart += i->interval;
 
 	t->absolute.dwLowDateTime  = i1.LowPart;
@@ -164,6 +171,7 @@ isc_time_add(const isc_time_t *t, const isc_interval_t *i, isc_time_t *result)
 	if (UINT64_MAX - i1.QuadPart < (unsigned __int64)i->interval)
 		return (ISC_R_RANGE);
 
+	/* cppcheck-suppress unreadVariable */
 	i1.QuadPart += i->interval;
 
 	result->absolute.dwLowDateTime = i1.LowPart;
@@ -185,6 +193,7 @@ isc_time_subtract(const isc_time_t *t, const isc_interval_t *i,
 	if (i1.QuadPart < (unsigned __int64) i->interval)
 		return (ISC_R_RANGE);
 
+	/* cppcheck-suppress unreadVariable */
 	i1.QuadPart -= i->interval;
 
 	result->absolute.dwLowDateTime = i1.LowPart;
@@ -193,16 +202,20 @@ isc_time_subtract(const isc_time_t *t, const isc_interval_t *i,
 	return (ISC_R_SUCCESS);
 }
 
-isc_uint64_t
+uint64_t
 isc_time_microdiff(const isc_time_t *t1, const isc_time_t *t2) {
 	ULARGE_INTEGER i1, i2;
 	LONGLONG i3;
 
 	REQUIRE(t1 != NULL && t2 != NULL);
 
+	/* cppcheck-suppress unreadVariable */
 	i1.LowPart  = t1->absolute.dwLowDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i1.HighPart = t1->absolute.dwHighDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i2.LowPart  = t2->absolute.dwLowDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i2.HighPart = t2->absolute.dwHighDateTime;
 
 	if (i1.QuadPart <= i2.QuadPart)
@@ -216,7 +229,7 @@ isc_time_microdiff(const isc_time_t *t1, const isc_time_t *t2) {
 	return (i3);
 }
 
-isc_uint32_t
+uint32_t
 isc_time_seconds(const isc_time_t *t) {
 	SYSTEMTIME epoch1970 = { 1970, 1, 4, 1, 0, 0, 0, 0 };
 	FILETIME temp;
@@ -225,14 +238,18 @@ isc_time_seconds(const isc_time_t *t) {
 
 	SystemTimeToFileTime(&epoch1970, &temp);
 
+	/* cppcheck-suppress unreadVariable */
 	i1.LowPart  = t->absolute.dwLowDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i1.HighPart = t->absolute.dwHighDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i2.LowPart  = temp.dwLowDateTime;
+	/* cppcheck-suppress unreadVariable */
 	i2.HighPart = temp.dwHighDateTime;
 
 	i3 = (i1.QuadPart - i2.QuadPart) / 10000000;
 
-	return ((isc_uint32_t)i3);
+	return ((uint32_t)i3);
 }
 
 isc_result_t
@@ -243,8 +260,8 @@ isc_time_secondsastimet(const isc_time_t *t, time_t *secondsp) {
 
 	seconds = (time_t)isc_time_seconds(t);
 
-	INSIST(sizeof(unsigned int) == sizeof(isc_uint32_t));
-	INSIST(sizeof(time_t) >= sizeof(isc_uint32_t));
+	INSIST(sizeof(unsigned int) == sizeof(uint32_t));
+	INSIST(sizeof(time_t) >= sizeof(uint32_t));
 
 	if (isc_time_seconds(t) > (~0U>>1) && seconds <= (time_t)(~0U>>1))
 		return (ISC_R_RANGE);
@@ -255,13 +272,13 @@ isc_time_secondsastimet(const isc_time_t *t, time_t *secondsp) {
 }
 
 
-isc_uint32_t
+uint32_t
 isc_time_nanoseconds(const isc_time_t *t) {
 	ULARGE_INTEGER i;
 
 	i.LowPart  = t->absolute.dwLowDateTime;
 	i.HighPart = t->absolute.dwHighDateTime;
-	return ((isc_uint32_t)(i.QuadPart % 10000000) * 100);
+	return ((uint32_t)(i.QuadPart % 10000000) * 100);
 }
 
 void
@@ -271,7 +288,10 @@ isc_time_formattimestamp(const isc_time_t *t, char *buf, unsigned int len) {
 	char DateBuf[50];
 	char TimeBuf[50];
 
+	REQUIRE(t != NULL);
+	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+
 	if (FileTimeToLocalFileTime(&t->absolute, &localft) &&
 	    FileTimeToSystemTime(&localft, &st)) {
 		GetDateFormat(LOCALE_USER_DEFAULT, 0, &st, "dd-MMM-yyyy",
@@ -283,8 +303,7 @@ isc_time_formattimestamp(const isc_time_t *t, char *buf, unsigned int len) {
 			 st.wMilliseconds);
 
 	} else {
-		strncpy(buf, "99-Bad-9999 99:99:99.999", len);
-		buf[len - 1] = 0;
+		strlcpy(buf, "99-Bad-9999 99:99:99.999", len);
 	}
 }
 
@@ -296,7 +315,10 @@ isc_time_formathttptimestamp(const isc_time_t *t, char *buf, unsigned int len) {
 
 /* strftime() format: "%a, %d %b %Y %H:%M:%S GMT" */
 
+	REQUIRE(t != NULL);
+	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+
 	if (FileTimeToSystemTime(&t->absolute, &st)) {
 		GetDateFormat(LOCALE_USER_DEFAULT, 0, &st,
 			      "ddd',' dd MMM yyyy", DateBuf, 50);
@@ -318,6 +340,7 @@ isc_time_parsehttptimestamp(char *buf, isc_time_t *t) {
 
 	REQUIRE(buf != NULL);
 	REQUIRE(t != NULL);
+
 	p = isc_tm_strptime(buf, "%a, %d %b %Y %H:%M:%S", &t_tm);
 	if (p == NULL)
 		return (ISC_R_UNEXPECTED);
@@ -336,7 +359,10 @@ isc_time_formatISO8601(const isc_time_t *t, char *buf, unsigned int len) {
 
 	/* strtime() format: "%Y-%m-%dT%H:%M:%SZ" */
 
+	REQUIRE(t != NULL);
+	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+
 	if (FileTimeToSystemTime(&t->absolute, &st)) {
 		GetDateFormat(LOCALE_NEUTRAL, 0, &st, "yyyy-MM-dd",
 			      DateBuf, 50);
@@ -357,7 +383,10 @@ isc_time_formatISO8601ms(const isc_time_t *t, char *buf, unsigned int len) {
 
 	/* strtime() format: "%Y-%m-%dT%H:%M:%S.SSSZ" */
 
+	REQUIRE(t != NULL);
+	REQUIRE(buf != NULL);
 	REQUIRE(len > 0);
+
 	if (FileTimeToSystemTime(&t->absolute, &st)) {
 		GetDateFormat(LOCALE_NEUTRAL, 0, &st, "yyyy-MM-dd",
 			      DateBuf, 50);

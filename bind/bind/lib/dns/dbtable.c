@@ -1,21 +1,17 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-/*
- * $Id: dbtable.c,v 1.33 2007/06/19 23:47:16 tbox Exp $
- */
-
-/*! \file
- * \author
- * Principal Author: DCL
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/mem.h>
 #include <isc/rwlock.h>
@@ -143,7 +139,7 @@ dns_dbtable_attach(dns_dbtable_t *source, dns_dbtable_t **targetp) {
 void
 dns_dbtable_detach(dns_dbtable_t **dbtablep) {
 	dns_dbtable_t *dbtable;
-	isc_boolean_t free_dbtable = ISC_FALSE;
+	bool free_dbtable = false;
 
 	REQUIRE(dbtablep != NULL);
 	dbtable = *dbtablep;
@@ -154,7 +150,7 @@ dns_dbtable_detach(dns_dbtable_t **dbtablep) {
 	INSIST(dbtable->references > 0);
 	dbtable->references--;
 	if (dbtable->references == 0)
-		free_dbtable = ISC_TRUE;
+		free_dbtable = true;
 
 	UNLOCK(&dbtable->lock);
 
@@ -208,7 +204,7 @@ dns_dbtable_remove(dns_dbtable_t *dbtable, dns_db_t *db) {
 	if (result == ISC_R_SUCCESS) {
 		INSIST(stored_data == db);
 
-		(void)dns_rbt_deletename(dbtable->rbt, name, ISC_FALSE);
+		(void)dns_rbt_deletename(dbtable->rbt, name, false);
 	}
 
 	RWUNLOCK(&dbtable->tree_lock, isc_rwlocktype_write);

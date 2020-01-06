@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_AVC_258_C
@@ -87,7 +90,7 @@ tostruct_avc(ARGS_TOSTRUCT) {
 	dns_rdata_avc_t *avc = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_avc);
-	REQUIRE(target != NULL);
+	REQUIRE(avc != NULL);
 
 	avc->common.rdclass = rdata->rdclass;
 	avc->common.rdtype = rdata->type;
@@ -98,10 +101,10 @@ tostruct_avc(ARGS_TOSTRUCT) {
 
 static inline void
 freestruct_avc(ARGS_FREESTRUCT) {
-	dns_rdata_avc_t *txt = source;
+	dns_rdata_avc_t *avc = source;
 
-	REQUIRE(source != NULL);
-	REQUIRE(txt->common.rdtype == dns_rdatatype_avc);
+	REQUIRE(avc != NULL);
+	REQUIRE(avc->common.rdtype == dns_rdatatype_avc);
 
 	generic_freestruct_txt(source);
 }
@@ -128,7 +131,7 @@ digest_avc(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_avc(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_avc);
@@ -138,10 +141,10 @@ checkowner_avc(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_avc(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_avc);
@@ -150,7 +153,7 @@ checknames_avc(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

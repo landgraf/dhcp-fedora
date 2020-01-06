@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: dir.h,v 1.21 2007/06/19 23:47:19 tbox Exp $ */
-
-/* Principal Authors: DCL */
 
 #ifndef ISC_DIR_H
 #define ISC_DIR_H 1
@@ -19,31 +18,22 @@
 #include <dirent.h>
 
 #include <isc/lang.h>
+#include <isc/platform.h>
 #include <isc/result.h>
 
-#define ISC_DIR_NAMEMAX 256
-#define ISC_DIR_PATHMAX 1024
+#define ISC_DIR_NAMEMAX NAME_MAX
+#define ISC_DIR_PATHMAX PATH_MAX
 
 /*% Directory Entry */
 typedef struct isc_direntry {
-	/*!
-	 * Ideally, this should be NAME_MAX, but AIX does not define it by
-	 * default and dynamically allocating the space based on pathconf()
-	 * complicates things undesirably, as does adding special conditionals
-	 * just for AIX.  So a comfortably sized buffer is chosen instead.
-	 */
-	char 		name[ISC_DIR_NAMEMAX];
+	char		name[NAME_MAX];
 	unsigned int	length;
 } isc_direntry_t;
 
 /*% Directory */
 typedef struct isc_dir {
 	unsigned int	magic;
-	/*!
-	 * As with isc_direntry_t->name, making this "right" for all systems
-	 * is slightly problematic because AIX does not define PATH_MAX.
-	 */
-	char		dirname[ISC_DIR_PATHMAX];
+	char		dirname[PATH_MAX];
 	isc_direntry_t	entry;
 	DIR *		handle;
 } isc_dir_t;

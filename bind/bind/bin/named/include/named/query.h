@@ -1,15 +1,20 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2010, 2011, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef NAMED_QUERY_H
 #define NAMED_QUERY_H 1
 
 /*! \file */
+
+#include <stdbool.h>
 
 #include <isc/types.h>
 #include <isc/buffer.h>
@@ -25,8 +30,8 @@
 typedef struct ns_dbversion {
 	dns_db_t			*db;
 	dns_dbversion_t			*version;
-	isc_boolean_t			acl_checked;
-	isc_boolean_t			queryok;
+	bool			acl_checked;
+	bool			queryok;
 	ISC_LINK(struct ns_dbversion)	link;
 } ns_dbversion_t;
 
@@ -34,7 +39,7 @@ typedef struct ns_dbversion {
 struct ns_query {
 	unsigned int			attributes;
 	unsigned int			restarts;
-	isc_boolean_t			timerset;
+	bool			timerset;
 	dns_name_t *			qname;
 	dns_name_t *			origqname;
 	dns_rdatatype_t			qtype;
@@ -43,8 +48,8 @@ struct ns_query {
 	dns_db_t *			gluedb;
 	dns_db_t *			authdb;
 	dns_zone_t *			authzone;
-	isc_boolean_t			authdbset;
-	isc_boolean_t			isreferral;
+	bool			authdbset;
+	bool			isreferral;
 	isc_mutex_t			fetchlock;
 	dns_fetch_t *			fetch;
 	dns_fetch_t *			prefetch;
@@ -54,7 +59,7 @@ struct ns_query {
 	ISC_LIST(ns_dbversion_t)	freeversions;
 	dns_rdataset_t *		dns64_aaaa;
 	dns_rdataset_t *		dns64_sigaaaa;
-	isc_boolean_t *			dns64_aaaaok;
+	bool *			dns64_aaaaok;
 	unsigned int			dns64_aaaaoklen;
 	unsigned int			dns64_options;
 	unsigned int			dns64_ttl;
@@ -68,10 +73,12 @@ struct ns_query {
 		isc_result_t		result;
 		dns_rdataset_t *	rdataset;
 		dns_rdataset_t *	sigrdataset;
-		isc_boolean_t		authoritative;
-		isc_boolean_t		is_zone;
+		bool		authoritative;
+		bool		is_zone;
 	} redirect;
-
+	dns_keytag_t root_key_sentinel_keyid;
+	bool root_key_sentinel_is_ta;
+	bool root_key_sentinel_not_ta;
 };
 
 #define NS_QUERYATTR_RECURSIONOK	0x0001

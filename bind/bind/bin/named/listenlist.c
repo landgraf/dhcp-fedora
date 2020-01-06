@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: listenlist.c,v 1.14 2007/06/19 23:46:59 tbox Exp $ */
@@ -11,6 +14,8 @@
 /*! \file */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/mem.h>
 #include <isc/util.h>
@@ -93,7 +98,7 @@ ns_listenlist_detach(ns_listenlist_t **listp) {
 
 isc_result_t
 ns_listenlist_default(isc_mem_t *mctx, in_port_t port, isc_dscp_t dscp,
-		      isc_boolean_t enabled, ns_listenlist_t **target)
+		      bool enabled, ns_listenlist_t **target)
 {
 	isc_result_t result;
 	dns_acl_t *acl = NULL;

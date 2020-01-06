@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
@@ -38,13 +41,17 @@ usage() {
 	fprintf(stderr, "	--enable-filter-aaaa\n");
 	fprintf(stderr, "	--gethostname\n");
 	fprintf(stderr, "	--gssapi\n");
+	fprintf(stderr, "       --have-aes\n");
 	fprintf(stderr, "	--have-dlopen\n");
 	fprintf(stderr, "	--have-geoip\n");
+	fprintf(stderr, "	--have-geoip2\n");
 	fprintf(stderr, "	--have-libxml2\n");
 	fprintf(stderr, "	--ipv6only=no\n");
 	fprintf(stderr, "	--rpz-nsdname\n");
 	fprintf(stderr, "	--rpz-nsip\n");
 	fprintf(stderr, "	--with-idn\n");
+	fprintf(stderr, "	--with-lmdb\n");
+	fprintf(stderr, "	--with-dlz-filesystem\n");
 }
 
 int
@@ -108,6 +115,14 @@ main(int argc, char **argv) {
 #endif
 	}
 
+	if (strcmp(argv[1], "--have-aes") == 0) {
+#if defined(HAVE_OPENSSL_AES) || defined(HAVE_OPENSSL_EVP_AES)
+		return (0);
+#else
+		return (1);
+#endif
+	}
+
 	if (strcmp(argv[1], "--have-dlopen") == 0) {
 #if defined(HAVE_DLOPEN) && defined(ISC_DLZ_DLOPEN)
 		return (0);
@@ -118,6 +133,14 @@ main(int argc, char **argv) {
 
 	if (strcmp(argv[1], "--have-geoip") == 0) {
 #ifdef HAVE_GEOIP
+		return (0);
+#else
+		return (1);
+#endif
+	}
+
+	if (strcmp(argv[1], "--have-geoip2") == 0) {
+#ifdef HAVE_GEOIP2
 		return (0);
 #else
 		return (1);
@@ -149,7 +172,23 @@ main(int argc, char **argv) {
 	}
 
 	if (strcmp(argv[1], "--with-idn") == 0) {
-#ifdef WITH_IDN
+#ifdef WITH_LIBIDN2
+		return (0);
+#else
+		return (1);
+#endif
+	}
+
+	if (strcmp(argv[1], "--with-lmdb") == 0) {
+#ifdef HAVE_LMDB
+		return (0);
+#else
+		return (1);
+#endif
+	}
+
+	if (strcmp(argv[1], "--with-dlz-filesystem") == 0) {
+#ifdef DLZ_FILESYSTEM
 		return (0);
 #else
 		return (1);
@@ -172,6 +211,14 @@ main(int argc, char **argv) {
 			close(s);
 		}
 		return ((n == 0 && v6only == 0) ? 0 : 1);
+#else
+		return (1);
+#endif
+	}
+
+	if (strcmp(argv[1], "--rpz-log-qtype-qclass") == 0) {
+#ifdef RPZ_LOG_QTYPE_QCLASS
+		return (0);
 #else
 		return (1);
 #endif

@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: keyboard.h,v 1.6 2007/06/19 23:47:20 tbox Exp $ */
 
 #ifndef ISC_KEYBOARD_H
 #define ISC_KEYBOARD_H 1
+
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/result.h>
@@ -30,7 +34,7 @@ isc_keyboard_close(isc_keyboard_t *keyboard, unsigned int sleepseconds);
 isc_result_t
 isc_keyboard_getchar(isc_keyboard_t *keyboard, unsigned char *cp);
 
-isc_boolean_t
+bool
 isc_keyboard_canceled(isc_keyboard_t *keyboard);
 
 ISC_LANG_ENDDECLS

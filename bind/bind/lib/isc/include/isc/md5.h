@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004-2007, 2009, 2010, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: md5.h,v 1.20 2010/01/07 23:48:54 tbox Exp $ */
 
 /*! \file isc/md5.h
  * \brief This is the header file for the MD5 message-digest algorithm.
@@ -38,6 +40,8 @@
 
 #ifndef PK11_MD5_DISABLE
 
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -51,7 +55,7 @@
 
 typedef struct {
 	EVP_MD_CTX *ctx;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 	EVP_MD_CTX _ctx;
 #endif
 } isc_md5_t;
@@ -64,9 +68,9 @@ typedef pk11_context_t isc_md5_t;
 #else
 
 typedef struct {
-	isc_uint32_t buf[4];
-	isc_uint32_t bytes[2];
-	isc_uint32_t in[16];
+	uint32_t buf[4];
+	uint32_t bytes[2];
+	uint32_t in[16];
 } isc_md5_t;
 #endif
 
@@ -83,6 +87,9 @@ isc_md5_update(isc_md5_t *ctx, const unsigned char *buf, unsigned int len);
 
 void
 isc_md5_final(isc_md5_t *ctx, unsigned char *digest);
+
+bool
+isc_md5_check(bool testing);
 
 ISC_LANG_ENDDECLS
 

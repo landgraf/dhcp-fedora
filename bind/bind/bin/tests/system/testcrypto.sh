@@ -1,15 +1,18 @@
 #!/bin/sh
 #
-# Copyright (C) 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=${SYSTEMTESTTOP:=..}
 . $SYSTEMTESTTOP/conf.sh
 
-test -r $RANDFILE || $GENRANDOM 400 $RANDFILE
+test -r $RANDFILE || $GENRANDOM $RANDOMSIZE $RANDFILE
 
 prog=$0
 
@@ -39,6 +42,11 @@ while test "$#" -gt 0; do
                 msg1="ECDSA cryptography"
                 msg2="--with-ecdsa"
                 ;;
+	eddsa|EDDSA)
+		alg="-a ED25519"
+		msg1="EDDSA cryptography"
+		msg2="--with-eddsa"
+		;;
         *)
                 echo "${prog}: unknown argument"
                 exit 1

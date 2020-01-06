@@ -1,12 +1,13 @@
 /*
- * Portions Copyright (C) 1999-2001, 2003-2005, 2007, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
 
 /*! \file */
 
@@ -104,6 +105,7 @@
 
 #include <config.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -113,6 +115,7 @@
 #include "print_p.h"
 
 #include "assert_p.h"
+#include "unreachable_p.h"
 
 #define SUCCESS 0
 
@@ -160,7 +163,6 @@ lwres_getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
 #endif
 	int family, i;
 	const void *addr;
-	char *p;
 #if 0
 	unsigned long v4a;
 	unsigned char pfx;
@@ -169,7 +171,7 @@ lwres_getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
 	char numaddr[sizeof("abcd:abcd:abcd:abcd:abcd:abcd:255.255.255.255")
 		    + 1 + sizeof("4294967295")];
 	const char *proto;
-	lwres_uint32_t lwf = 0;
+	uint32_t lwf = 0;
 	lwres_context_t *lwrctx = NULL;
 	lwres_gnbaresponse_t *by = NULL;
 	int result = SUCCESS;
@@ -295,19 +297,20 @@ lwres_getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
 			break;
 		default:
 			INSIST(0);
+			ISC_UNREACHABLE();
 		}
 
 		n = lwres_context_create(&lwrctx, NULL, NULL, NULL, 0);
-		if (n == 0)
+		if (n == 0) {
 			(void) lwres_conf_parse(lwrctx, lwres_resolv_conf);
 
-		if (n == 0)
 			n = lwres_getnamebyaddr(lwrctx, lwf,
-						(lwres_uint16_t)afd->a_addrlen,
+						(uint16_t)afd->a_addrlen,
 						addr, &by);
+		}
 		if (n == 0) {
 			if (flags & NI_NOFQDN) {
-				p = strchr(by->realname, '.');
+				char *p = strchr(by->realname, '.');
 				if (p)
 					*p = '\0';
 			}

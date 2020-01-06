@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*-
@@ -58,7 +61,7 @@
  */
 #define ALT_E			0x01
 #define ALT_O			0x02
-#define	LEGAL_ALT(x)		{ if (alt_format & ~(x)) return (0); }
+#define	LEGAL_ALT(x)		{ if ((alt_format & ~(x)) != 0) return (0); }
 
 #ifndef TM_YEAR_BASE
 #define TM_YEAR_BASE 1900

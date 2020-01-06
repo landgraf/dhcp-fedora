@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_EUI64_109_C
@@ -29,7 +32,7 @@ fromtext_eui64(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	n = sscanf(DNS_AS_STR(token), "%2x-%2x-%2x-%2x-%2x-%2x-%2x-%2x",
 		   &l0, &l1, &l2, &l3, &l4, &l5, &l6, &l7);
 	if (n != 8 || l0 > 255U || l1 > 255U || l2 > 255U || l3 > 255U ||
@@ -115,7 +118,7 @@ fromstruct_eui64(ARGS_FROMSTRUCT) {
 	dns_rdata_eui64_t *eui64 = source;
 
 	REQUIRE(type == dns_rdatatype_eui64);
-	REQUIRE(source != NULL);
+	REQUIRE(eui64 != NULL);
 	REQUIRE(eui64->common.rdtype == type);
 	REQUIRE(eui64->common.rdclass == rdclass);
 
@@ -130,7 +133,7 @@ tostruct_eui64(ARGS_TOSTRUCT) {
 	dns_rdata_eui64_t *eui64 = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_eui64);
-	REQUIRE(target != NULL);
+	REQUIRE(eui64 != NULL);
 	REQUIRE(rdata->length == 8);
 
 	UNUSED(mctx);
@@ -147,7 +150,7 @@ static inline void
 freestruct_eui64(ARGS_FREESTRUCT) {
 	dns_rdata_eui64_t *eui64 = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(eui64 != NULL);
 	REQUIRE(eui64->common.rdtype == dns_rdatatype_eui64);
 
 	return;
@@ -178,7 +181,7 @@ digest_eui64(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_eui64(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_eui64);
@@ -188,10 +191,10 @@ checkowner_eui64(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_eui64(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_eui64);
@@ -201,7 +204,7 @@ checknames_eui64(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

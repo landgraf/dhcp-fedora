@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2010, 2011, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: zoneconf.h,v 1.30 2011/08/30 23:46:51 tbox Exp $ */
@@ -13,6 +16,7 @@
 
 /*! \file */
 
+#include <stdbool.h>
 #include <isc/lang.h>
 #include <isc/types.h>
 
@@ -40,13 +44,13 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
  * \li	'zone' to be initialized.
  */
 
-isc_boolean_t
+bool
 ns_zone_reusable(dns_zone_t *zone, const cfg_obj_t *zconfig);
 /*%<
  * If 'zone' can be safely reconfigured according to the configuration
- * data in 'zconfig', return ISC_TRUE.  If the configuration data is so
+ * data in 'zconfig', return true.  If the configuration data is so
  * different from the current zone state that the zone needs to be destroyed
- * and recreated, return ISC_FALSE.
+ * and recreated, return false.
  */
 
 isc_result_t

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2007, 2009, 2011, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
-
-/* Reviewed: Thu Mar 16 15:18:32 PST 2000 by explorer */
 
 #ifndef RDATA_GENERIC_SOA_6_C
 #define RDATA_GENERIC_SOA_6_C
@@ -21,8 +20,8 @@ fromtext_soa(ARGS_FROMTEXT) {
 	dns_name_t name;
 	isc_buffer_t buffer;
 	int i;
-	isc_uint32_t n;
-	isc_boolean_t ok;
+	uint32_t n;
+	bool ok;
 
 	REQUIRE(type == dns_rdatatype_soa);
 
@@ -36,17 +35,17 @@ fromtext_soa(ARGS_FROMTEXT) {
 	for (i = 0; i < 2; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_string,
-					      ISC_FALSE));
+					      false));
 
 		dns_name_init(&name, NULL);
 		buffer_fromregion(&buffer, &token.value.as_region);
 		RETTOK(dns_name_fromtext(&name, &buffer, origin,
 					 options, target));
-		ok = ISC_TRUE;
+		ok = true;
 		if ((options & DNS_RDATA_CHECKNAMES) != 0)
 			switch (i) {
 			case 0:
-				ok = dns_name_ishostname(&name, ISC_FALSE);
+				ok = dns_name_ishostname(&name, false);
 				break;
 			case 1:
 				ok = dns_name_ismailbox(&name);
@@ -60,13 +59,13 @@ fromtext_soa(ARGS_FROMTEXT) {
 	}
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	RETERR(uint32_tobuffer(token.value.as_ulong, target));
 
 	for (i = 0; i < 4; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_string,
-					      ISC_FALSE));
+					      false));
 		RETTOK(dns_counter_fromtext(&token.value.as_textregion, &n));
 		RETERR(uint32_tobuffer(n, target));
 	}
@@ -84,20 +83,20 @@ totext_soa(ARGS_TOTEXT) {
 	dns_name_t mname;
 	dns_name_t rname;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 	int i;
-	isc_boolean_t multiline;
-	isc_boolean_t comm;
+	bool multiline;
+	bool comm;
 
 	REQUIRE(rdata->type == dns_rdatatype_soa);
 	REQUIRE(rdata->length != 0);
 
-	multiline = ISC_TF((tctx->flags & DNS_STYLEFLAG_MULTILINE) != 0);
-	if (multiline)
-		comm = ISC_TF((tctx->flags & DNS_STYLEFLAG_RRCOMMENT) != 0);
-	else
-		comm = ISC_FALSE;
-
+	multiline = (tctx->flags & DNS_STYLEFLAG_MULTILINE);
+	if (multiline) {
+		comm = ((tctx->flags & DNS_STYLEFLAG_RRCOMMENT) != 0);
+	} else {
+		comm = false;
+	}
 
 	dns_name_init(&mname, NULL);
 	dns_name_init(&rname, NULL);
@@ -128,14 +127,14 @@ totext_soa(ARGS_TOTEXT) {
 		unsigned long num;
 		num = uint32_fromregion(&dregion);
 		isc_region_consume(&dregion, 4);
-		sprintf(buf, comm ? "%-10lu ; " : "%lu", num);
+		snprintf(buf, sizeof(buf), comm ? "%-10lu ; " : "%lu", num);
 		RETERR(str_totext(buf, target));
 		if (comm) {
 			RETERR(str_totext(soa_fieldnames[i], target));
 			/* Print times in week/day/hour/minute/second form */
 			if (i >= 1) {
 				RETERR(str_totext(" (", target));
-				RETERR(dns_ttl_totext(num, ISC_TRUE, target));
+				RETERR(dns_ttl_totext(num, true, target));
 				RETERR(str_totext(")", target));
 			}
 			RETERR(str_totext(tctx->linebreak, target));
@@ -273,7 +272,7 @@ fromstruct_soa(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_soa);
-	REQUIRE(source != NULL);
+	REQUIRE(soa != NULL);
 	REQUIRE(soa->common.rdtype == type);
 	REQUIRE(soa->common.rdclass == rdclass);
 
@@ -299,7 +298,7 @@ tostruct_soa(ARGS_TOSTRUCT) {
 	isc_result_t result;
 
 	REQUIRE(rdata->type == dns_rdatatype_soa);
-	REQUIRE(target != NULL);
+	REQUIRE(soa != NULL);
 	REQUIRE(rdata->length != 0);
 
 	soa->common.rdclass = rdata->rdclass;
@@ -349,7 +348,7 @@ static inline void
 freestruct_soa(ARGS_FREESTRUCT) {
 	dns_rdata_soa_t *soa = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(soa != NULL);
 	REQUIRE(soa->common.rdtype == dns_rdatatype_soa);
 
 	if (soa->mctx == NULL)
@@ -393,7 +392,7 @@ digest_soa(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_soa(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_soa);
@@ -403,10 +402,10 @@ checkowner_soa(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_soa(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -418,19 +417,19 @@ checknames_soa(ARGS_CHECKNAMES) {
 	dns_rdata_toregion(rdata, &region);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
-	if (!dns_name_ishostname(&name, ISC_FALSE)) {
+	if (!dns_name_ishostname(&name, false)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
 	isc_region_consume(&region, name_length(&name));
 	dns_name_fromregion(&name, &region);
 	if (!dns_name_ismailbox(&name)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

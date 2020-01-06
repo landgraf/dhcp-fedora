@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000-2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: msgs.h,v 1.19 2009/10/01 23:48:08 tbox Exp $ */
 
 #ifndef ISC_MSGS_H
 #define ISC_MSGS_H 1
@@ -121,6 +123,7 @@
 #define ISC_MSG_POSTLOCK       1207 /*%< "postlock" */
 #define ISC_MSG_PREUNLOCK      1208 /*%< "preunlock" */
 #define ISC_MSG_POSTUNLOCK     1209 /*%< "postunlock" */
+#define ISC_MSG_PRINTLOCK2     1210 /*%< "rwlock %p thread %lu ..." w/ atomic */
 
 #define ISC_MSG_UNKNOWNFAMILY  1301 /*%< "unknown address family: %d" */
 

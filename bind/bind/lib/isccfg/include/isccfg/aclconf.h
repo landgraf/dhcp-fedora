@@ -1,29 +1,32 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2010-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISCCFG_ACLCONF_H
 #define ISCCFG_ACLCONF_H 1
 
+#include <inttypes.h>
+
 #include <isc/lang.h>
+#include <isc/refcount.h>
 
 #include <isccfg/cfg.h>
 
-#ifdef HAVE_GEOIP
 #include <dns/geoip.h>
-#endif
 #include <dns/types.h>
 
 typedef struct cfg_aclconfctx {
 	ISC_LIST(dns_acl_t) named_acl_cache;
 	isc_mem_t *mctx;
-#ifdef HAVE_GEOIP
+#if defined(HAVE_GEOIP) || defined(HAVE_GEOIP2)
 	dns_geoip_databases_t *geoip;
 #endif
 	isc_refcount_t references;
@@ -64,7 +67,7 @@ isc_result_t
 cfg_acl_fromconfig2(const cfg_obj_t *caml, const cfg_obj_t *cctx,
 		   isc_log_t *lctx, cfg_aclconfctx_t *ctx,
 		   isc_mem_t *mctx, unsigned int nest_level,
-		   isc_uint16_t family, dns_acl_t **target);
+		   uint16_t family, dns_acl_t **target);
 /*
  * Construct a new dns_acl_t from configuration data in 'caml' and
  * 'cctx'.  Memory is allocated through 'mctx'.

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -30,7 +33,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id: pkcs11-list.c,v 1.7 2009/10/26 23:36:53 each Exp $ */
 
 /* pkcs11-list [-P] [-m module] [-s slot] [-i $id | -l $label] [-p $pin] */
 
@@ -38,6 +40,7 @@
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -69,7 +72,7 @@ main(int argc, char *argv[]) {
 	char *lib_name = NULL;
 	char *label = NULL;
 	char *pin = NULL;
-	isc_boolean_t error = ISC_FALSE, logon = ISC_TRUE, all = ISC_FALSE;
+	bool error = false, logon = true, all = false;
 	unsigned int i = 0, id = 0;
 	int c, errflg = 0;
 	CK_ULONG ulObjectCount;
@@ -80,7 +83,7 @@ main(int argc, char *argv[]) {
 	while ((c = isc_commandline_parse(argc, argv, ":m:s:i:l:p:P")) != -1) {
 		switch (c) {
 		case 'P':
-			logon = ISC_FALSE;
+			logon = false;
 			break;
 		case 'm':
 			lib_name = isc_commandline_argument;
@@ -119,13 +122,13 @@ main(int argc, char *argv[]) {
 	}
 
 	if (!id && (label == NULL))
-		all = ISC_TRUE;
+		all = true;
 
 	if (slot)
 		printf("slot %lu\n", slot);
 
 	if (id) {
-		printf("id %i\n", id);
+		printf("id %u\n", id);
 		attr_id[0] = (id >> 8) & 0xff;
 		attr_id[1] = id & 0xff;
 	} else if (label != NULL) {
@@ -144,7 +147,7 @@ main(int argc, char *argv[]) {
 	if (logon && pin == NULL)
 		pin = getpassphrase("Enter Pin: ");
 
-	result = pk11_get_session(&pctx, OP_ANY, ISC_FALSE, ISC_FALSE,
+	result = pk11_get_session(&pctx, OP_ANY, false, false,
 				  logon, pin, slot);
 	if (result == PK11_R_NORANDOMSERVICE ||
 	    result == PK11_R_NODIGESTSERVICE ||

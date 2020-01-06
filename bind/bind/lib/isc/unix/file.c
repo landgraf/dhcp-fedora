@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2005, 2007, 2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -35,7 +38,6 @@
  * SUCH DAMAGE.
  */
 
-/* $Id$ */
 
 /*! \file */
 
@@ -44,6 +46,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>		/* Required for utimes on some platforms. */
 #include <unistd.h>		/* Required for mkstemp on NetBSD. */
@@ -60,6 +64,7 @@
 #include <isc/file.h>
 #include <isc/log.h>
 #include <isc/mem.h>
+#include <isc/platform.h>
 #include <isc/print.h>
 #include <isc/random.h>
 #include <isc/sha2.h>
@@ -199,7 +204,7 @@ isc_file_settime(const char *file, isc_time_t *when) {
 	 * we can at least cast to signed so the IRIX compiler shuts up.
 	 */
 	times[0].tv_usec = times[1].tv_usec =
-		(isc_int32_t)(isc_time_nanoseconds(when) / 1000);
+		(int32_t)(isc_time_nanoseconds(when) / 1000);
 
 	if (utimes(file, times) < 0)
 		return (isc__errno2result(errno));
@@ -221,9 +226,11 @@ isc_file_template(const char *path, const char *templet, char *buf,
 {
 	const char *s;
 
-	REQUIRE(path != NULL);
 	REQUIRE(templet != NULL);
 	REQUIRE(buf != NULL);
+
+	if (path == NULL)
+		path = "";
 
 	s = strrchr(templet, '/');
 	if (s != NULL)
@@ -232,17 +239,18 @@ isc_file_template(const char *path, const char *templet, char *buf,
 	s = strrchr(path, '/');
 
 	if (s != NULL) {
-		if ((s - path + 1 + strlen(templet) + 1) > buflen)
+		size_t prefixlen = s - path + 1;
+		if ((prefixlen + strlen(templet) + 1) > buflen)
 			return (ISC_R_NOSPACE);
 
-		strncpy(buf, path, s - path + 1);
-		buf[s - path + 1] = '\0';
-		strcat(buf, templet);
+		/* Copy 'prefixlen' bytes and NUL terminate. */
+		strlcpy(buf, path, ISC_MIN(prefixlen + 1, buflen));
+		strlcat(buf, templet, buflen);
 	} else {
 		if ((strlen(templet) + 1) > buflen)
 			return (ISC_R_NOSPACE);
 
-		strcpy(buf, templet);
+		strlcpy(buf, templet, buflen);
 	}
 
 	return (ISC_R_SUCCESS);
@@ -267,7 +275,7 @@ isc_file_renameunique(const char *file, char *templet) {
 
 	x = cp--;
 	while (cp >= templet && *cp == 'X') {
-		isc_uint32_t which;
+		uint32_t which;
 
 		isc_random_get(&which);
 		*cp = alphnum[which % (sizeof(alphnum) - 1)];
@@ -326,7 +334,7 @@ isc_file_openuniquemode(char *templet, int mode, FILE **fp) {
 
 	x = cp--;
 	while (cp >= templet && *cp == 'X') {
-		isc_uint32_t which;
+		uint32_t which;
 
 		isc_random_get(&which);
 		*cp = alphnum[which % (sizeof(alphnum) - 1)];
@@ -409,13 +417,13 @@ isc_file_rename(const char *oldname, const char *newname) {
 		return (isc__errno2result(errno));
 }
 
-isc_boolean_t
+bool
 isc_file_exists(const char *pathname) {
 	struct stat stats;
 
 	REQUIRE(pathname != NULL);
 
-	return (ISC_TF(file_stats(pathname, &stats) == ISC_R_SUCCESS));
+	return (file_stats(pathname, &stats) == ISC_R_SUCCESS);
 }
 
 isc_result_t
@@ -471,26 +479,26 @@ isc_file_isdirectory(const char *filename) {
 }
 
 
-isc_boolean_t
+bool
 isc_file_isabsolute(const char *filename) {
 	REQUIRE(filename != NULL);
-	return (ISC_TF(filename[0] == '/'));
+	return (filename[0] == '/');
 }
 
-isc_boolean_t
+bool
 isc_file_iscurrentdir(const char *filename) {
 	REQUIRE(filename != NULL);
-	return (ISC_TF(filename[0] == '.' && filename[1] == '\0'));
+	return (filename[0] == '.' && filename[1] == '\0');
 }
 
-isc_boolean_t
+bool
 isc_file_ischdiridempotent(const char *filename) {
 	REQUIRE(filename != NULL);
 	if (isc_file_isabsolute(filename))
-		return (ISC_TRUE);
+		return (true);
 	if (isc_file_iscurrentdir(filename))
-		return (ISC_TRUE);
-	return (ISC_FALSE);
+		return (true);
+	return (false);
 }
 
 const char *
@@ -541,15 +549,17 @@ dir_current(char *dirname, size_t length) {
 	cwd = getcwd(dirname, length);
 
 	if (cwd == NULL) {
-		if (errno == ERANGE)
+		if (errno == ERANGE) {
 			result = ISC_R_NOSPACE;
-		else
+		} else {
 			result = isc__errno2result(errno);
+		}
 	} else {
-		if (strlen(dirname) + 1 == length)
+		if (strlen(dirname) + 1 == length) {
 			result = ISC_R_NOSPACE;
-		else if (dirname[1] != '\0')
-			strcat(dirname, "/");
+		} else if (dirname[1] != '\0') {
+			strlcat(dirname, "/", length);
+		}
 	}
 
 	return (result);
@@ -563,7 +573,7 @@ isc_file_absolutepath(const char *filename, char *path, size_t pathlen) {
 		return (result);
 	if (strlen(path) + strlen(filename) + 1 > pathlen)
 		return (ISC_R_NOSPACE);
-	strcat(path, filename);
+	strlcat(path, filename, pathlen);
 	return (ISC_R_SUCCESS);
 }
 
@@ -698,15 +708,12 @@ isc_file_munmap(void *addr, size_t len) {
 }
 
 #define DISALLOW "\\/ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#ifndef PATH_MAX
-#define PATH_MAX 1024
-#endif
 
 isc_result_t
 isc_file_sanitize(const char *dir, const char *base, const char *ext,
 		  char *path, size_t length)
 {
-	char buf[PATH_MAX], hash[PATH_MAX];
+	char buf[PATH_MAX], hash[ISC_SHA256_DIGESTSTRINGLENGTH];
 	size_t l = 0;
 
 	REQUIRE(base != NULL);
@@ -764,4 +771,9 @@ isc_file_sanitize(const char *dir, const char *base, const char *ext,
 		base, ext != NULL ? "." : "", ext != NULL ? ext : "");
 	strlcpy(path, buf, length);
 	return (ISC_R_SUCCESS);
+}
+
+bool
+isc_file_isdirwritable(const char *path) {
+	return (access(path, W_OK|X_OK) == 0);
 }

@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1998-2001, 2004, 2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: minfo_14.c,v 1.47 2009/12/04 22:06:37 tbox Exp $ */
-
-/* reviewed: Wed Mar 15 17:45:32 PST 2000 by brister */
 
 #ifndef RDATA_GENERIC_MINFO_14_C
 #define RDATA_GENERIC_MINFO_14_C
@@ -21,7 +20,7 @@ fromtext_minfo(ARGS_FROMTEXT) {
 	dns_name_t name;
 	isc_buffer_t buffer;
 	int i;
-	isc_boolean_t ok;
+	bool ok;
 
 	REQUIRE(type == dns_rdatatype_minfo);
 
@@ -35,12 +34,12 @@ fromtext_minfo(ARGS_FROMTEXT) {
 	for (i = 0; i < 2; i++) {
 		RETERR(isc_lex_getmastertoken(lexer, &token,
 					      isc_tokentype_string,
-					      ISC_FALSE));
+					      false));
 		dns_name_init(&name, NULL);
 		buffer_fromregion(&buffer, &token.value.as_region);
 		RETTOK(dns_name_fromtext(&name, &buffer, origin,
 					 options, target));
-		ok = ISC_TRUE;
+		ok = true;
 		if ((options & DNS_RDATA_CHECKNAMES) != 0)
 			ok = dns_name_ismailbox(&name);
 		if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
@@ -57,7 +56,7 @@ totext_minfo(ARGS_TOTEXT) {
 	dns_name_t rmail;
 	dns_name_t email;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_minfo);
 	REQUIRE(rdata->length != 0);
@@ -178,7 +177,7 @@ fromstruct_minfo(ARGS_FROMSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_minfo);
-	REQUIRE(source != NULL);
+	REQUIRE(minfo != NULL);
 	REQUIRE(minfo->common.rdtype == type);
 	REQUIRE(minfo->common.rdclass == rdclass);
 
@@ -199,7 +198,7 @@ tostruct_minfo(ARGS_TOSTRUCT) {
 	isc_result_t result;
 
 	REQUIRE(rdata->type == dns_rdatatype_minfo);
-	REQUIRE(target != NULL);
+	REQUIRE(minfo != NULL);
 	REQUIRE(rdata->length != 0);
 
 	minfo->common.rdclass = rdata->rdclass;
@@ -231,7 +230,7 @@ static inline void
 freestruct_minfo(ARGS_FREESTRUCT) {
 	dns_rdata_minfo_t *minfo = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(minfo != NULL);
 	REQUIRE(minfo->common.rdtype == dns_rdatatype_minfo);
 
 	if (minfo->mctx == NULL)
@@ -274,7 +273,7 @@ digest_minfo(ARGS_DIGEST) {
 	return (dns_name_digest(&name, digest, arg));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_minfo(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_minfo);
@@ -284,10 +283,10 @@ checkowner_minfo(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_minfo(ARGS_CHECKNAMES) {
 	isc_region_t region;
 	dns_name_t name;
@@ -302,16 +301,16 @@ checknames_minfo(ARGS_CHECKNAMES) {
 	if (!dns_name_ismailbox(&name)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
 	isc_region_consume(&region, name_length(&name));
 	dns_name_fromregion(&name, &region);
 	if (!dns_name_ismailbox(&name)) {
 		if (bad != NULL)
 			dns_name_clone(&name, bad);
-		return (ISC_FALSE);
+		return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

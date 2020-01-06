@@ -1,10 +1,13 @@
 #! /bin/sh
 #
-# Copyright (C) 2011-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 set -e
 
@@ -13,7 +16,14 @@ SYSTEMTESTTOP=..
 
 QPERF=`$SHELL qperf.sh`
 
-$SHELL clean.sh
+copy_setports ns1/named.conf.in ns1/named.conf
+copy_setports ns2/named.conf.in ns2/named.conf
+copy_setports ns3/named.conf.in ns3/named.conf
+copy_setports ns4/named.conf.in ns4/named.conf
+copy_setports ns5/named.conf.in ns5/named.conf
+copy_setports ns6/named.conf.in ns6/named.conf
+copy_setports ns7/named.conf.in ns7/named.conf
+copy_setports ns9/named.conf.in ns9/named.conf
 
 # set up test policy zones.
 #   bl is the main test zone
@@ -24,21 +34,25 @@ $SHELL clean.sh
 for NM in '' -2 -given -disabled -passthru -no-op -nodata -nxdomain -cname -wildcname -garden -drop -tcp-only; do
     sed -e "/SOA/s/blx/bl$NM/g" ns3/base.db >ns3/bl$NM.db
 done
+#  bl zones are dynamically updated.  Add one zone that is updated manually.
+cp ns3/manual-update-rpz.db.in ns3/manual-update-rpz.db
 
-# sign the root and a zone in ns2
-test -r $RANDFILE || $GENRANDOM 400 $RANDFILE
-
-# $1=directory, $2=domain name, $3=input zone file, $4=output file
+# $1=directory
+# $2=domain name
+# $3=input zone file
+# $4=output file
 signzone () {
     KEYNAME=`$KEYGEN -q -r $RANDFILE -b 512 -K $1 $2`
     cat $1/$3 $1/$KEYNAME.key > $1/tmp
     $SIGNER -Pp -K $1 -o $2 -f $1/$4 $1/tmp >/dev/null
     sed -n -e 's/\(.*\) IN DNSKEY \([0-9]\{1,\} [0-9]\{1,\} [0-9]\{1,\}\) \(.*\)/trusted-keys {"\1" \2 "\3";};/p' $1/$KEYNAME.key >>trusted.conf
-    DSFILENAME=dsset-`echo $2 |sed -e "s/\.$//g"`$TP
+    DSFILENAME=dsset-${2}${TP}
     rm $DSFILENAME $1/tmp
 }
-signzone ns2 tld2s. base-tld2s.db tld2s.db
 
+# sign the root and a zone in ns2
+test -r $RANDFILE || $GENRANDOM $RANDOMSIZE $RANDFILE
+signzone ns2 tld2s base-tld2s.db tld2s.db
 
 # Performance and a few other checks.
 cat <<EOF >ns5/rpz-switch

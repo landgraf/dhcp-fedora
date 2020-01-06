@@ -1,14 +1,14 @@
 /*
- * Copyright (C) 1997-2001, 2004-2009, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/*
- * $Id: assertions.h,v 1.28 2009/09/29 23:48:04 tbox Exp $
- */
 /*! \file isc/assertions.h
  */
 
@@ -16,6 +16,7 @@
 #define ISC_ASSERTIONS_H 1
 
 #include <isc/lang.h>
+#include <isc/likely.h>
 #include <isc/platform.h>
 
 ISC_LANG_BEGINDECLS
@@ -79,7 +80,7 @@ isc_assertion_typetotext(isc_assertiontype_t type);
 					 isc_assertiontype_require, \
 					 #cond), 0)))
 #else
-#define ISC_REQUIRE(cond)	((void) 0)
+#define ISC_REQUIRE(cond)	((void) ISC_LIKELY(cond))
 #endif /* ISC_CHECK_REQUIRE */
 
 #if ISC_CHECK_ENSURE != 0
@@ -89,7 +90,7 @@ isc_assertion_typetotext(isc_assertiontype_t type);
 					 isc_assertiontype_ensure, \
 					 #cond), 0)))
 #else
-#define ISC_ENSURE(cond)	((void) 0)
+#define ISC_ENSURE(cond)	((void) ISC_LIKELY(cond))
 #endif /* ISC_CHECK_ENSURE */
 
 #if ISC_CHECK_INSIST != 0
@@ -99,7 +100,7 @@ isc_assertion_typetotext(isc_assertiontype_t type);
 					 isc_assertiontype_insist, \
 					 #cond), 0)))
 #else
-#define ISC_INSIST(cond)	((void) 0)
+#define ISC_INSIST(cond)	((void) ISC_LIKELY(cond))
 #endif /* ISC_CHECK_INSIST */
 
 #if ISC_CHECK_INVARIANT != 0
@@ -109,7 +110,7 @@ isc_assertion_typetotext(isc_assertiontype_t type);
 					 isc_assertiontype_invariant, \
 					 #cond), 0)))
 #else
-#define ISC_INVARIANT(cond)	((void) 0)
+#define ISC_INVARIANT(cond)	((void) ISC_LIKELY(cond))
 #endif /* ISC_CHECK_INVARIANT */
 
 ISC_LANG_ENDDECLS

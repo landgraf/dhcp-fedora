@@ -1,58 +1,80 @@
 /*
- * Copyright (C) 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
-
-/*! \file */
 
 #include <config.h>
 
-#include <atf-c.h>
+#if HAVE_CMOCKA
 
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+
+#include <sched.h> /* IWYU pragma: keep */
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+
+#define UNIT_TESTING
+#include <cmocka.h>
 
 #include <isc/symtab.h>
 #include <isc/print.h>
+#include <isc/util.h>
 
 #include "isctest.h"
+
+static int
+_setup(void **state) {
+	isc_result_t result;
+
+	UNUSED(state);
+
+	result = isc_test_begin(NULL, true, 0);
+	assert_int_equal(result, ISC_R_SUCCESS);
+
+	return (0);
+}
+
+static int
+_teardown(void **state) {
+	UNUSED(state);
+
+	isc_test_end();
+
+	return (0);
+}
 
 static void
 undefine(char *key, unsigned int type, isc_symvalue_t value, void *arg) {
 	UNUSED(arg);
 
-	ATF_REQUIRE_EQ(type, 1);
+	assert_int_equal(type, 1);
 	isc_mem_free(mctx, key);
 	isc_mem_free(mctx, value.as_pointer);
 }
 
-/*
- * Individual unit tests
- */
-
-ATF_TC(symtab_grow);
-ATF_TC_HEAD(symtab_grow, tc) {
-	atf_tc_set_md_var(tc, "descr", "symbol table growth");
-}
-ATF_TC_BODY(symtab_grow, tc) {
+/* test symbol table growth */
+static void
+symtab_grow(void **state) {
 	isc_result_t result;
 	isc_symtab_t *st = NULL;
 	isc_symvalue_t value;
 	isc_symexists_t policy = isc_symexists_reject;
 	int i;
 
-	UNUSED(tc);
+	UNUSED(state);
 
-	result = isc_test_begin(NULL, ISC_TRUE);
-	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
-
-	result = isc_symtab_create(mctx, 3, undefine, NULL, ISC_FALSE, &st);
-	ATF_REQUIRE_EQ(result, ISC_R_SUCCESS);
-	ATF_REQUIRE(st != NULL);
+	result = isc_symtab_create(mctx, 3, undefine, NULL, false, &st);
+	assert_int_equal(result, ISC_R_SUCCESS);
+	assert_non_null(st);
 
 	/* Nothing should be in the table yet */
 
@@ -65,11 +87,11 @@ ATF_TC_BODY(symtab_grow, tc) {
 
 		snprintf(str, sizeof(str), "%04x", i);
 		key = isc_mem_strdup(mctx, str);
-		ATF_REQUIRE(key != NULL);
+		assert_non_null(key);
 		value.as_pointer = isc_mem_strdup(mctx, str);
-		ATF_REQUIRE(value.as_pointer != NULL);
+		assert_non_null(value.as_pointer);
 		result = isc_symtab_define(st, key, 1, value, policy);
-		ATF_CHECK_EQ(result, ISC_R_SUCCESS);
+		assert_int_equal(result, ISC_R_SUCCESS);
 		if (result != ISC_R_SUCCESS)
 			undefine(key, 1, value, NULL);
 	}
@@ -82,11 +104,11 @@ ATF_TC_BODY(symtab_grow, tc) {
 
 		snprintf(str, sizeof(str), "%04x", i);
 		key = isc_mem_strdup(mctx, str);
-		ATF_REQUIRE(key != NULL);
+		assert_non_null(key);
 		value.as_pointer = isc_mem_strdup(mctx, str);
-		ATF_REQUIRE(value.as_pointer != NULL);
+		assert_non_null(value.as_pointer);
 		result = isc_symtab_define(st, key, 1, value, policy);
-		ATF_CHECK_EQ(result, ISC_R_EXISTS);
+		assert_int_equal(result, ISC_R_EXISTS);
 		undefine(key, 1, value, NULL);
 	}
 
@@ -98,8 +120,8 @@ ATF_TC_BODY(symtab_grow, tc) {
 
 		snprintf(str, sizeof(str), "%04x", i);
 		result = isc_symtab_lookup(st, str, 0, &value);
-		ATF_CHECK_EQ(result, ISC_R_SUCCESS);
-		ATF_CHECK_STREQ(str, (char *)value.as_pointer);
+		assert_int_equal(result, ISC_R_SUCCESS);
+		assert_string_equal(str, (char *)value.as_pointer);
 	}
 
 	/*
@@ -110,7 +132,7 @@ ATF_TC_BODY(symtab_grow, tc) {
 
 		snprintf(str, sizeof(str), "%04x", i);
 		result = isc_symtab_undefine(st, str, 1);
-		ATF_CHECK_EQ(result, ISC_R_SUCCESS);
+		assert_int_equal(result, ISC_R_SUCCESS);
 	}
 
 	/*
@@ -121,19 +143,30 @@ ATF_TC_BODY(symtab_grow, tc) {
 
 		snprintf(str, sizeof(str), "%04x", i);
 		result = isc_symtab_lookup(st, str, 0, &value);
-		ATF_CHECK_EQ(result, ISC_R_NOTFOUND);
+		assert_int_equal(result, ISC_R_NOTFOUND);
 	}
 
 	isc_symtab_destroy(&st);
-	isc_test_end();
 }
 
-/*
- * Main
- */
-ATF_TP_ADD_TCS(tp) {
-	ATF_TP_ADD_TC(tp, symtab_grow);
+int
+main(void) {
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test_setup_teardown(symtab_grow,
+						_setup, _teardown),
+	};
 
-	return (atf_no_error());
+	return (cmocka_run_group_tests(tests, NULL, NULL));
 }
 
+#else /* HAVE_CMOCKA */
+
+#include <stdio.h>
+
+int
+main(void) {
+	printf("1..0 # Skipped: cmocka not available\n");
+	return (0);
+}
+
+#endif

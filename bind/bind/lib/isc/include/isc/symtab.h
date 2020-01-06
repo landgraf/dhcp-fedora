@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1996-2001, 2004-2007, 2009, 2011-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_SYMTAB_H
 #define ISC_SYMTAB_H 1
@@ -76,6 +78,8 @@
  *** Imports.
  ***/
 
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isc/types.h>
 
@@ -105,7 +109,7 @@ ISC_LANG_BEGINDECLS
 isc_result_t
 isc_symtab_create(isc_mem_t *mctx, unsigned int size,
 		  isc_symtabaction_t undefine_action, void *undefine_arg,
-		  isc_boolean_t case_sensitive, isc_symtab_t **symtabp);
+		  bool case_sensitive, isc_symtab_t **symtabp);
 
 /*% Destroy a symbol table. */
 void

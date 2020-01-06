@@ -1,13 +1,14 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 /*
- * Copyright (C) 1999-2005, 2007, 2008, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: acconfig.h,v 1.53 2008/12/01 23:47:44 tbox Exp $ */
 
 /*! \file */
 
@@ -138,15 +139,9 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Use AES for Client Cookie generation */
-#undef AES_CC
-
 /* Define to enable the "filter-aaaa-on-v4" and "filter-aaaa-on-v6" options.
    */
 #undef ALLOW_FILTER_AAAA
-
-/* define if ATF unit tests are to be built. */
-#undef ATF_TEST
 
 /* Define if recvmsg() does not meet all of the BSD socket API specifications.
    */
@@ -194,14 +189,26 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to 1 if the compiler supports __builtin_expect. */
 #undef HAVE_BUILTIN_EXPECT
 
+/* define if the compiler supports __builtin_unreachable(). */
+#undef HAVE_BUILTIN_UNREACHABLE
+
 /* Define to 1 if you have the `chroot' function. */
 #undef HAVE_CHROOT
 
 /* Define if clock_gettime is available. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Use cmocka */
+#undef HAVE_CMOCKA
+
+/* Define to 1 if you have the <cmocka.h> header file. */
+#undef HAVE_CMOCKA_H
+
 /* Define to 1 if you have the <devpoll.h> header file. */
 #undef HAVE_DEVPOLL_H
+
+/* Define to 1 if you have the `DH_get0_key' function. */
+#undef HAVE_DH_GET0_KEY
 
 /* Define to 1 if you have the `dlclose' function. */
 #undef HAVE_DLCLOSE
@@ -217,6 +224,12 @@ int sigwait(const unsigned int *set, int *sig);
 
 /* Define to 1 to enable dnstap support */
 #undef HAVE_DNSTAP
+
+/* Define to 1 if you have the `DSA_get0_pqg' function. */
+#undef HAVE_DSA_GET0_PQG
+
+/* Define to 1 if you have the `ECDSA_SIG_get0' function. */
+#undef HAVE_ECDSA_SIG_GET0
 
 /* Define to 1 if you have the <editline/readline.h> header file. */
 #undef HAVE_EDITLINE_READLINE_H
@@ -236,8 +249,14 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to 1 if you have the `EVP_sha512' function. */
 #undef HAVE_EVP_SHA512
 
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
+
+/* Define if OpenSSL provides FIPS_mode() */
+#undef HAVE_FIPS_MODE
 
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
@@ -247,6 +266,9 @@ int sigwait(const unsigned int *set, int *sig);
 
 /* Build with GeoIP support */
 #undef HAVE_GEOIP
+
+/* Build with GeoIP2 support */
+#undef HAVE_GEOIP2
 
 /* Build with GeoIP City IPv6 support */
 #undef HAVE_GEOIP_CITY_V6
@@ -368,6 +390,12 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define if your OpenSSL version supports ECDSA. */
 #undef HAVE_OPENSSL_ECDSA
 
+/* Define if your OpenSSL version supports Ed25519. */
+#undef HAVE_OPENSSL_ED25519
+
+/* Define if your OpenSSL version supports Ed448. */
+#undef HAVE_OPENSSL_ED448
+
 /* Define if your OpenSSL version supports EVP AES */
 #undef HAVE_OPENSSL_EVP_AES
 
@@ -376,6 +404,12 @@ int sigwait(const unsigned int *set, int *sig);
 
 /* Define if your PKCS11 provider supports ECDSA. */
 #undef HAVE_PKCS11_ECDSA
+
+/* Define if your PKCS11 provider supports Ed25519. */
+#undef HAVE_PKCS11_ED25519
+
+/* Define if your PKCS11 provider supports Ed448. */
+#undef HAVE_PKCS11_ED448
 
 /* Define if your PKCS11 provider supports GOST. */
 #undef HAVE_PKCS11_GOST
@@ -409,6 +443,9 @@ int sigwait(const unsigned int *set, int *sig);
 
 /* Define to 1 if you have the <regex.h> header file. */
 #undef HAVE_REGEX_H
+
+/* Define to 1 if you have the `RSA_set0_key' function. */
+#undef HAVE_RSA_SET0_KEY
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
@@ -488,6 +525,9 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define if running under Compaq TruCluster */
 #undef HAVE_TRUCLUSTER
 
+/* Define to 1 if the system has the type `uintptr_t'. */
+#undef HAVE_UINTPTR_T
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -496,12 +536,6 @@ int sigwait(const unsigned int *set, int *sig);
 
 /* Define if zlib was found */
 #undef HAVE_ZLIB
-
-/* Use HMAC-SHA1 for Client Cookie generation */
-#undef HMAC_SHA1_CC
-
-/* Use HMAC-SHA256 for Client Cookie generation */
-#undef HMAC_SHA256_CC
 
 /* return type of gai_strerror */
 #undef IRS_GAISTRERROR_RETURN_T
@@ -515,11 +549,16 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to the sockaddr length type used by getnameinfo(3). */
 #undef IRS_GETNAMEINFO_SOCKLEN_T
 
+/* Define if you want to use inline buffers */
+#undef ISC_BUFFER_USEINLINE
+
 /* Define to allow building of objects for dlopen(). */
 #undef ISC_DLZ_DLOPEN
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* define if the linker supports --wrap option */
+#undef LD_WRAP
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Defined if extern char *optarg is not declared. */
@@ -574,7 +613,16 @@ int sigwait(const unsigned int *set, int *sig);
 #undef WANT_QUERYTRACE
 
 /* define if idnkit support is to be included. */
-#undef WITH_IDN
+#undef WITH_IDNKIT
+
+/* define if IDN output support is to be included. */
+#undef WITH_IDN_OUT_SUPPORT
+
+/* define if IDN input support is to be included. */
+#undef WITH_IDN_SUPPORT
+
+/* define if libidn2 support is to be included. */
+#undef WITH_LIBIDN2
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -600,7 +648,8 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to `int' if <sys/types.h> does not define. */
 #undef ssize_t
 
-/* Define to `unsigned long' if <sys/types.h> does not define. */
+/* Define to the type of an unsigned integer type wide enough to hold a
+   pointer, if such a type exists, and if the system does not define it. */
 #undef uintptr_t
 
 /* Define to empty if the keyword `volatile' does not work. Warning: valid

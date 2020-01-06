@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2002, 2004-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -11,6 +14,9 @@
  */
 /*! \file */
 #include <config.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/buffer.h>
@@ -73,28 +79,15 @@
 static unsigned char hmacmd5_ndata[] = "\010hmac-md5\007sig-alg\003reg\003int";
 static unsigned char hmacmd5_offsets[] = { 0, 9, 17, 21, 25 };
 
-static dns_name_t hmacmd5 = {
-	DNS_NAME_MAGIC,
-	hmacmd5_ndata, 26, 5,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacmd5_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
-dns_name_t *dns_tsig_hmacmd5_name = &hmacmd5;
+static dns_name_t hmacmd5 =
+	DNS_NAME_INITABSOLUTE(hmacmd5_ndata, hmacmd5_offsets);
+LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacmd5_name = &hmacmd5;
 #endif
 
 static unsigned char gsstsig_ndata[] = "\010gss-tsig";
 static unsigned char gsstsig_offsets[] = { 0, 9 };
-static dns_name_t gsstsig = {
-	DNS_NAME_MAGIC,
-	gsstsig_ndata, 10, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	gsstsig_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
+static dns_name_t gsstsig =
+	DNS_NAME_INITABSOLUTE(gsstsig_ndata, gsstsig_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_gssapi_name = &gsstsig;
 
 /*
@@ -103,84 +96,38 @@ LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_gssapi_name = &gsstsig;
  */
 static unsigned char gsstsigms_ndata[] = "\003gss\011microsoft\003com";
 static unsigned char gsstsigms_offsets[] = { 0, 4, 14, 18 };
-static dns_name_t gsstsigms = {
-	DNS_NAME_MAGIC,
-	gsstsigms_ndata, 19, 4,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	gsstsigms_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
+static dns_name_t gsstsigms =
+	DNS_NAME_INITABSOLUTE(gsstsigms_ndata, gsstsigms_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_gssapims_name = &gsstsigms;
 
 static unsigned char hmacsha1_ndata[] = "\011hmac-sha1";
 static unsigned char hmacsha1_offsets[] = { 0, 10 };
-
-static dns_name_t  hmacsha1 = {
-	DNS_NAME_MAGIC,
-	hmacsha1_ndata, 11, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacsha1_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
+static dns_name_t hmacsha1 =
+	DNS_NAME_INITABSOLUTE(hmacsha1_ndata, hmacsha1_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacsha1_name = &hmacsha1;
 
 static unsigned char hmacsha224_ndata[] = "\013hmac-sha224";
 static unsigned char hmacsha224_offsets[] = { 0, 12 };
-
-static dns_name_t hmacsha224 = {
-	DNS_NAME_MAGIC,
-	hmacsha224_ndata, 13, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacsha224_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
+static dns_name_t hmacsha224 =
+	DNS_NAME_INITABSOLUTE(hmacsha224_ndata, hmacsha224_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacsha224_name = &hmacsha224;
 
 static unsigned char hmacsha256_ndata[] = "\013hmac-sha256";
 static unsigned char hmacsha256_offsets[] = { 0, 12 };
-
-static dns_name_t hmacsha256 = {
-	DNS_NAME_MAGIC,
-	hmacsha256_ndata, 13, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacsha256_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
+static dns_name_t hmacsha256 =
+	DNS_NAME_INITABSOLUTE(hmacsha256_ndata, hmacsha256_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacsha256_name = &hmacsha256;
 
 static unsigned char hmacsha384_ndata[] = "\013hmac-sha384";
 static unsigned char hmacsha384_offsets[] = { 0, 12 };
-
-static dns_name_t hmacsha384 = {
-	DNS_NAME_MAGIC,
-	hmacsha384_ndata, 13, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacsha384_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
+static dns_name_t hmacsha384 =
+	DNS_NAME_INITABSOLUTE(hmacsha384_ndata, hmacsha384_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacsha384_name = &hmacsha384;
 
 static unsigned char hmacsha512_ndata[] = "\013hmac-sha512";
 static unsigned char hmacsha512_offsets[] = { 0, 12 };
-
-static dns_name_t hmacsha512 = {
-	DNS_NAME_MAGIC,
-	hmacsha512_ndata, 13, 2,
-	DNS_NAMEATTR_READONLY | DNS_NAMEATTR_ABSOLUTE,
-	hmacsha512_offsets, NULL,
-	{(void *)-1, (void *)-1},
-	{NULL, NULL}
-};
-
+static dns_name_t hmacsha512 =
+	DNS_NAME_INITABSOLUTE(hmacsha512_ndata, hmacsha512_offsets);
 LIBDNS_EXTERNAL_DATA dns_name_t *dns_tsig_hmacsha512_name = &hmacsha512;
 
 static isc_result_t
@@ -202,30 +149,33 @@ tsig_log(dns_tsigkey_t *key, int level, const char *fmt, ...) {
 	char namestr[DNS_NAME_FORMATSIZE];
 	char creatorstr[DNS_NAME_FORMATSIZE];
 
-	if (isc_log_wouldlog(dns_lctx, level) == ISC_FALSE)
+	if (isc_log_wouldlog(dns_lctx, level) == false)
 		return;
-	if (key != NULL)
+	if (key != NULL) {
 		dns_name_format(&key->name, namestr, sizeof(namestr));
-	else
-		strcpy(namestr, "<null>");
+	} else {
+		strlcpy(namestr, "<null>", sizeof(namestr));
+	}
 
-	if (key != NULL && key->generated && key->creator)
+	if (key != NULL && key->generated && key->creator) {
 		dns_name_format(key->creator, creatorstr, sizeof(creatorstr));
-	else
-		strcpy(creatorstr, "<null>");
+	} else {
+		strlcpy(creatorstr, "<null>", sizeof(creatorstr));
+	}
 
 	va_start(ap, fmt);
 	vsnprintf(message, sizeof(message), fmt, ap);
 	va_end(ap);
-	if (key != NULL && key->generated)
+	if (key != NULL && key->generated) {
 		isc_log_write(dns_lctx,
 			      DNS_LOGCATEGORY_DNSSEC, DNS_LOGMODULE_TSIG,
 			      level, "tsig key '%s' (%s): %s",
 			      namestr, creatorstr, message);
-	else
+	} else {
 		isc_log_write(dns_lctx,
 			      DNS_LOGCATEGORY_DNSSEC, DNS_LOGMODULE_TSIG,
 			      level, "tsig key '%s': %s", namestr, message);
+	}
 }
 
 static void
@@ -234,7 +184,7 @@ remove_fromring(dns_tsigkey_t *tkey) {
 		ISC_LIST_UNLINK(tkey->ring->lru, tkey, link);
 		tkey->ring->generated--;
 	}
-	(void)dns_rbt_deletename(tkey->ring->keys, &tkey->name, ISC_FALSE);
+	(void)dns_rbt_deletename(tkey->ring->keys, &tkey->name, false);
 }
 
 static void
@@ -297,7 +247,7 @@ keyring_add(dns_tsig_keyring_t *ring, dns_name_t *name,
 
 isc_result_t
 dns_tsigkey_createfromkey(dns_name_t *name, dns_name_t *algorithm,
-			  dst_key_t *dstkey, isc_boolean_t generated,
+			  dst_key_t *dstkey, bool generated,
 			  dns_name_t *creator, isc_stdtime_t inception,
 			  isc_stdtime_t expire, isc_mem_t *mctx,
 			  dns_tsig_keyring_t *ring, dns_tsigkey_t **key)
@@ -503,8 +453,7 @@ cleanup_ring(dns_tsig_keyring_t *ring)
 	 */
 	isc_stdtime_get(&now);
 	dns_name_init(&foundname, NULL);
-	dns_fixedname_init(&fixedorigin);
-	origin = dns_fixedname_name(&fixedorigin);
+	origin = dns_fixedname_initname(&fixedorigin);
 
  again:
 	dns_rbtnodechain_init(&chain, ring->mctx);
@@ -597,24 +546,21 @@ restore_key(dns_tsig_keyring_t *ring, isc_stdtime_t now, FILE *fp) {
 	if (isc_serial_lt(expire, now))
 		return (DNS_R_EXPIRED);
 
-	dns_fixedname_init(&fname);
-	name = dns_fixedname_name(&fname);
+	name = dns_fixedname_initname(&fname);
 	isc_buffer_init(&b, namestr, strlen(namestr));
 	isc_buffer_add(&b, strlen(namestr));
 	result = dns_name_fromtext(name, &b, dns_rootname, 0, NULL);
 	if (result != ISC_R_SUCCESS)
 		return (result);
 
-	dns_fixedname_init(&fcreator);
-	creator = dns_fixedname_name(&fcreator);
+	creator = dns_fixedname_initname(&fcreator);
 	isc_buffer_init(&b, creatorstr, strlen(creatorstr));
 	isc_buffer_add(&b, strlen(creatorstr));
 	result = dns_name_fromtext(creator, &b, dns_rootname, 0, NULL);
 	if (result != ISC_R_SUCCESS)
 		return (result);
 
-	dns_fixedname_init(&falgorithm);
-	algorithm = dns_fixedname_name(&falgorithm);
+	algorithm = dns_fixedname_initname(&falgorithm);
 	isc_buffer_init(&b, algorithmstr, strlen(algorithmstr));
 	isc_buffer_add(&b, strlen(algorithmstr));
 	result = dns_name_fromtext(algorithm, &b, dns_rootname, 0, NULL);
@@ -632,7 +578,7 @@ restore_key(dns_tsig_keyring_t *ring, isc_stdtime_t now, FILE *fp) {
 		return (result);
 
 	result = dns_tsigkey_createfromkey(name, algorithm, dstkey,
-					   ISC_TRUE, creator, inception,
+					   true, creator, inception,
 					   expire, ring->mctx, ring, NULL);
 	if (dstkey != NULL)
 		dst_key_free(&dstkey);
@@ -692,8 +638,7 @@ dns_tsigkeyring_dumpanddetach(dns_tsig_keyring_t **ringp, FILE *fp) {
 
 	isc_stdtime_get(&now);
 	dns_name_init(&foundname, NULL);
-	dns_fixedname_init(&fixedorigin);
-	origin = dns_fixedname_name(&fixedorigin);
+	origin = dns_fixedname_initname(&fixedorigin);
 	dns_rbtnodechain_init(&chain, ring->mctx);
 	result = dns_rbtnodechain_first(&chain, ring->keys, &foundname,
 					origin);
@@ -723,9 +668,23 @@ dns_tsigkeyring_dumpanddetach(dns_tsig_keyring_t **ringp, FILE *fp) {
 	return (result);
 }
 
+const dns_name_t *
+dns_tsigkey_identity(const dns_tsigkey_t *tsigkey) {
+	REQUIRE(tsigkey == NULL || VALID_TSIG_KEY(tsigkey));
+
+	if (tsigkey == NULL) {
+		return (NULL);
+	}
+	if (tsigkey->generated) {
+		return (tsigkey->creator);
+	} else {
+		return (&tsigkey->name);
+	}
+}
+
 isc_result_t
 dns_tsigkey_create(dns_name_t *name, dns_name_t *algorithm,
-		   unsigned char *secret, int length, isc_boolean_t generated,
+		   unsigned char *secret, int length, bool generated,
 		   dns_name_t *creator, isc_stdtime_t inception,
 		   isc_stdtime_t expire, isc_mem_t *mctx,
 		   dns_tsig_keyring_t *ring, dns_tsigkey_t **key)
@@ -893,15 +852,15 @@ dns_tsigkey_setdeleted(dns_tsigkey_t *key) {
 
 isc_result_t
 dns_tsig_sign(dns_message_t *msg) {
-	dns_tsigkey_t *key;
+	dns_tsigkey_t *key = NULL;
 	dns_rdata_any_tsig_t tsig, querytsig;
 	unsigned char data[128];
 	isc_buffer_t databuf, sigbuf;
-	isc_buffer_t *dynbuf;
+	isc_buffer_t *dynbuf = NULL;
 	dns_name_t *owner;
 	dns_rdata_t *rdata = NULL;
-	dns_rdatalist_t *datalist;
-	dns_rdataset_t *dataset;
+	dns_rdatalist_t *datalist = NULL;
+	dns_rdataset_t *dataset = NULL;
 	isc_region_t r;
 	isc_stdtime_t now;
 	isc_mem_t *mctx;
@@ -909,20 +868,22 @@ dns_tsig_sign(dns_message_t *msg) {
 	isc_result_t ret;
 	unsigned char badtimedata[BADTIMELEN];
 	unsigned int sigsize = 0;
-	isc_boolean_t response;
+	bool response;
 
 	REQUIRE(msg != NULL);
 	key = dns_message_gettsigkey(msg);
 	REQUIRE(VALID_TSIG_KEY(key));
 
 	/*
-	 * If this is a response, there should be a query tsig.
+	 * If this is a response, there should be a TSIG in the query with the
+	 * the exception if this is a TKEY request (see RFC 3645, Section 2.2).
 	 */
 	response = is_response(msg);
-	if (response && msg->querytsig == NULL)
-		return (DNS_R_EXPECTEDTSIG);
-
-	dynbuf = NULL;
+	if (response && msg->querytsig == NULL) {
+		if (msg->tkey != 1) {
+			return (DNS_R_EXPECTEDTSIG);
+		}
+	}
 
 	mctx = msg->mctx;
 
@@ -964,25 +925,33 @@ dns_tsig_sign(dns_message_t *msg) {
 	{
 		unsigned char header[DNS_MESSAGE_HEADERLEN];
 		isc_buffer_t headerbuf;
-		isc_uint16_t digestbits;
+		uint16_t digestbits;
+		bool querytsig_ok = false;
 
 		/*
 		 * If it is a response, we assume that the request MAC
 		 * has validated at this point. This is why we include a
 		 * MAC length > 0 in the reply.
 		 */
-
 		ret = dst_context_create3(key->key, mctx,
 					  DNS_LOGCATEGORY_DNSSEC,
-					  ISC_TRUE, &ctx);
+					  true, &ctx);
 		if (ret != ISC_R_SUCCESS)
 			return (ret);
 
 		/*
-		 * If this is a response, digest the request's MAC.
+		 * If this is a response, and if there was a TSIG in
+		 * the query, digest the request's MAC.
+		 *
+		 * (Note: querytsig should be non-NULL for all
+		 * responses except TKEY responses. Those may be signed
+		 * with the newly-negotiated TSIG key even if the query
+		 * wasn't signed.)
 		 */
-		if (response) {
+		if (response && msg->querytsig != NULL) {
 			dns_rdata_t querytsigrdata = DNS_RDATA_INIT;
+
+			INSIST(msg->verified_sig);
 
 			ret = dns_rdataset_first(msg->querytsig);
 			if (ret != ISC_R_SUCCESS)
@@ -1004,14 +973,8 @@ dns_tsig_sign(dns_message_t *msg) {
 			ret = dst_context_adddata(ctx, &r);
 			if (ret != ISC_R_SUCCESS)
 				goto cleanup_context;
+			querytsig_ok = true;
 		}
-#if defined(__clang__)  && \
-       ( __clang_major__ < 3 || \
-	(__clang_major__ == 3 && __clang_minor__ < 2) || \
-	(__clang_major__ == 4 && __clang_minor__ < 2))
-	/* false positive: http://llvm.org/bugs/show_bug.cgi?id=14461 */
-		else memset(&querytsig, 0, sizeof(querytsig));
-#endif
 
 		/*
 		 * Digest the header.
@@ -1057,8 +1020,7 @@ dns_tsig_sign(dns_message_t *msg) {
 		}
 		/* Digest the timesigned and fudge */
 		isc_buffer_clear(&databuf);
-		if (tsig.error == dns_tsigerror_badtime) {
-			INSIST(response);
+		if (tsig.error == dns_tsigerror_badtime && querytsig_ok) {
 			tsig.timesigned = querytsig.timesigned;
 		}
 		isc_buffer_putuint48(&databuf, tsig.timesigned);
@@ -1109,19 +1071,8 @@ dns_tsig_sign(dns_message_t *msg) {
 		dst_context_destroy(&ctx);
 		digestbits = dst_key_getbits(key->key);
 		if (digestbits != 0) {
-			/*
-			 * XXXRAY: Is this correct? What is the
-			 * expected behavior when digestbits is not an
-			 * integral multiple of 8? It looks like bytes
-			 * should either be (digestbits/8) or
-			 * (digestbits+7)/8.
-			 *
-			 * In any case, for current algorithms,
-			 * digestbits are an integral multiple of 8, so
-			 * it has the same effect as (digestbits/8).
-			 */
-			unsigned int bytes = (digestbits + 1) / 8;
-			if (response && bytes < querytsig.siglen)
+			unsigned int bytes = (digestbits + 7) / 8;
+			if (querytsig_ok && bytes < querytsig.siglen)
 				bytes = querytsig.siglen;
 			if (bytes > isc_buffer_usedlength(&sigbuf))
 				bytes = isc_buffer_usedlength(&sigbuf);
@@ -1216,10 +1167,10 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 	unsigned char header[DNS_MESSAGE_HEADERLEN];
 	dst_context_t *ctx = NULL;
 	isc_mem_t *mctx;
-	isc_uint16_t addcount, id;
+	uint16_t addcount, id;
 	unsigned int siglen;
 	unsigned int alg;
-	isc_boolean_t response;
+	bool response;
 
 	REQUIRE(source != NULL);
 	REQUIRE(DNS_MESSAGE_VALID(msg));
@@ -1315,7 +1266,7 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 		if (ret != ISC_R_SUCCESS) {
 			msg->tsigstatus = dns_tsigerror_badkey;
 			ret = dns_tsigkey_create(keyname, &tsig.algorithm,
-						 NULL, 0, ISC_FALSE, NULL,
+						 NULL, 0, false, NULL,
 						 now, now,
 						 mctx, NULL, &msg->tsigkey);
 			if (ret != ISC_R_SUCCESS)
@@ -1357,14 +1308,14 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 	}
 
 	if (tsig.siglen > 0) {
-		isc_uint16_t addcount_n;
+		uint16_t addcount_n;
 
 		sig_r.base = tsig.signature;
 		sig_r.length = tsig.siglen;
 
 		ret = dst_context_create3(key, mctx,
 					  DNS_LOGCATEGORY_DNSSEC,
-					  ISC_FALSE, &ctx);
+					  false, &ctx);
 		if (ret != ISC_R_SUCCESS)
 			return (ret);
 
@@ -1396,7 +1347,7 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 		 */
 		memmove(&addcount, &header[DNS_MESSAGE_HEADERLEN - 2], 2);
 		addcount_n = ntohs(addcount);
-		addcount = htons((isc_uint16_t)(addcount_n - 1));
+		addcount = htons((uint16_t)(addcount_n - 1));
 		memmove(&header[DNS_MESSAGE_HEADERLEN - 2], &addcount, 2);
 
 		/*
@@ -1475,6 +1426,7 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 		} else if (ret != ISC_R_SUCCESS) {
 			goto cleanup_context;
 		}
+		msg->verified_sig = 1;
 	} else if (tsig.error != dns_tsigerror_badsig &&
 		   tsig.error != dns_tsigerror_badkey) {
 		tsig_log(msg->tsigkey, 2, "signature was empty");
@@ -1511,20 +1463,10 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 	    alg == DST_ALG_HMACSHA224 || alg == DST_ALG_HMACSHA256 ||
 	    alg == DST_ALG_HMACSHA384 || alg == DST_ALG_HMACSHA512)
 	{
-		isc_uint16_t digestbits = dst_key_getbits(key);
+		uint16_t digestbits = dst_key_getbits(key);
 
-		/*
-		 * XXXRAY: Is this correct? What is the expected
-		 * behavior when digestbits is not an integral multiple
-		 * of 8? It looks like bytes should either be
-		 * (digestbits/8) or (digestbits+7)/8.
-		 *
-		 * In any case, for current algorithms, digestbits are
-		 * an integral multiple of 8, so it has the same effect
-		 * as (digestbits/8).
-		 */
 		if (tsig.siglen > 0 && digestbits != 0 &&
-		    tsig.siglen < ((digestbits + 1) / 8))
+		    tsig.siglen < ((digestbits + 7) / 8))
 		{
 			msg->tsigstatus = dns_tsigerror_badtrunc;
 			tsig_log(msg->tsigkey, 2,
@@ -1552,7 +1494,6 @@ dns_tsig_verify(isc_buffer_t *source, dns_message_t *msg,
 	}
 
 	msg->tsigstatus = dns_rcode_noerror;
-	msg->verified_sig = 1;
 	ret = ISC_R_SUCCESS;
 
  cleanup_context:
@@ -1575,8 +1516,8 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 	dns_tsigkey_t *tsigkey;
 	dst_key_t *key = NULL;
 	unsigned char header[DNS_MESSAGE_HEADERLEN];
-	isc_uint16_t addcount, id;
-	isc_boolean_t has_tsig = ISC_FALSE;
+	uint16_t addcount, id;
+	bool has_tsig = false;
 	isc_mem_t *mctx;
 	unsigned int siglen;
 	unsigned int alg;
@@ -1614,7 +1555,7 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 	 * If there is a TSIG in this message, do some checks.
 	 */
 	if (msg->tsig != NULL) {
-		has_tsig = ISC_TRUE;
+		has_tsig = true;
 
 		keyname = msg->tsigname;
 		ret = dns_rdataset_first(msg->tsig);
@@ -1676,7 +1617,7 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 	if (msg->tsigctx == NULL) {
 		ret = dst_context_create3(key, mctx,
 					  DNS_LOGCATEGORY_DNSSEC,
-					  ISC_FALSE, &msg->tsigctx);
+					  false, &msg->tsigctx);
 		if (ret != ISC_R_SUCCESS)
 			goto cleanup_querystruct;
 
@@ -1713,19 +1654,20 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 	 * Decrement the additional field counter if necessary.
 	 */
 	if (has_tsig) {
-		isc_uint16_t addcount_n;
+		uint16_t addcount_n;
 
 		memmove(&addcount, &header[DNS_MESSAGE_HEADERLEN - 2], 2);
 		addcount_n = ntohs(addcount);
-		addcount = htons((isc_uint16_t)(addcount_n - 1));
+		addcount = htons((uint16_t)(addcount_n - 1));
 		memmove(&header[DNS_MESSAGE_HEADERLEN - 2], &addcount, 2);
-	}
 
-	/*
-	 * Put in the original id.
-	 */
-	/* XXX Can TCP transfers be forwarded?  How would that work? */
-	if (has_tsig) {
+		/*
+		 * Put in the original id.
+		 *
+		 * XXX Can TCP transfers be forwarded?  How would that
+		 * work?
+		 */
+		/* cppcheck-suppress uninitStructMember symbolName=tsig.originalid */
 		id = htons(tsig.originalid);
 		memmove(&header[0], &id, 2);
 	}
@@ -1791,6 +1733,7 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 		} else if (ret != ISC_R_SUCCESS) {
 			goto cleanup_context;
 		}
+		msg->verified_sig = 1;
 
 		/*
 		 * Here at this point, the MAC has been verified. Even
@@ -1833,21 +1776,10 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 			alg == DST_ALG_HMACSHA384 ||
 			alg == DST_ALG_HMACSHA512)
 		{
-			isc_uint16_t digestbits = dst_key_getbits(key);
+			uint16_t digestbits = dst_key_getbits(key);
 
-			/*
-			 * XXXRAY: Is this correct? What is the
-			 * expected behavior when digestbits is not an
-			 * integral multiple of 8? It looks like bytes
-			 * should either be (digestbits/8) or
-			 * (digestbits+7)/8.
-			 *
-			 * In any case, for current algorithms,
-			 * digestbits are an integral multiple of 8, so
-			 * it has the same effect as (digestbits/8).
-			 */
 			if (tsig.siglen > 0 && digestbits != 0 &&
-			    tsig.siglen < ((digestbits + 1) / 8))
+			    tsig.siglen < ((digestbits + 7) / 8))
 			{
 				msg->tsigstatus = dns_tsigerror_badtrunc;
 				tsig_log(msg->tsigkey, 2,
@@ -1878,7 +1810,6 @@ tsig_verify_tcp(isc_buffer_t *source, dns_message_t *msg) {
 	}
 
 	msg->tsigstatus = dns_rcode_noerror;
-	msg->verified_sig = 1;
 	ret = ISC_R_SUCCESS;
 
  cleanup_context:

@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 1998-2001, 2003-2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: rwlock.h,v 1.28 2007/06/19 23:47:18 tbox Exp $ */
 
 #ifndef ISC_RWLOCK_H
 #define ISC_RWLOCK_H 1
+
+#include <inttypes.h>
 
 /*! \file isc/rwlock.h */
 
@@ -17,6 +21,14 @@
 #include <isc/lang.h>
 #include <isc/platform.h>
 #include <isc/types.h>
+
+#if defined(ISC_PLATFORM_HAVESTDATOMIC)
+#if defined(__cplusplus)
+#include <isc/stdatomic.h>
+#else
+#include <stdatomic.h>
+#endif
+#endif
 
 ISC_LANG_BEGINDECLS
 
@@ -27,17 +39,22 @@ typedef enum {
 } isc_rwlocktype_t;
 
 #ifdef ISC_PLATFORM_USETHREADS
-#if defined(ISC_PLATFORM_HAVEXADD) && defined(ISC_PLATFORM_HAVECMPXCHG)
-#define ISC_RWLOCK_USEATOMIC 1
-#endif
+# if defined(ISC_PLATFORM_HAVESTDATOMIC)
+#  define ISC_RWLOCK_USEATOMIC 1
+#  define ISC_RWLOCK_USESTDATOMIC 1
+# else /* defined(ISC_PLATFORM_HAVESTDATOMIC) */
+#  if defined(ISC_PLATFORM_HAVEXADD) && defined(ISC_PLATFORM_HAVECMPXCHG)
+#   define ISC_RWLOCK_USEATOMIC 1
+#  endif
+# endif /* defined(ISC_PLATFORM_HAVESTDATOMIC) */
 
 struct isc_rwlock {
 	/* Unlocked. */
 	unsigned int		magic;
 	isc_mutex_t		lock;
-	isc_int32_t		spins;
+	int32_t		spins;
 
-#if defined(ISC_PLATFORM_HAVEXADD) && defined(ISC_PLATFORM_HAVECMPXCHG)
+#if defined(ISC_RWLOCK_USEATOMIC)
 	/*
 	 * When some atomic instructions with hardware assistance are
 	 * available, rwlock will use those so that concurrent readers do not
@@ -52,9 +69,15 @@ struct isc_rwlock {
 	 */
 
 	/* Read or modified atomically. */
-	isc_int32_t		write_requests;
-	isc_int32_t		write_completions;
-	isc_int32_t		cnt_and_flag;
+#if defined(ISC_RWLOCK_USESTDATOMIC)
+	atomic_int_fast32_t	write_requests;
+	atomic_int_fast32_t	write_completions;
+	atomic_int_fast32_t	cnt_and_flag;
+#else
+	int32_t		write_requests;
+	int32_t		write_completions;
+	int32_t		cnt_and_flag;
+#endif
 
 	/* Locked by lock. */
 	isc_condition_t		readable;
@@ -67,7 +90,7 @@ struct isc_rwlock {
 	/* Unlocked. */
 	unsigned int		write_quota;
 
-#else  /* ISC_PLATFORM_HAVEXADD && ISC_PLATFORM_HAVECMPXCHG */
+#else  /* ISC_RWLOCK_USEATOMIC */
 
 	/*%< Locked by lock. */
 	isc_condition_t		readable;
@@ -89,7 +112,7 @@ struct isc_rwlock {
 	unsigned int		read_quota;
 	unsigned int		write_quota;
 	isc_rwlocktype_t	original;
-#endif  /* ISC_PLATFORM_HAVEXADD && ISC_PLATFORM_HAVECMPXCHG */
+#endif  /* ISC_RWLOCK_USEATOMIC */
 };
 #else /* ISC_PLATFORM_USETHREADS */
 struct isc_rwlock {

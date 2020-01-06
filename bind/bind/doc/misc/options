@@ -87,6 +87,7 @@ options {
             ] [ dscp <integer> ];
         alt-transfer-source-v6 ( <ipv6_address> | * ) [ port ( <integer> |
             * ) ] [ dscp <integer> ];
+        answer-cookie <boolean>;
         attach-cache <string>;
         auth-nxdomain <boolean>; // default changed
         auto-dnssec ( allow | maintain | off );
@@ -96,9 +97,9 @@ options {
         bindkeys-file <quoted_string>;
         blackhole { <address_match_element>; ... };
         cache-file <quoted_string>;
-        catalog-zones { zone <quoted_string> [ default-masters [ port
-            <integer> ] [ dscp <integer> ] { ( <masters> | <ipv4_address> [
-            port <integer> ] | <ipv6_address> [ port <integer> ] ) [ key
+        catalog-zones { zone <string> [ default-masters [ port <integer> ]
+            [ dscp <integer> ] { ( <masters> | <ipv4_address> [ port
+            <integer> ] | <ipv6_address> [ port <integer> ] ) [ key
             <string> ]; ... } ] [ zone-directory <quoted_string> ] [
             in-memory <boolean> ] [ min-update-interval <integer> ]; ... };
         check-dup-records ( fail | warn | ignore );
@@ -113,8 +114,8 @@ options {
         check-wildcard <boolean>;
         cleaning-interval <integer>;
         clients-per-query <integer>;
-        cookie-algorithm ( aes | sha1 | sha256 );
-        cookie-secret <string>;
+        cookie-algorithm ( aes | sha1 | sha256 | siphash24 );
+        cookie-secret <string>; // may occur multiple times
         coresize ( default | unlimited | <sizeval> );
         datasize ( default | unlimited | <sizeval> );
         deallocate-on-exit <boolean>; // obsolete
@@ -186,7 +187,7 @@ options {
         fstrm-set-output-queue-size <integer>; // not configured
         fstrm-set-reopen-interval <integer>; // not configured
         geoip-directory ( <quoted_string> | none ); // not configured
-        geoip-use-ecs ( <quoted_string> | none ); // not configured
+        geoip-use-ecs <boolean>; // not configured
         has-old-clients <boolean>; // obsolete
         heartbeat-interval <integer>;
         host-statistics <boolean>; // not implemented
@@ -298,15 +299,16 @@ options {
         require-server-cookie <boolean>;
         reserved-sockets <integer>;
         resolver-query-timeout <integer>;
-        response-policy { zone <quoted_string> [ log <boolean> ] [
-            max-policy-ttl <integer> ] [ policy ( cname | disabled | drop |
-            given | no-op | nodata | nxdomain | passthru | tcp-only
-            <quoted_string> ) ] [ recursive-only <boolean> ]; ... } [
-            break-dnssec <boolean> ] [ max-policy-ttl <integer> ] [
-            min-ns-dots <integer> ] [ nsip-wait-recurse <boolean> ] [
-            qname-wait-recurse <boolean> ] [ recursive-only <boolean> ];
+        response-policy { zone <string> [ log <boolean> ] [ max-policy-ttl
+            <integer> ] [ policy ( cname | disabled | drop | given | no-op
+            | nodata | nxdomain | passthru | tcp-only <quoted_string> ) ] [
+            recursive-only <boolean> ]; ... } [ break-dnssec <boolean> ] [
+            max-policy-ttl <integer> ] [ min-ns-dots <integer> ] [
+            nsip-wait-recurse <boolean> ] [ qname-wait-recurse <boolean> ]
+            [ recursive-only <boolean> ];
         rfc2308-type1 <boolean>; // not yet implemented
         root-delegation-only [ exclude { <quoted_string>; ... } ];
+        root-key-sentinel <boolean>;
         rrset-order { [ class <string> ] [ type <string> ] [ name
             <quoted_string> ] <string> <string>; ... };
         secroots-file <quoted_string>;
@@ -434,9 +436,9 @@ view <string> [ <class> ] {
         auth-nxdomain <boolean>; // default changed
         auto-dnssec ( allow | maintain | off );
         cache-file <quoted_string>;
-        catalog-zones { zone <quoted_string> [ default-masters [ port
-            <integer> ] [ dscp <integer> ] { ( <masters> | <ipv4_address> [
-            port <integer> ] | <ipv6_address> [ port <integer> ] ) [ key
+        catalog-zones { zone <string> [ default-masters [ port <integer> ]
+            [ dscp <integer> ] { ( <masters> | <ipv4_address> [ port
+            <integer> ] | <ipv6_address> [ port <integer> ] ) [ key
             <string> ]; ... } ] [ zone-directory <quoted_string> ] [
             in-memory <boolean> ] [ min-update-interval <integer> ]; ... };
         check-dup-records ( fail | warn | ignore );
@@ -599,15 +601,16 @@ view <string> [ <class> ] {
         request-sit <boolean>; // obsolete
         require-server-cookie <boolean>;
         resolver-query-timeout <integer>;
-        response-policy { zone <quoted_string> [ log <boolean> ] [
-            max-policy-ttl <integer> ] [ policy ( cname | disabled | drop |
-            given | no-op | nodata | nxdomain | passthru | tcp-only
-            <quoted_string> ) ] [ recursive-only <boolean> ]; ... } [
-            break-dnssec <boolean> ] [ max-policy-ttl <integer> ] [
-            min-ns-dots <integer> ] [ nsip-wait-recurse <boolean> ] [
-            qname-wait-recurse <boolean> ] [ recursive-only <boolean> ];
+        response-policy { zone <string> [ log <boolean> ] [ max-policy-ttl
+            <integer> ] [ policy ( cname | disabled | drop | given | no-op
+            | nodata | nxdomain | passthru | tcp-only <quoted_string> ) ] [
+            recursive-only <boolean> ]; ... } [ break-dnssec <boolean> ] [
+            max-policy-ttl <integer> ] [ min-ns-dots <integer> ] [
+            nsip-wait-recurse <boolean> ] [ qname-wait-recurse <boolean> ]
+            [ recursive-only <boolean> ];
         rfc2308-type1 <boolean>; // not yet implemented
         root-delegation-only [ exclude { <quoted_string>; ... } ];
+        root-key-sentinel <boolean>;
         rrset-order { [ class <string> ] [ type <string> ] [ name
             <quoted_string> ] <string> <string>; ... };
         send-cookie <boolean>;
@@ -751,8 +754,7 @@ view <string> [ <class> ] {
                 request-expire <boolean>;
                 request-ixfr <boolean>;
                 serial-update-method ( date | increment | unixtime );
-                server-addresses { ( <ipv4_address> | <ipv6_address> ) [
-                    port <integer> ]; ... };
+                server-addresses { ( <ipv4_address> | <ipv6_address> ); ... };
                 server-names { <quoted_string>; ... };
                 sig-signing-nodes <integer>;
                 sig-signing-signatures <integer>;
@@ -767,10 +769,10 @@ view <string> [ <class> ] {
                     | slave | static-stub | stub );
                 update-check-ksk <boolean>;
                 update-policy ( local | { ( deny | grant ) <string> (
-                    6to4-self | external | krb5-self | krb5-subdomain |
-                    ms-self | ms-subdomain | name | self | selfsub |
-                    selfwild | subdomain | tcp-self | wildcard | zonesub )
-                    [ <string> ] <rrtypelist>; ... };
+                    6to4-self | external | krb5-self | krb5-selfsub |
+                    krb5-subdomain | ms-self | ms-selfsub | ms-subdomain |
+                    name | self | selfsub | selfwild | subdomain | tcp-self
+                    | wildcard | zonesub ) [ <string> ] <rrtypelist>; ... };
                 use-alt-transfer-source <boolean>;
                 zero-no-soa-ttl <boolean>;
                 zone-statistics ( full | terse | none | <boolean> );
@@ -853,8 +855,7 @@ zone <string> [ <class> ] {
         request-expire <boolean>;
         request-ixfr <boolean>;
         serial-update-method ( date | increment | unixtime );
-        server-addresses { ( <ipv4_address> | <ipv6_address> ) [ port
-            <integer> ]; ... };
+        server-addresses { ( <ipv4_address> | <ipv6_address> ); ... };
         server-names { <quoted_string>; ... };
         sig-signing-nodes <integer>;
         sig-signing-signatures <integer>;
@@ -869,9 +870,10 @@ zone <string> [ <class> ] {
             | static-stub | stub );
         update-check-ksk <boolean>;
         update-policy ( local | { ( deny | grant ) <string> ( 6to4-self |
-            external | krb5-self | krb5-subdomain | ms-self | ms-subdomain
-            | name | self | selfsub | selfwild | subdomain | tcp-self |
-            wildcard | zonesub ) [ <string> ] <rrtypelist>; ... };
+            external | krb5-self | krb5-selfsub | krb5-subdomain | ms-self
+            | ms-selfsub | ms-subdomain | name | self | selfsub | selfwild
+            | subdomain | tcp-self | wildcard | zonesub ) [ <string> ]
+            <rrtypelist>; ... };
         use-alt-transfer-source <boolean>;
         zero-no-soa-ttl <boolean>;
         zone-statistics ( full | terse | none | <boolean> );

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: md5.c,v 1.16 2009/02/06 23:47:42 tbox Exp $ */
 
 /*! \file
  * This code implements the MD5 message-digest algorithm.
@@ -31,21 +33,23 @@
 
 #ifndef PK11_MD5_DISABLE
 
+#include <stdbool.h>
+
 #include <isc/assertions.h>
 #include <isc/md5.h>
 #include <isc/platform.h>
+#include <isc/safe.h>
 #include <isc/string.h>
 #include <isc/types.h>
+#include <isc/util.h>
 
 #if PKCS11CRYPTO
 #include <pk11/internal.h>
 #include <pk11/pk11.h>
 #endif
 
-#include <isc/util.h>
-
 #ifdef ISC_PLATFORM_OPENSSLHASH
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 #define EVP_MD_CTX_new() &(ctx->_ctx)
 #define EVP_MD_CTX_free(ptr) EVP_MD_CTX_cleanup(ptr)
 #endif
@@ -54,7 +58,9 @@ void
 isc_md5_init(isc_md5_t *ctx) {
 	ctx->ctx = EVP_MD_CTX_new();
 	RUNTIME_CHECK(ctx->ctx != NULL);
-	RUNTIME_CHECK(EVP_DigestInit(ctx->ctx, EVP_md5()) == 1);
+	if (EVP_DigestInit(ctx->ctx, EVP_md5()) != 1) {
+		FATAL_ERROR(__FILE__, __LINE__, "Cannot initialize MD5.");
+	}
 }
 
 void
@@ -86,8 +92,8 @@ isc_md5_init(isc_md5_t *ctx) {
 	CK_RV rv;
 	CK_MECHANISM mech = { CKM_MD5, NULL, 0 };
 
-	RUNTIME_CHECK(pk11_get_session(ctx, OP_DIGEST, ISC_TRUE, ISC_FALSE,
-				       ISC_FALSE, NULL, 0) == ISC_R_SUCCESS);
+	RUNTIME_CHECK(pk11_get_session(ctx, OP_DIGEST, true, false,
+				       false, NULL, 0) == ISC_R_SUCCESS);
 	PK11_FATALCHECK(pkcs_C_DigestInit, (ctx->session, &mech));
 }
 
@@ -99,7 +105,7 @@ isc_md5_invalidate(isc_md5_t *ctx) {
 	if (ctx->handle == NULL)
 		return;
 	(void) pkcs_C_DigestFinal(ctx->session, garbage, &len);
-	memset(garbage, 0, sizeof(garbage));
+	isc_safe_memwipe(garbage, sizeof(garbage));
 	pk11_return_session(ctx);
 }
 
@@ -126,12 +132,12 @@ isc_md5_final(isc_md5_t *ctx, unsigned char *digest) {
 #else
 
 static void
-byteSwap(isc_uint32_t *buf, unsigned words)
+byteSwap(uint32_t *buf, unsigned words)
 {
 	unsigned char *p = (unsigned char *)buf;
 
 	do {
-		*buf++ = (isc_uint32_t)((unsigned)p[3] << 8 | p[2]) << 16 |
+		*buf++ = (uint32_t)((unsigned)p[3] << 8 | p[2]) << 16 |
 			((unsigned)p[1] << 8 | p[0]);
 		p += 4;
 	} while (--words);
@@ -154,7 +160,7 @@ isc_md5_init(isc_md5_t *ctx) {
 
 void
 isc_md5_invalidate(isc_md5_t *ctx) {
-	memset(ctx, 0, sizeof(isc_md5_t));
+	isc_safe_memwipe(ctx, sizeof(*ctx));
 }
 
 /*@{*/
@@ -177,8 +183,8 @@ isc_md5_invalidate(isc_md5_t *ctx) {
  * the data and converts bytes into longwords for this routine.
  */
 static void
-transform(isc_uint32_t buf[4], isc_uint32_t const in[16]) {
-	register isc_uint32_t a, b, c, d;
+transform(uint32_t buf[4], uint32_t const in[16]) {
+	register uint32_t a, b, c, d;
 
 	a = buf[0];
 	b = buf[1];
@@ -265,7 +271,7 @@ transform(isc_uint32_t buf[4], isc_uint32_t const in[16]) {
  */
 void
 isc_md5_update(isc_md5_t *ctx, const unsigned char *buf, unsigned int len) {
-	isc_uint32_t t;
+	uint32_t t;
 
 	/* Update byte count */
 
@@ -330,18 +336,54 @@ isc_md5_final(isc_md5_t *ctx, unsigned char *digest) {
 
 	byteSwap(ctx->buf, 4);
 	memmove(digest, ctx->buf, 16);
-	memset(ctx, 0, sizeof(isc_md5_t));	/* In case it's sensitive */
+	isc_safe_memwipe(ctx, sizeof(*ctx));	/* In case it's sensitive */
 }
 #endif
 
+/*
+ * Check for MD5 support; if it does not work, raise a fatal error.
+ *
+ * Use "a" as the test vector.
+ *
+ * Standard use is testing false and result true.
+ * Testing use is testing true and result false;
+ */
+bool
+isc_md5_check(bool testing) {
+	isc_md5_t ctx;
+	unsigned char input = 'a';
+	unsigned char digest[ISC_MD5_DIGESTLENGTH];
+	unsigned char expected[] = {
+		0x0c, 0xc1, 0x75, 0xb9, 0xc0, 0xf1, 0xb6, 0xa8,
+		0x31, 0xc3, 0x99, 0xe2, 0x69, 0x77, 0x26, 0x61
+	};
+
+	INSIST(sizeof(expected) == ISC_MD5_DIGESTLENGTH);
+
+	/*
+	 * Introduce a fault for testing.
+	 */
+	if (testing) {
+		input ^= 0x01;
+	}
+
+	/*
+	 * These functions do not return anything; any failure will be fatal.
+	 */
+	isc_md5_init(&ctx);
+	isc_md5_update(&ctx, &input, 1U);
+	isc_md5_final(&ctx, digest);
+
+	/*
+	 * Must return true in standard case, should return false for testing.
+	 */
+	return (memcmp(digest, expected, ISC_MD5_DIGESTLENGTH) == 0);
+}
+
 #else /* !PK11_MD5_DISABLE */
-#ifdef WIN32
-/* Make the Visual Studio linker happy */
+
 #include <isc/util.h>
 
-void isc_md5_final() { INSIST(0); }
-void isc_md5_init() { INSIST(0); }
-void isc_md5_invalidate() { INSIST(0); }
-void isc_md5_update() { INSIST(0); }
-#endif
+EMPTY_TRANSLATION_UNIT
+
 #endif /* PK11_MD5_DISABLE */

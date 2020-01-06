@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 1999-2002, 2004-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 1995-2000 by Network Associates, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) Network Associates, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,12 +23,10 @@
  * IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/*%
- * Principal Author: Brian Wellington
- * $Id: dst_parse.c,v 1.29 2011/08/18 23:46:35 tbox Exp $
- */
-
 #include <config.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/base64.h>
 #include <isc/dir.h>
@@ -112,6 +113,10 @@ static struct parse_map map[] = {
 	{TAG_ECDSA_ENGINE, "Engine:" },
 	{TAG_ECDSA_LABEL, "Label:" },
 
+	{TAG_EDDSA_PRIVATEKEY, "PrivateKey:"},
+	{TAG_EDDSA_ENGINE, "Engine:" },
+	{TAG_EDDSA_LABEL, "Label:" },
+
 #ifndef PK11_MD5_DISABLE
 	{TAG_HMACMD5_KEY, "Key:"},
 	{TAG_HMACMD5_BITS, "Bits:"},
@@ -182,17 +187,17 @@ find_numericdata(const char *s) {
 }
 
 static int
-check_rsa(const dst_private_t *priv, isc_boolean_t external) {
+check_rsa(const dst_private_t *priv, bool external) {
 	int i, j;
-	isc_boolean_t have[RSA_NTAGS];
-	isc_boolean_t ok;
+	bool have[RSA_NTAGS];
+	bool ok;
 	unsigned int mask;
 
 	if (external)
 		return ((priv->nelements == 0) ? 0 : -1);
 
 	for (i = 0; i < RSA_NTAGS; i++)
-		have[i] = ISC_FALSE;
+		have[i] = false;
 
 	for (j = 0; j < priv->nelements; j++) {
 		for (i = 0; i < RSA_NTAGS; i++)
@@ -200,12 +205,10 @@ check_rsa(const dst_private_t *priv, isc_boolean_t external) {
 				break;
 		if (i == RSA_NTAGS)
 			return (-1);
-		have[i] = ISC_TRUE;
+		have[i] = true;
 	}
 
-	mask = ~0;
-	mask <<= sizeof(mask) * 8 - TAG_SHIFT;
-	mask >>= sizeof(mask) * 8 - TAG_SHIFT;
+	mask = (1ULL << TAG_SHIFT) - 1;
 
 	if (have[TAG_RSA_ENGINE & mask])
 		ok = have[TAG_RSA_MODULUS & mask] &&
@@ -242,7 +245,7 @@ check_dh(const dst_private_t *priv) {
 
 #ifndef PK11_DSA_DISABLE
 static int
-check_dsa(const dst_private_t *priv, isc_boolean_t external) {
+check_dsa(const dst_private_t *priv, bool external) {
 	int i, j;
 
 	if (external)
@@ -263,7 +266,7 @@ check_dsa(const dst_private_t *priv, isc_boolean_t external) {
 #endif
 
 static int
-check_gost(const dst_private_t *priv, isc_boolean_t external) {
+check_gost(const dst_private_t *priv, bool external) {
 
 	if (external)
 		return ((priv->nelements == 0)? 0 : -1);
@@ -277,29 +280,27 @@ check_gost(const dst_private_t *priv, isc_boolean_t external) {
 }
 
 static int
-check_ecdsa(const dst_private_t *priv, isc_boolean_t external) {
+check_ecdsa(const dst_private_t *priv, bool external) {
 	int i, j;
-	isc_boolean_t have[ECDSA_NTAGS];
-	isc_boolean_t ok;
+	bool have[ECDSA_NTAGS];
+	bool ok;
 	unsigned int mask;
 
 	if (external)
 		return ((priv->nelements == 0) ? 0 : -1);
 
 	for (i = 0; i < ECDSA_NTAGS; i++)
-		have[i] = ISC_FALSE;
+		have[i] = false;
 	for (j = 0; j < priv->nelements; j++) {
 		for (i = 0; i < ECDSA_NTAGS; i++)
 			if (priv->elements[j].tag == TAG(DST_ALG_ECDSA256, i))
 				break;
 		if (i == ECDSA_NTAGS)
 			return (-1);
-		have[i] = ISC_TRUE;
+		have[i] = true;
 	}
 
-	mask = ~0;
-	mask <<= sizeof(mask) * 8 - TAG_SHIFT;
-	mask >>= sizeof(mask) * 8 - TAG_SHIFT;
+	mask = (1ULL << TAG_SHIFT) - 1;
 
 	if (have[TAG_ECDSA_ENGINE & mask])
 		ok = have[TAG_ECDSA_LABEL & mask];
@@ -308,9 +309,39 @@ check_ecdsa(const dst_private_t *priv, isc_boolean_t external) {
 	return (ok ? 0 : -1 );
 }
 
+static int
+check_eddsa(const dst_private_t *priv, bool external) {
+	int i, j;
+	bool have[EDDSA_NTAGS];
+	bool ok;
+	unsigned int mask;
+
+	if (external)
+		return ((priv->nelements == 0) ? 0 : -1);
+
+	for (i = 0; i < EDDSA_NTAGS; i++)
+		have[i] = false;
+	for (j = 0; j < priv->nelements; j++) {
+		for (i = 0; i < EDDSA_NTAGS; i++)
+			if (priv->elements[j].tag == TAG(DST_ALG_ED25519, i))
+				break;
+		if (i == EDDSA_NTAGS)
+			return (-1);
+		have[i] = true;
+	}
+
+	mask = (1ULL << TAG_SHIFT) - 1;
+
+	if (have[TAG_EDDSA_ENGINE & mask])
+		ok = have[TAG_EDDSA_LABEL & mask];
+	else
+		ok = have[TAG_EDDSA_PRIVATEKEY & mask];
+	return (ok ? 0 : -1 );
+}
+
 #ifndef PK11_MD5_DISABLE
 static int
-check_hmac_md5(const dst_private_t *priv, isc_boolean_t old) {
+check_hmac_md5(const dst_private_t *priv, bool old) {
 	int i, j;
 
 	if (priv->nelements != HMACMD5_NTAGS) {
@@ -356,7 +387,7 @@ check_hmac_sha(const dst_private_t *priv, unsigned int ntags,
 
 static int
 check_data(const dst_private_t *priv, const unsigned int alg,
-	   isc_boolean_t old, isc_boolean_t external)
+	   bool old, bool external)
 {
 #ifdef PK11_MD5_DISABLE
 	UNUSED(old);
@@ -385,6 +416,9 @@ check_data(const dst_private_t *priv, const unsigned int alg,
 	case DST_ALG_ECDSA256:
 	case DST_ALG_ECDSA384:
 		return (check_ecdsa(priv, external));
+	case DST_ALG_ED25519:
+	case DST_ALG_ED448:
+		return (check_eddsa(priv, external));
 #ifndef PK11_MD5_DISABLE
 	case DST_ALG_HMACMD5:
 		return (check_hmac_md5(priv, old));
@@ -430,7 +464,7 @@ dst__privstruct_parse(dst_key_t *key, unsigned int alg, isc_lex_t *lex,
 	unsigned int opt = ISC_LEXOPT_EOL;
 	isc_stdtime_t when;
 	isc_result_t ret;
-	isc_boolean_t external = ISC_FALSE;
+	bool external = false;
 
 	REQUIRE(priv != NULL);
 
@@ -530,7 +564,7 @@ dst__privstruct_parse(dst_key_t *key, unsigned int alg, isc_lex_t *lex,
 		}
 
 		if (strcmp(DST_AS_STR(token), "External:") == 0) {
-			external = ISC_TRUE;
+			external = true;
 			goto next;
 		}
 
@@ -607,9 +641,9 @@ dst__privstruct_parse(dst_key_t *key, unsigned int alg, isc_lex_t *lex,
 
 #ifdef PK11_MD5_DISABLE
 	check = check_data(priv, alg == DST_ALG_RSA ? DST_ALG_RSASHA1 : alg,
-			   ISC_TRUE, external);
+			   true, external);
 #else
-	check = check_data(priv, alg, ISC_TRUE, external);
+	check = check_data(priv, alg, true, external);
 #endif
 	if (check < 0) {
 		ret = DST_R_INVALIDPRIVATEKEY;
@@ -637,11 +671,11 @@ dst__privstruct_writefile(const dst_key_t *key, const dst_private_t *priv,
 {
 	FILE *fp;
 	isc_result_t result;
-	char filename[ISC_DIR_NAMEMAX];
+	char filename[NAME_MAX];
 	char buffer[MAXFIELDSIZE * 2];
 	isc_fsaccess_t access;
 	isc_stdtime_t when;
-	isc_uint32_t value;
+	uint32_t value;
 	isc_buffer_t b;
 	isc_region_t r;
 	int major, minor;
@@ -650,7 +684,7 @@ dst__privstruct_writefile(const dst_key_t *key, const dst_private_t *priv,
 
 	REQUIRE(priv != NULL);
 
-	ret = check_data(priv, dst_key_alg(key), ISC_FALSE, key->external);
+	ret = check_data(priv, dst_key_alg(key), false, key->external);
 	if (ret < 0)
 		return (DST_R_INVALIDPRIVATEKEY);
 	else if (ret != ISC_R_SUCCESS)
@@ -699,7 +733,7 @@ dst__privstruct_writefile(const dst_key_t *key, const dst_private_t *priv,
 	/* XXXDCL return value should be checked for full filesystem */
 	fprintf(fp, "%s v%d.%d\n", PRIVATE_KEY_STR, major, minor);
 
-	fprintf(fp, "%s %d ", ALGORITHM_STR, dst_key_alg(key));
+	fprintf(fp, "%s %u ", ALGORITHM_STR, dst_key_alg(key));
 
 	/* XXXVIX this switch statement is too sparse to gen a jump table. */
 	switch (dst_key_alg(key)) {
@@ -735,6 +769,12 @@ dst__privstruct_writefile(const dst_key_t *key, const dst_private_t *priv,
 		break;
 	case DST_ALG_ECDSA384:
 		fprintf(fp, "(ECDSAP384SHA384)\n");
+		break;
+	case DST_ALG_ED25519:
+		fprintf(fp, "(ED25519)\n");
+		break;
+	case DST_ALG_ED448:
+		fprintf(fp, "(ED448)\n");
 		break;
 	case DST_ALG_HMACMD5:
 		fprintf(fp, "(HMAC_MD5)\n");

@@ -1,13 +1,18 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2005, 2007, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/buffer.h>
@@ -23,8 +28,8 @@
 
 int parseflags = 0;
 isc_mem_t *mctx = NULL;
-isc_boolean_t printmemstats = ISC_FALSE;
-isc_boolean_t dorender = ISC_FALSE;
+bool printmemstats = false;
+bool dorender = false;
 
 static void
 process_message(isc_buffer_t *source);
@@ -101,11 +106,11 @@ printmessage(dns_message_t *msg) {
 int
 main(int argc, char *argv[]) {
 	isc_buffer_t *input = NULL;
-	isc_boolean_t need_close = ISC_FALSE;
-	isc_boolean_t tcp = ISC_FALSE;
-	isc_boolean_t rawdata = ISC_FALSE;
+	bool need_close = false;
+	bool tcp = false;
+	bool rawdata = false;
 	isc_result_t result;
-	isc_uint8_t c;
+	uint8_t c;
 	FILE *f;
 	int ch;
 
@@ -131,7 +136,7 @@ main(int argc, char *argv[]) {
 			break;
 		}
 	}
-	isc_commandline_reset = ISC_TRUE;
+	isc_commandline_reset = true;
 
 	RUNTIME_CHECK(isc_mem_create(0, 0, &mctx) == ISC_R_SUCCESS);
 
@@ -141,7 +146,7 @@ main(int argc, char *argv[]) {
 				parseflags |= DNS_MESSAGEPARSE_BESTEFFORT;
 				break;
 			case 'd':
-				rawdata = ISC_TRUE;
+				rawdata = true;
 				break;
 			case 'm':
 				break;
@@ -149,13 +154,13 @@ main(int argc, char *argv[]) {
 				parseflags |= DNS_MESSAGEPARSE_PRESERVEORDER;
 				break;
 			case 'r':
-				dorender = ISC_TRUE;
+				dorender = true;
 				break;
 			case 's':
-				printmemstats = ISC_TRUE;
+				printmemstats = true;
 				break;
 			case 't':
-				tcp = ISC_TRUE;
+				tcp = true;
 				break;
 			default:
 				usage();
@@ -172,7 +177,7 @@ main(int argc, char *argv[]) {
 			fprintf(stderr, "%s: fopen failed\n", argv[0]);
 			exit(1);
 		}
-		need_close = ISC_TRUE;
+		need_close = true;
 	} else
 		f = stdin;
 
@@ -183,7 +188,7 @@ main(int argc, char *argv[]) {
 		while (fread(&c, 1, 1, f) != 0) {
 			result = isc_buffer_reserve(&input, 1);
 			RUNTIME_CHECK(result == ISC_R_SUCCESS);
-			isc_buffer_putuint8(input, (isc_uint8_t) c);
+			isc_buffer_putuint8(input, (uint8_t) c);
 		}
 	} else {
 		char s[BUFSIZ];
@@ -217,7 +222,7 @@ main(int argc, char *argv[]) {
 				c += fromhex(*rp++);
 				result = isc_buffer_reserve(&input, 1);
 				RUNTIME_CHECK(result == ISC_R_SUCCESS);
-				isc_buffer_putuint8(input, (isc_uint8_t) c);
+				isc_buffer_putuint8(input, (uint8_t) c);
 			}
 		}
 	}

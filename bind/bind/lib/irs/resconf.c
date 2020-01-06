@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2009, 2011, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
 
 /*! \file resconf.c */
 
@@ -41,6 +42,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -95,7 +97,7 @@ struct irs_resconf {
 
 	char	       		*domainname;
 	char 	       		*search[RESCONFMAXSEARCH];
-	isc_uint8_t		searchnxt; /*%< index for next free slot */
+	uint8_t		searchnxt; /*%< index for next free slot */
 
 	irs_resconf_searchlist_t searchlist;
 
@@ -104,12 +106,12 @@ struct irs_resconf {
 		/*% mask has a non-zero 'family' if set */
 		isc_netaddr_t	mask;
 	} sortlist[RESCONFMAXSORTLIST];
-	isc_uint8_t		sortlistnxt;
+	uint8_t		sortlistnxt;
 
 	/*%< non-zero if 'options debug' set */
-	isc_uint8_t		resdebug;
+	uint8_t		resdebug;
 	/*%< set to n in 'options ndots:n' */
-	isc_uint8_t		ndots;
+	uint8_t		ndots;
 };
 
 static isc_result_t
@@ -451,7 +453,7 @@ resconf_parseoption(irs_resconf_t *conf,  FILE *fp) {
 				return (ISC_R_UNEXPECTEDTOKEN);
 			if (ndots < 0 || ndots > 0xff) /* Out of range. */
 				return (ISC_R_RANGE);
-			conf->ndots = (isc_uint8_t)ndots;
+			conf->ndots = (uint8_t)ndots;
 		}
 
 		if (delim == EOF || delim == '\n')
@@ -500,6 +502,7 @@ irs_resconf_load(isc_mem_t *mctx, const char *filename, irs_resconf_t **confp)
 
 	conf->mctx = mctx;
 	ISC_LIST_INIT(conf->nameservers);
+	ISC_LIST_INIT(conf->searchlist);
 	conf->numns = 0;
 	conf->domainname = NULL;
 	conf->searchnxt = 0;
@@ -554,6 +557,10 @@ irs_resconf_load(isc_mem_t *mctx, const char *filename, irs_resconf_t **confp)
 		}
 	}
 
+	if (ret != ISC_R_SUCCESS) {
+		goto error;
+	}
+
 	/* If we don't find a nameserver fall back to localhost */
 	if (conf->numns == 0U) {
 		INSIST(ISC_LIST_EMPTY(conf->nameservers));
@@ -567,7 +574,6 @@ irs_resconf_load(isc_mem_t *mctx, const char *filename, irs_resconf_t **confp)
 	 * Construct unified search list from domain or configured
 	 * search list
 	 */
-	ISC_LIST_INIT(conf->searchlist);
 	if (conf->domainname != NULL) {
 		ret = add_search(conf, conf->domainname);
 	} else if (conf->searchnxt > 0) {
@@ -578,6 +584,7 @@ irs_resconf_load(isc_mem_t *mctx, const char *filename, irs_resconf_t **confp)
 		}
 	}
 
+ error:
 	conf->magic = IRS_RESCONF_MAGIC;
 
 	if (ret != ISC_R_SUCCESS)

@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: ipv6.h,v 1.24 2007/06/19 23:47:18 tbox Exp $ */
@@ -44,7 +47,7 @@
  *** Imports.
  ***/
 
-#include <isc/int.h>
+#include <inttypes.h>
 #include <isc/platform.h>
 
 /***
@@ -53,9 +56,9 @@
 
 struct in6_addr {
 	union {
-		isc_uint8_t	_S6_u8[16];
-		isc_uint16_t	_S6_u16[8];
-		isc_uint32_t	_S6_u32[4];
+		uint8_t	_S6_u8[16];
+		uint16_t	_S6_u16[8];
+		uint32_t	_S6_u32[4];
 	} _S6_un;
 };
 #define s6_addr		_S6_un._S6_u8
@@ -71,15 +74,15 @@ LIBISC_EXTERNAL_DATA extern const struct in6_addr in6addr_loopback;
 
 struct sockaddr_in6 {
 #ifdef ISC_PLATFORM_HAVESALEN
-	isc_uint8_t		sin6_len;
-	isc_uint8_t		sin6_family;
+	uint8_t		sin6_len;
+	uint8_t		sin6_family;
 #else
-	isc_uint16_t		sin6_family;
+	uint16_t		sin6_family;
 #endif
-	isc_uint16_t		sin6_port;
-	isc_uint32_t		sin6_flowinfo;
+	uint16_t		sin6_port;
+	uint32_t		sin6_flowinfo;
 	struct in6_addr		sin6_addr;
-	isc_uint32_t		sin6_scope_id;
+	uint32_t		sin6_scope_id;
 };
 
 #ifdef ISC_PLATFORM_HAVESALEN

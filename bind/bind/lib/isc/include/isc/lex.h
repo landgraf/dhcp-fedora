@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1998-2002, 2004, 2005, 2007, 2008, 2015-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: lex.h,v 1.37 2008/05/30 23:47:01 tbox Exp $ */
 
 #ifndef ISC_LEX_H
 #define ISC_LEX_H 1
@@ -42,6 +44,7 @@
  *** Imports
  ***/
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include <isc/lang.h>
@@ -298,12 +301,13 @@ isc_lex_gettoken(isc_lex_t *lex, unsigned int options, isc_token_t *tokenp);
 
 isc_result_t
 isc_lex_getmastertoken(isc_lex_t *lex, isc_token_t *token,
-		       isc_tokentype_t expect, isc_boolean_t eol);
+		       isc_tokentype_t expect, bool eol);
 /*%<
  * Get the next token from a DNS master file type stream.  This is a
  * convenience function that sets appropriate options and handles quoted
  * strings and end of line correctly for master files.  It also ungets
- * unexpected tokens.
+ * unexpected tokens.  If `eol` is set then expect end-of-line otherwise
+ * eol is a error.
  *
  * Requires:
  *\li	'lex' is a valid lexer.
@@ -316,11 +320,12 @@ isc_lex_getmastertoken(isc_lex_t *lex, isc_token_t *token,
  */
 
 isc_result_t
-isc_lex_getoctaltoken(isc_lex_t *lex, isc_token_t *token, isc_boolean_t eol);
+isc_lex_getoctaltoken(isc_lex_t *lex, isc_token_t *token, bool eol);
 /*%<
  * Get the next token from a DNS master file type stream.  This is a
  * convenience function that sets appropriate options and handles end
  * of line correctly for master files.  It also ungets unexpected tokens.
+ * If `eol` is set then expect end-of-line otherwise eol is a error.
  *
  * Requires:
  *\li	'lex' is a valid lexer.
@@ -420,7 +425,7 @@ isc_lex_setsourceline(isc_lex_t *lex, unsigned long line);
  * \li	#ISC_R_NOTFOUND - there are no sources.
  */
 
-isc_boolean_t
+bool
 isc_lex_isfile(isc_lex_t *lex);
 /*%<
  * Return whether the current input source is a file.
@@ -429,8 +434,8 @@ isc_lex_isfile(isc_lex_t *lex);
  *\li	'lex' is a valid lexer.
  *
  * Returns:
- * \li	#ISC_TRUE if the current input is a file,
- *\li	#ISC_FALSE otherwise.
+ * \li	#true if the current input is a file,
+ *\li	#false otherwise.
  */
 
 

@@ -1,39 +1,39 @@
 /*
- * Copyright (C) 1999-2001, 2004, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: dir.h,v 1.15 2007/06/19 23:47:20 tbox Exp $ */
-
-/* Principal Authors: DCL */
 
 #ifndef ISC_DIR_H
 #define ISC_DIR_H 1
 
 #include <windows.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/lang.h>
-#include <isc/boolean.h>
+#include <isc/platform.h>
 #include <isc/result.h>
 
-#define ISC_DIR_NAMEMAX _MAX_FNAME
-#define ISC_DIR_PATHMAX _MAX_PATH
+#define ISC_DIR_NAMEMAX NAME_MAX
+#define ISC_DIR_PATHMAX PATH_MAX
 
 typedef struct {
-	char 		name[ISC_DIR_NAMEMAX];
+	char		name[NAME_MAX];
 	unsigned int	length;
 	WIN32_FIND_DATA	find_data;
 } isc_direntry_t;
 
 typedef struct {
 	unsigned int	magic;
-	char		dirname[ISC_DIR_PATHMAX];
+	char		dirname[PATH_MAX];
 	isc_direntry_t	entry;
-	isc_boolean_t	entry_filled;
+	bool	entry_filled;
 	HANDLE        	search_handle;
 } isc_dir_t;
 

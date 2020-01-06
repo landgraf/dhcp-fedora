@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2011, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: interfacemgr.h,v 1.35 2011/07/28 23:47:58 tbox Exp $ */
 
 #ifndef NAMED_INTERFACEMGR_H
 #define NAMED_INTERFACEMGR_H 1
@@ -39,9 +40,12 @@
  *** Imports
  ***/
 
+#include <stdbool.h>
+
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/socket.h>
+#include <isc/refcount.h>
 
 #include <dns/result.h>
 
@@ -72,9 +76,14 @@ struct ns_interface {
 						/*%< UDP dispatchers. */
 	isc_socket_t *		tcpsocket;	/*%< TCP socket. */
 	isc_dscp_t		dscp;		/*%< "listen-on" DSCP value */
-	int			ntcptarget;	/*%< Desired number of concurrent
-						     TCP accepts */
-	int			ntcpcurrent;	/*%< Current ditto, locked */
+	isc_refcount_t		ntcpaccepting;	/*%< Number of clients
+						     ready to accept new
+						     TCP connections on this
+						     interface */
+	isc_refcount_t		ntcpactive;	/*%< Number of clients
+						     servicing TCP queries
+						     (whether accepting or
+						     connected) */
 	int			nudpdispatch;	/*%< Number of UDP dispatches */
 	ns_clientmgr_t *	clientmgr;	/*%< Client manager. */
 	ISC_LINK(ns_interface_t) link;
@@ -106,7 +115,7 @@ ns_interfacemgr_detach(ns_interfacemgr_t **targetp);
 void
 ns_interfacemgr_shutdown(ns_interfacemgr_t *mgr);
 
-isc_boolean_t
+bool
 ns_interfacemgr_islistening(ns_interfacemgr_t *mgr);
 /*%
  * Return if the manager is listening on any interface. It can be called
@@ -114,7 +123,7 @@ ns_interfacemgr_islistening(ns_interfacemgr_t *mgr);
  */
 
 isc_result_t
-ns_interfacemgr_scan(ns_interfacemgr_t *mgr, isc_boolean_t verbose);
+ns_interfacemgr_scan(ns_interfacemgr_t *mgr, bool verbose);
 /*%
  * Scan the operatings system's list of network interfaces
  * and create listeners when new interfaces are discovered.
@@ -127,7 +136,7 @@ ns_interfacemgr_scan(ns_interfacemgr_t *mgr, isc_boolean_t verbose);
 
 isc_result_t
 ns_interfacemgr_adjust(ns_interfacemgr_t *mgr, ns_listenlist_t *list,
-		       isc_boolean_t verbose);
+		       bool verbose);
 /*%
  * Similar to ns_interfacemgr_scan(), but this function also tries to see the
  * need for an explicit listen-on when a list element in 'list' is going to
@@ -172,7 +181,7 @@ ns_interface_shutdown(ns_interface_t *ifp);
 void
 ns_interfacemgr_dumprecursing(FILE *f, ns_interfacemgr_t *mgr);
 
-isc_boolean_t
+bool
 ns_interfacemgr_listeningon(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr);
 
 #endif /* NAMED_INTERFACEMGR_H */

@@ -1,9 +1,12 @@
 <!--
- - Copyright (C) 2000, 2001, 2004, 2005, 2007, 2013-2017  Internet Systems Consortium, Inc. ("ISC")
+ - Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  -
  - This Source Code Form is subject to the terms of the Mozilla Public
  - License, v. 2.0. If a copy of the MPL was not distributed with this
  - file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ -
+ - See the COPYRIGHT file distributed with this work for additional
+ - information regarding copyright ownership.
 -->
 
 <!-- Converted by db4-upgrade version 1.0 -->
@@ -39,6 +42,8 @@
       <year>2015</year>
       <year>2016</year>
       <year>2017</year>
+      <year>2018</year>
+      <year>2019</year>
       <holder>Internet Systems Consortium, Inc. ("ISC")</holder>
     </copyright>
   </docinfo>
@@ -498,7 +503,7 @@
 
       <varlistentry>
 	<term><userinput>nta
-	<optional>( -d | -f | -r | -l <replaceable>duration</replaceable>)</optional>
+	    <optional>( -class <replaceable>class</replaceable> | -dump | -force | -remove | -lifetime <replaceable>duration</replaceable>)</optional>
 	<replaceable>domain</replaceable>
 	<optional><replaceable>view</replaceable></optional>
 	</userinput></term>
@@ -546,7 +551,7 @@
 	    is equivalent to <option>-remove</option>.
 	  </para>
 	  <para>
-	    If <option>-dump</option> is used, any other arguments
+	    If the <option>-dump</option> is used, any other arguments
 	    are ignored, and a list of existing NTAs is printed
 	    (note that this may include NTAs that are expired but
 	    have not yet been cleaned up).
@@ -564,15 +569,20 @@
 	    validated if the NTA were not present.
 	  </para>
 	  <para>
+	    The view class can be specified with <option>-class</option>.
+	    The default is class <userinput>IN</userinput>, which is
+	    the only class for which DNSSEC is currently supported.
+	  </para>
+	  <para>
 	    All of these options can be shortened, i.e., to
 	    <option>-l</option>, <option>-r</option>, <option>-d</option>,
-	    and <option>-f</option>.
+	    <option>-f</option>, and <option>-c</option>.
 	  </para>
 	</listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><userinput>querylog</userinput> <optional>on|off</optional> </term>
+	<term><userinput>querylog</userinput> <optional> on | off </optional> </term>
 	<listitem>
 	  <para>
 	    Enable or disable query logging.  (For backward
@@ -926,14 +936,14 @@
 	  <para>
 	    List the names of all TSIG keys currently configured
 	    for use by <command>named</command> in each view.  The
-	    list both statically configured keys and dynamic
+	    list includes both statically configured keys and dynamic
 	    TKEY-negotiated keys.
 	  </para>
 	</listitem>
       </varlistentry>
 
       <varlistentry>
-	<term><userinput>validation ( on | off | check ) <optional><replaceable>view ...</replaceable></optional> </userinput></term>
+	<term><userinput>validation ( on | off | status ) <optional><replaceable>view ...</replaceable></optional> </userinput></term>
 	<listitem>
 	  <para>
 	    Enable, disable, or check the current status of

@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2000, 2001, 2004, 2005, 2007, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: quota.c,v 1.18 2007/06/19 23:47:17 tbox Exp $ */
 
 /*! \file */
 
@@ -72,21 +74,50 @@ isc_quota_release(isc_quota_t *quota) {
 	UNLOCK(&quota->lock);
 }
 
-isc_result_t
-isc_quota_attach(isc_quota_t *quota, isc_quota_t **p)
-{
+static isc_result_t
+doattach(isc_quota_t *quota, isc_quota_t **p, bool force) {
 	isc_result_t result;
-	INSIST(p != NULL && *p == NULL);
+	REQUIRE(p != NULL && *p == NULL);
+
 	result = isc_quota_reserve(quota);
-	if (result == ISC_R_SUCCESS || result == ISC_R_SOFTQUOTA)
+	if (result == ISC_R_SUCCESS || result == ISC_R_SOFTQUOTA) {
 		*p = quota;
+	} else if (result == ISC_R_QUOTA && force) {
+		/* attach anyway */
+		LOCK(&quota->lock);
+		quota->used++;
+		UNLOCK(&quota->lock);
+
+		*p = quota;
+		result = ISC_R_SUCCESS;
+	}
+
 	return (result);
 }
 
+isc_result_t
+isc_quota_attach(isc_quota_t *quota, isc_quota_t **p) {
+	return (doattach(quota, p, false));
+}
+
+isc_result_t
+isc_quota_force(isc_quota_t *quota, isc_quota_t **p) {
+	return (doattach(quota, p, true));
+}
+
 void
-isc_quota_detach(isc_quota_t **p)
-{
+isc_quota_detach(isc_quota_t **p) {
 	INSIST(p != NULL && *p != NULL);
 	isc_quota_release(*p);
 	*p = NULL;
+}
+
+unsigned int
+isc_quota_getused(isc_quota_t *quota) {
+	int used;
+
+	LOCK(&quota->lock);
+	used = quota->used;
+	UNLOCK(&quota->lock);
+	return (used);
 }

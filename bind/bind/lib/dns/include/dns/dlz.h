@@ -1,9 +1,12 @@
 /*
- * Portions Copyright (C) 1999-2001, 2005-2007, 2009-2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*
@@ -41,7 +44,6 @@
  * USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-/* $Id$ */
 
 /*! \file dns/dlz.h */
 
@@ -74,6 +76,8 @@
 /*****
  ***** Imports
  *****/
+
+#include <stdbool.h>
 
 #include <dns/clientinfo.h>
 #include <dns/name.h>
@@ -172,7 +176,7 @@ typedef isc_result_t
  */
 
 
-typedef isc_boolean_t (*dns_dlzssumatch_t)(dns_name_t *signer,
+typedef bool (*dns_dlzssumatch_t)(dns_name_t *signer,
 					   dns_name_t *name,
 					   isc_netaddr_t *tcpaddr,
 					   dns_rdatatype_t type,
@@ -213,7 +217,7 @@ struct dns_dlzdb {
 	dns_dlzimplementation_t	*implementation;
 	void			*dbdata;
 	dlzconfigure_callback_t configure_callback;
-	isc_boolean_t		search;
+	bool		search;
 	char			*dlzname;
 	ISC_LINK(dns_dlzdb_t)	link;
 	dns_ssutable_t 		*ssutable;
@@ -322,12 +326,12 @@ dns_dlzconfigure(dns_view_t *view, dns_dlzdb_t *dlzdb,
  * call a DLZ drivers configure method, if supplied
  */
 
-isc_boolean_t
+bool
 dns_dlz_ssumatch(dns_dlzdb_t *dlzdatabase,
 		  dns_name_t *signer, dns_name_t *name, isc_netaddr_t *tcpaddr,
 		  dns_rdatatype_t type, const dst_key_t *key);
 /*%<
- * call a DLZ drivers ssumatch method, if supplied. Otherwise return ISC_FALSE
+ * call a DLZ drivers ssumatch method, if supplied. Otherwise return false
  */
 
 ISC_LANG_ENDDECLS

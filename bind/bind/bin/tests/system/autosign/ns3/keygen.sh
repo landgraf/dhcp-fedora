@@ -1,23 +1,26 @@
 #!/bin/sh -e
 #
-# Copyright (C) 2009-2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+# Copyright (C) Internet Systems Consortium, Inc. ("ISC")
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-# $Id: keygen.sh,v 1.15 2012/02/06 23:46:46 tbox Exp $
+#
+# See the COPYRIGHT file distributed with this work for additional
+# information regarding copyright ownership.
 
 SYSTEMTESTTOP=../..
 . $SYSTEMTESTTOP/conf.sh
 
+SYSTESTDIR=autosign
+
 dumpit () {
-	echo "D:${debug}: dumping ${1}"
-	cat "${1}" | sed 's/^/D:/'
+	echo_d "${debug}: dumping ${1}"
+	cat "${1}" | cat_d
 }
 
 setup () {
-	echo "I:setting up zone: $1"
+	echo_i "setting up zone: $1"
 	debug="$1"
 	zone="$1"
 	zonefile="${zone}.db"
@@ -48,6 +51,21 @@ cp $infile $zonefile
 ksk=`$KEYGEN -q -3 -r $RANDFILE -fk $zone 2> kg.out` || dumpit kg.out
 $KEYGEN -q -3 -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
 $DSFROMKEY $ksk.key > dsset-${zone}$TP
+
+#
+#  Jitter/NSEC3 test zone
+#
+setup jitter.nsec3.example
+cp $infile $zonefile
+count=1
+while [ $count -le 100 ]
+do
+    echo "label${count} IN TXT label${count}" >> $zonefile
+    count=`expr $count + 1`
+done
+# Don't create keys just yet, because the scenario we want to test
+# is an unsigned zone that has a NSEC3PARAM record added with
+# dynamic update before the keys are generated.
 
 #
 #  OPTOUT/NSEC3 test zone
@@ -147,9 +165,16 @@ $DSFROMKEY $ksk.key > dsset-${zone}$TP
 #
 setup oldsigs.example
 cp $infile $zonefile
+count=1
+while [ $count -le 100 ]
+do
+    echo "label${count} IN TXT label${count}" >> $zonefile
+    count=`expr $count + 1`
+done
 $KEYGEN -q -r $RANDFILE -fk $zone > kg.out 2>&1 || dumpit kg.out
 $KEYGEN -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
-$SIGNER -PS -s now-1y -e now-6mo -o $zone -f $zonefile $infile > s.out 2>&1 || dumpit s.out
+$SIGNER -PS -s now-1y -e now-6mo -o $zone -f $zonefile.signed $zonefile > s.out 2>&1 || dumpit s.out
+mv $zonefile.signed $zonefile
 
 #
 # NSEC3->NSEC transition test zone.
@@ -264,3 +289,61 @@ ksk=`$KEYGEN -3 -q -r $RANDFILE -fk -P sync now $zone 2> kg.out` || dumpit kg.ou
 $KEYGEN -3 -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
 $DSFROMKEY $ksk.key > dsset-${zone}$TP
 echo ns3/$ksk > ../sync.key
+
+#
+# A zone that has a published inactive key that is autosigned.
+#
+setup inacksk2.example
+cp $infile $zonefile
+ksk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -Pnow -A now+3600 -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
+$DSFROMKEY $ksk.key > dsset-${zone}$TP
+
+#
+# A zone that has a published inactive key that is autosigned.
+#
+setup inaczsk2.example
+cp $infile $zonefile
+ksk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -P now -A now+3600 $zone > kg.out 2>&1 || dumpit kg.out
+$DSFROMKEY $ksk.key > dsset-${zone}$TP
+
+#
+#  A zone that starts with a active KSK + ZSK and a inactive ZSK.
+#
+setup inacksk3.example
+cp $infile $zonefile
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -P now -A now+3600 -fk $zone > kg.out 2>&1 || dumpit kg.out
+ksk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
+$DSFROMKEY $ksk.key > dsset-${zone}$TP
+
+#
+#  A zone that starts with a active KSK + ZSK and a inactive ZSK.
+#
+setup inaczsk3.example
+cp $infile $zonefile
+ksk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -P now -A now+3600 $zone > kg.out 2>&1 || dumpit kg.out
+$DSFROMKEY $ksk.key > dsset-${zone}$TP
+
+#
+# A zone that starts with an active KSK + ZSK and an inactive ZSK, with the
+# latter getting deleted during the test.
+#
+setup delzsk.example
+cp $infile $zonefile
+ksk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE $zone > kg.out 2>&1 || dumpit kg.out
+zsk=`$KEYGEN -a NSEC3RSASHA1 -b 1024 -3 -q -r $RANDFILE -I now-1w $zone 2>kg.out` || dumpit kg.out
+echo $zsk > ../delzsk.key
+
+#
+#  Check that NSEC3 are correctly signed and returned from below a DNAME
+#
+setup dname-at-apex-nsec3.example
+cp $infile $zonefile
+ksk=`$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -3 -fk $zone 2> kg.out` || dumpit kg.out
+$KEYGEN -q -r $RANDFILE -a NSEC3RSASHA1 -b 1024 -3 $zone > kg.out 2>&1 || dumpit kg.out
+$DSFROMKEY $ksk.key > dsset-${zone}$TP

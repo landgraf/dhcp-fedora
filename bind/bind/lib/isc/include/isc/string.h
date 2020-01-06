@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000, 2001, 2003-2007, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: string.h,v 1.23 2007/09/13 04:48:16 each Exp $ */
@@ -13,8 +16,9 @@
 
 /*! \file isc/string.h */
 
+#include <inttypes.h>
+
 #include <isc/formatcheck.h>
-#include <isc/int.h>
 #include <isc/lang.h>
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -29,10 +33,10 @@
 
 ISC_LANG_BEGINDECLS
 
-isc_uint64_t
+uint64_t
 isc_string_touint64(char *source, char **endp, int base);
 /*%<
- * Convert the string pointed to by 'source' to isc_uint64_t.
+ * Convert the string pointed to by 'source' to uint64_t.
  *
  * On successful conversion 'endp' points to the first character
  * after conversion is complete.

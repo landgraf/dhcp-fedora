@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2000-2002, 2004, 2005, 2007, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: lwres_gnba.c,v 1.28 2007/09/24 17:18:25 each Exp $ */
@@ -29,17 +32,17 @@
 #define LWRES_OPCODE_GETNAMEBYADDR      0x00010002U
 
 typedef struct {
-	lwres_uint32_t  flags;
+	uint32_t  flags;
 	lwres_addr_t    addr;
 } lwres_gnbarequest_t;
 
 typedef struct {
-	lwres_uint32_t  flags;
-	lwres_uint16_t  naliases;
+	uint32_t  flags;
+	uint16_t  naliases;
 	char           *realname;
 	char          **aliases;
-	lwres_uint16_t  realnamelen;
-	lwres_uint16_t *aliaslen;
+	uint16_t  realnamelen;
+	uint16_t *aliaslen;
 	void           *base;
 	size_t          baselen;
 } lwres_gnbaresponse_t;
@@ -92,6 +95,7 @@ semantics as lwres_gnbarequest_parse() except it yields a
 #include <config.h>
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -128,7 +132,7 @@ lwres_gnbarequest_render(lwres_context_t *ctx, lwres_gnbarequest_t *req,
 		return (LWRES_R_NOMEMORY);
 	lwres_buffer_init(b, buf, (unsigned int)buflen);
 
-	pkt->length = (lwres_uint32_t)buflen;
+	pkt->length = (uint32_t)buflen;
 	pkt->version = LWRES_LWPACKETVERSION_0;
 	pkt->pktflags &= ~LWRES_LWPACKETFLAG_RESPONSE;
 	pkt->opcode = LWRES_OPCODE_GETNAMEBYADDR;
@@ -169,7 +173,7 @@ lwres_gnbaresponse_render(lwres_context_t *ctx, lwres_gnbaresponse_t *req,
 	size_t buflen;
 	int ret;
 	size_t payload_length;
-	lwres_uint16_t datalen;
+	uint16_t datalen;
 	int x;
 
 	REQUIRE(ctx != NULL);
@@ -192,7 +196,7 @@ lwres_gnbaresponse_render(lwres_context_t *ctx, lwres_gnbaresponse_t *req,
 		return (LWRES_R_NOMEMORY);
 	lwres_buffer_init(b, buf, (unsigned int)buflen);
 
-	pkt->length = (lwres_uint32_t)buflen;
+	pkt->length = (uint32_t)buflen;
 	pkt->version = LWRES_LWPACKETVERSION_0;
 	pkt->pktflags |= LWRES_LWPACKETFLAG_RESPONSE;
 	pkt->opcode = LWRES_OPCODE_GETNAMEBYADDR;
@@ -284,8 +288,8 @@ lwres_gnbaresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 {
 	int ret;
 	unsigned int x;
-	lwres_uint32_t flags;
-	lwres_uint16_t naliases;
+	uint32_t flags;
+	uint16_t naliases;
 	lwres_gnbaresponse_t *gnba;
 
 	REQUIRE(ctx != NULL);
@@ -323,7 +327,7 @@ lwres_gnbaresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 			goto out;
 		}
 
-		gnba->aliaslen = CTXMALLOC(sizeof(lwres_uint16_t) * naliases);
+		gnba->aliaslen = CTXMALLOC(sizeof(uint16_t) * naliases);
 		if (gnba->aliaslen == NULL) {
 			ret = LWRES_R_NOMEMORY;
 			goto out;
@@ -361,7 +365,7 @@ lwres_gnbaresponse_parse(lwres_context_t *ctx, lwres_buffer_t *b,
 			CTXFREE(gnba->aliases, sizeof(char *) * naliases);
 		if (gnba->aliaslen != NULL)
 			CTXFREE(gnba->aliaslen,
-				sizeof(lwres_uint16_t) * naliases);
+				sizeof(uint16_t) * naliases);
 		CTXFREE(gnba, sizeof(lwres_gnbaresponse_t));
 	}
 
@@ -398,7 +402,7 @@ lwres_gnbaresponse_free(lwres_context_t *ctx, lwres_gnbaresponse_t **structp)
 	if (gnba->naliases > 0) {
 		CTXFREE(gnba->aliases, sizeof(char *) * gnba->naliases);
 		CTXFREE(gnba->aliaslen,
-			sizeof(lwres_uint16_t) * gnba->naliases);
+			sizeof(uint16_t) * gnba->naliases);
 	}
 	if (gnba->base != NULL)
 		CTXFREE(gnba->base, gnba->baselen);

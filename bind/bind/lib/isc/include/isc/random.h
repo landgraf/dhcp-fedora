@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2009, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: random.h,v 1.20 2009/01/17 23:47:43 tbox Exp $ */
@@ -35,13 +38,13 @@ typedef struct isc_rng isc_rng_t;
  */
 
 void
-isc_random_seed(isc_uint32_t seed);
+isc_random_seed(uint32_t seed);
 /*%<
  * Set the initial seed of the random state.
  */
 
 void
-isc_random_get(isc_uint32_t *val);
+isc_random_get(uint32_t *val);
 /*%<
  * Get a random value.
  *
@@ -49,8 +52,8 @@ isc_random_get(isc_uint32_t *val);
  *	val != NULL.
  */
 
-isc_uint32_t
-isc_random_jitter(isc_uint32_t max, isc_uint32_t jitter);
+uint32_t
+isc_random_jitter(uint32_t max, uint32_t jitter);
 /*%<
  * Get a random value between (max - jitter) and (max).
  * This is useful for jittering timer values.
@@ -103,14 +106,14 @@ isc_rng_detach(isc_rng_t **rngp);
  * \li rngp != NULL the RNG struct to decrement reference for
  */
 
-isc_uint16_t
+uint16_t
 isc_rng_random(isc_rng_t *rngctx);
 /*%<
  * Returns a pseudo random 16-bit unsigned integer.
  */
 
-isc_uint16_t
-isc_rng_uniformrandom(isc_rng_t *rngctx, isc_uint16_t upper_bound);
+uint16_t
+isc_rng_uniformrandom(isc_rng_t *rngctx, uint16_t upper_bound);
 /*%<
  * Returns a uniformly distributed pseudo random 16-bit unsigned
  * integer.

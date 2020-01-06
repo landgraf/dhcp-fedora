@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
 
 #include <config.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include <isc/buffer.h>
@@ -17,6 +21,7 @@
 #include <isc/entropy.h>
 #include <isc/hash.h>
 #include <isc/mem.h>
+#include <isc/platform.h>
 #include <isc/print.h>
 #include <isc/string.h>
 #include <isc/util.h>
@@ -45,10 +50,6 @@
 
 #include "dnssectool.h"
 
-#ifndef PATH_MAX
-#define PATH_MAX 1024   /* AIX, WIN32, and others don't define this. */
-#endif
-
 const char *program = "dnssec-importkey";
 int verbose;
 
@@ -56,21 +57,20 @@ static dns_rdataclass_t rdclass;
 static dns_fixedname_t	fixed;
 static dns_name_t	*name = NULL;
 static isc_mem_t	*mctx = NULL;
-static isc_boolean_t	setpub = ISC_FALSE, setdel = ISC_FALSE;
-static isc_boolean_t	setttl = ISC_FALSE;
+static bool	setpub = false, setdel = false;
+static bool	setttl = false;
 static isc_stdtime_t	pub = 0, del = 0;
 static dns_ttl_t	ttl = 0;
 static isc_stdtime_t	syncadd = 0, syncdel = 0;
-static isc_boolean_t	setsyncadd = ISC_FALSE;
-static isc_boolean_t	setsyncdel = ISC_FALSE;
+static bool	setsyncadd = false;
+static bool	setsyncdel = false;
 
 static isc_result_t
 initname(char *setname) {
 	isc_result_t result;
 	isc_buffer_t buf;
 
-	dns_fixedname_init(&fixed);
-	name = dns_fixedname_name(&fixed);
+	name = dns_fixedname_initname(&fixed);
 
 	isc_buffer_init(&buf, setname, strlen(setname));
 	isc_buffer_add(&buf, strlen(setname));
@@ -123,7 +123,7 @@ loadset(const char *filename, dns_rdataset_t *rdataset) {
 			      isc_result_totext(result));
 	}
 
-	result = dns_db_findnode(db, name, ISC_FALSE, &node);
+	result = dns_db_findnode(db, name, false, &node);
 	if (result != ISC_R_SUCCESS)
 		fatal("can't find %s node in %s", setname, filename);
 
@@ -178,8 +178,7 @@ loadkey(char *filename, unsigned char *key_buf, unsigned int key_buf_size,
 
 	rdclass = dst_key_class(key);
 
-	dns_fixedname_init(&fixed);
-	name = dns_fixedname_name(&fixed);
+	name = dns_fixedname_initname(&fixed);
 	result = dns_name_copy(dst_key_name(key), name, NULL);
 	if (result != ISC_R_SUCCESS)
 		fatal("can't copy name");
@@ -226,7 +225,7 @@ emit(const char *dir, dns_rdata_t *rdata) {
 		dst_key_free(&tmp);
 	}
 
-	dst_key_setexternal(key, ISC_TRUE);
+	dst_key_setexternal(key, true);
 	if (setpub)
 		dst_key_settime(key, DST_TIME_PUBLISH, pub);
 	if (setdel)
@@ -316,7 +315,7 @@ main(int argc, char **argv) {
 #endif
 	dns_result_register();
 
-	isc_commandline_errprint = ISC_FALSE;
+	isc_commandline_errprint = false;
 
 #define CMDLINE_FLAGS "D:f:hK:L:P:v:V"
 	while ((ch = isc_commandline_parse(argc, argv, CMDLINE_FLAGS)) != -1) {
@@ -347,7 +346,7 @@ main(int argc, char **argv) {
 			break;
 		case 'L':
 			ttl = strtottl(isc_commandline_argument);
-			setttl = ISC_TRUE;
+			setttl = true;
 			break;
 		case 'P':
 			/* -Psync ? */

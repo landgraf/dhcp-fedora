@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2004, 2006, 2007, 2013, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: acache.h,v 1.8 2007/06/19 23:47:16 tbox Exp $ */
@@ -150,7 +153,6 @@
 
 #include <isc/mutex.h>
 #include <isc/lang.h>
-#include <isc/refcount.h>
 #include <isc/stdtime.h>
 
 #include <dns/types.h>
@@ -379,7 +381,7 @@ dns_acache_setentry(dns_acache_t *acache, dns_acacheentry_t *entry,
  *	ISC_R_NOTFOUND
  */
 
-isc_boolean_t
+bool
 dns_acache_cancelentry(dns_acacheentry_t *entry);
 /*
  * Cancel the use of the cache entry 'entry'.  This function is supposed to
@@ -392,7 +394,7 @@ dns_acache_cancelentry(dns_acacheentry_t *entry);
  *	'entry' is a valid additional cache entry.
  *
  * Returns:
- * 	ISC_TRUE if the entry was active when canceled
+ * 	true if the entry was active when canceled
  */
 
 void

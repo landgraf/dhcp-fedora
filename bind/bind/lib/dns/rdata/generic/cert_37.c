@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2005, 2007, 2009, 2011, 2012, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
-
-/* Reviewed: Wed Mar 15 21:14:32 EST 2000 by tale */
 
 /* RFC2538 */
 
@@ -35,7 +34,7 @@ fromtext_cert(ARGS_FROMTEXT) {
 	 * Cert type.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_cert_fromtext(&cert, &token.value.as_textregion));
 	RETERR(uint16_tobuffer(cert, target));
 
@@ -43,7 +42,7 @@ fromtext_cert(ARGS_FROMTEXT) {
 	 * Key tag.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -52,11 +51,11 @@ fromtext_cert(ARGS_FROMTEXT) {
 	 * Algorithm.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	RETTOK(dns_secalg_fromtext(&secalg, &token.value.as_textregion));
 	RETERR(mem_tobuffer(target, &secalg, 1));
 
-	return (isc_base64_tobuffer(lexer, target, -1));
+	return (isc_base64_tobuffer(lexer, target, -2));
 }
 
 static inline isc_result_t
@@ -85,7 +84,7 @@ totext_cert(ARGS_TOTEXT) {
 	 */
 	n = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%u ", n);
+	snprintf(buf, sizeof(buf), "%u ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -163,7 +162,7 @@ fromstruct_cert(ARGS_FROMSTRUCT) {
 	dns_rdata_cert_t *cert = source;
 
 	REQUIRE(type == dns_rdatatype_cert);
-	REQUIRE(source != NULL);
+	REQUIRE(cert != NULL);
 	REQUIRE(cert->common.rdtype == type);
 	REQUIRE(cert->common.rdclass == rdclass);
 
@@ -183,7 +182,7 @@ tostruct_cert(ARGS_TOSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(rdata->type == dns_rdatatype_cert);
-	REQUIRE(target != NULL);
+	REQUIRE(cert != NULL);
 	REQUIRE(rdata->length != 0);
 
 	cert->common.rdclass = rdata->rdclass;
@@ -245,7 +244,7 @@ digest_cert(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_cert(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_cert);
@@ -255,10 +254,10 @@ checkowner_cert(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_cert(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_cert);
@@ -267,7 +266,7 @@ checknames_cert(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 

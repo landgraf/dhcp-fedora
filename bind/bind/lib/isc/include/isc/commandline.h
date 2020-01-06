@@ -1,19 +1,22 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_COMMANDLINE_H
 #define ISC_COMMANDLINE_H 1
 
 /*! \file isc/commandline.h */
 
-#include <isc/boolean.h>
+#include <stdbool.h>
+
 #include <isc/lang.h>
 #include <isc/platform.h>
 #include <isc/result.h>
@@ -27,9 +30,9 @@ LIBISC_EXTERNAL_DATA extern char *isc_commandline_argument;
 /*% For printing error messages. */
 LIBISC_EXTERNAL_DATA extern char *isc_commandline_progname;
 /*% Print error message. */
-LIBISC_EXTERNAL_DATA extern isc_boolean_t isc_commandline_errprint;
+LIBISC_EXTERNAL_DATA extern bool isc_commandline_errprint;
 /*% Reset getopt. */
-LIBISC_EXTERNAL_DATA extern isc_boolean_t isc_commandline_reset;
+LIBISC_EXTERNAL_DATA extern bool isc_commandline_reset;
 
 ISC_LANG_BEGINDECLS
 

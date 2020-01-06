@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 1999-2008, 2011, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: adb.h,v 1.88 2011/12/05 17:10:51 each Exp $ */
 
 #ifndef DNS_ADB_H
 #define DNS_ADB_H 1
@@ -63,6 +65,9 @@
 /***
  *** Imports
  ***/
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/magic.h>
@@ -658,7 +663,7 @@ dns_adb_ednsto(dns_adb_t *adb, dns_adbaddrinfo_t *addr, unsigned int size);
  *\li	addr be valid.
  */
 
-isc_boolean_t
+bool
 dns_adb_noedns(dns_adb_t *adb, dns_adbaddrinfo_t *addr);
 /*%
  * Return whether EDNS should be disabled for this server.
@@ -774,7 +779,7 @@ dns_adb_getcookie(dns_adb_t *adb, dns_adbaddrinfo_t *addr,
  */
 
 void
-dns_adb_setquota(dns_adb_t *adb, isc_uint32_t quota, isc_uint32_t freq,
+dns_adb_setquota(dns_adb_t *adb, uint32_t quota, uint32_t freq,
 		 double low, double high, double discount);
 /*%<
  * Set the baseline ADB quota, and configure parameters for the
@@ -805,7 +810,7 @@ dns_adb_setquota(dns_adb_t *adb, isc_uint32_t quota, isc_uint32_t freq,
  *\li	'adb' is valid.
  */
 
-isc_boolean_t
+bool
 dns_adbentry_overquota(dns_adbentry_t *entry);
 /*%<
  * Returns true if the specified ADB has too many active fetches.

@@ -1,27 +1,27 @@
 #!/bin/sh
-
-PATH="@ATFBIN@:${PATH}"
-export PATH
+KYUA=@KYUA@
+UNITTESTS=@UNITTESTS@
+CMOCKA_MESSAGE_OUTPUT=TAP
+export CMOCKA_MESSAGE_OUTPUT
 
 status=0
-if [ -n "@ATFBIN@" -a -f Atffile ]
+if [ -n "${UNITTESTS}" ] && [ -f Kyuafile ]
 then
-	echo "S:unit:`date`"
-        echo "T:unit:1:A"
-	echo "I: unit tests"
-	atf-run > atf.out
+	echo "S:unit:$(date)"
+	echo "T:unit:1:A"
+	echo "I: unit tests (using kyua)"
+	${KYUA} -v parallelism="${TEST_PARALLEL_JOBS:-1}" --logfile kyua.log --loglevel debug test --results-file "${KYUA_RESULT:-NEW}"
 	status=$?
 
-        # | cat is there to force non-fancy output
-	atf-report < atf.out | cat
+	${KYUA} --logfile /dev/null report --results-file "${KYUA_RESULT:-LATEST}"
 
-	if [ $status -eq 0 ]
+	if [ "${status}" -eq "0" ]
 	then
-		rm -f atf.out
-		echo R:PASS
+		rm -f kyua.log
+		echo "R:PASS"
 	else
-		echo R:FAIL
+		echo "R:FAIL"
 	fi
-	echo "E:unit:`date`"
+	echo "E:unit:$(date)"
 fi
-exit $status
+exit ${status}

@@ -1,33 +1,37 @@
 /*
- * Copyright (C) 2005, 2007, 2009, 2011, 2012, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #ifndef ISC_ATOMIC_H
 #define ISC_ATOMIC_H 1
+
+#include <inttypes.h>
 
 #include <isc/platform.h>
 #include <isc/types.h>
 
 /*!\file
- * static inline isc_int32_t
- * isc_atomic_xadd(isc_int32_t *p, isc_int32_t val);
+ * static inline int32_t
+ * isc_atomic_xadd(int32_t *p, int32_t val);
  *
  * This routine atomically increments the value stored in 'p' by 'val', and
  * returns the previous value.
  *
  * static inline void
- * isc_atomic_store(void *p, isc_int32_t val);
+ * isc_atomic_store(void *p, int32_t val);
  *
  * This routine atomically stores the value 'val' in 'p'.
  *
- * static inline isc_int32_t
- * isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val);
+ * static inline int32_t
+ * isc_atomic_cmpxchg(int32_t *p, int32_t cmpval, int32_t val);
  *
  * This routine atomically replaces the value in 'p' with 'val', if the
  * original value is equal to 'cmpval'.  The original value is returned in any
@@ -41,11 +45,11 @@
 #define isc_atomic_store(p, v) _clear_lock(p, v)
 
 #ifdef __GNUC__
-static inline isc_int32_t
+static inline int32_t
 #else
-static isc_int32_t
+static int32_t
 #endif
-isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
+isc_atomic_xadd(int32_t *p, int32_t val) {
 	int ret;
 
 #ifdef __GNUC__
@@ -70,7 +74,7 @@ static inline int
 #else
 static int
 #endif
-isc_atomic_cmpxchg(atomic_p p, int old, int new) {
+isc_atomic_cmpxchg(atomic_p p, int old, int replacement) {
 	int orig = old;
 
 #ifdef __GNUC__
@@ -78,7 +82,7 @@ isc_atomic_cmpxchg(atomic_p p, int old, int new) {
 #else
 	 __isync();
 #endif
-	if (compare_and_swap(p, &orig, new))
+	if (compare_and_swap(p, &orig, replacement))
 		orig = old;
 
 #ifdef __GNUC__
@@ -91,9 +95,9 @@ isc_atomic_cmpxchg(atomic_p p, int old, int new) {
 }
 
 #elif defined(ISC_PLATFORM_USEGCCASM) || defined(ISC_PLATFORM_USEMACASM)
-static inline isc_int32_t
-isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
-	isc_int32_t orig;
+static inline int32_t
+isc_atomic_xadd(int32_t *p, int32_t val) {
+	int32_t orig;
 
 	__asm__ volatile (
 #ifdef ISC_PLATFORM_USEMACASM
@@ -122,7 +126,7 @@ isc_atomic_xadd(isc_int32_t *p, isc_int32_t val) {
 }
 
 static inline void
-isc_atomic_store(void *p, isc_int32_t val) {
+isc_atomic_store(void *p, int32_t val) {
 	__asm__ volatile (
 #ifdef ISC_PLATFORM_USEMACASM
 		"1:"
@@ -145,9 +149,9 @@ isc_atomic_store(void *p, isc_int32_t val) {
 		);
 }
 
-static inline isc_int32_t
-isc_atomic_cmpxchg(isc_int32_t *p, isc_int32_t cmpval, isc_int32_t val) {
-	isc_int32_t orig;
+static inline int32_t
+isc_atomic_cmpxchg(int32_t *p, int32_t cmpval, int32_t val) {
+	int32_t orig;
 
 	__asm__ volatile (
 #ifdef ISC_PLATFORM_USEMACASM

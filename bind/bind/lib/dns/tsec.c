@@ -1,16 +1,18 @@
 /*
- * Copyright (C) 2009, 2010, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: tsec.c,v 1.7 2010/12/09 00:54:34 marka Exp $ */
 
 #include <config.h>
 
 #include <isc/mem.h>
+#include <isc/util.h>
 
 #include <pk11/site.h>
 
@@ -84,7 +86,7 @@ dns_tsec_create(isc_mem_t *mctx, dns_tsectype_t type, dst_key_t *key,
 			return (DNS_R_BADALG);
 		}
 		result = dns_tsigkey_createfromkey(dst_key_name(key),
-						   algname, key, ISC_FALSE,
+						   algname, key, false,
 						   NULL, 0, 0, mctx, NULL,
 						   &tsigkey);
 		if (result != ISC_R_SUCCESS) {
@@ -98,6 +100,7 @@ dns_tsec_create(isc_mem_t *mctx, dns_tsectype_t type, dst_key_t *key,
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	tsec->magic = DNS_TSEC_MAGIC;
@@ -123,6 +126,7 @@ dns_tsec_destroy(dns_tsec_t **tsecp) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	tsec->magic = 0;
@@ -152,5 +156,6 @@ dns_tsec_getkey(dns_tsec_t *tsec, void *keyp) {
 		break;
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 }

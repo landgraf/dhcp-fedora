@@ -1,16 +1,20 @@
 /*
- * Copyright (C) 1999-2001, 2004-2007, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: tcpmsg.c,v 1.31 2007/06/19 23:47:16 tbox Exp $ */
 
 /*! \file */
 
 #include <config.h>
+
+#include <inttypes.h>
 
 #include <isc/mem.h>
 #include <isc/print.h>
@@ -113,7 +117,7 @@ recv_message(isc_task_t *task, isc_event_t *ev_in) {
 	tcpmsg->result = ISC_R_SUCCESS;
 	isc_buffer_add(&tcpmsg->buffer, ev->n);
 
-	XDEBUG(("Received %d bytes (of %d)\n", ev->n, tcpmsg->size));
+	XDEBUG(("Received %u bytes (of %d)\n", ev->n, tcpmsg->size));
 
  send_and_free:
 	isc_task_send(tcpmsg->task, &dev);
@@ -179,7 +183,7 @@ dns_tcpmsg_readmessage(dns_tcpmsg_t *tcpmsg,
 		       NULL, NULL);
 
 	region.base = (unsigned char *)&tcpmsg->size;
-	region.length = 2;  /* isc_uint16_t */
+	region.length = 2;  /* uint16_t */
 	result = isc_socket_recv(tcpmsg->sock, &region, 0,
 				 tcpmsg->task, recv_length, tcpmsg);
 

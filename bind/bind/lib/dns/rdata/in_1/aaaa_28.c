@@ -1,14 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007, 2009, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: aaaa_28.c,v 1.47 2009/12/04 22:06:37 tbox Exp $ */
-
-/* Reviewed: Thu Mar 16 16:52:50 PST 2000 by bwelling */
 
 /* RFC1886 */
 
@@ -35,7 +34,7 @@ fromtext_in_aaaa(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	if (inet_pton(AF_INET6, DNS_AS_STR(token), addr) != 1)
 		RETTOK(DNS_R_BADAAAA);
@@ -128,7 +127,7 @@ fromstruct_in_aaaa(ARGS_FROMSTRUCT) {
 
 	REQUIRE(type == dns_rdatatype_aaaa);
 	REQUIRE(rdclass == dns_rdataclass_in);
-	REQUIRE(source != NULL);
+	REQUIRE(aaaa != NULL);
 	REQUIRE(aaaa->common.rdtype == type);
 	REQUIRE(aaaa->common.rdclass == rdclass);
 
@@ -145,7 +144,7 @@ tostruct_in_aaaa(ARGS_TOSTRUCT) {
 
 	REQUIRE(rdata->type == dns_rdatatype_aaaa);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-	REQUIRE(target != NULL);
+	REQUIRE(aaaa != NULL);
 	REQUIRE(rdata->length == 16);
 
 	UNUSED(mctx);
@@ -165,7 +164,7 @@ static inline void
 freestruct_in_aaaa(ARGS_FREESTRUCT) {
 	dns_rdata_in_aaaa_t *aaaa = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(aaaa != NULL);
 	REQUIRE(aaaa->common.rdclass == dns_rdataclass_in);
 	REQUIRE(aaaa->common.rdtype == dns_rdatatype_aaaa);
 
@@ -196,7 +195,7 @@ digest_in_aaaa(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_in_aaaa(ARGS_CHECKOWNER) {
 	dns_name_t prefix, suffix;
 
@@ -215,14 +214,14 @@ checkowner_in_aaaa(ARGS_CHECKOWNER) {
 		dns_name_split(name, dns_name_countlabels(name) - 2,
 			       &prefix, &suffix);
 		if (dns_name_equal(&gc_msdcs, &prefix) &&
-		    dns_name_ishostname(&suffix, ISC_FALSE))
-			return (ISC_TRUE);
+		    dns_name_ishostname(&suffix, false))
+			return (true);
 	}
 
 	return (dns_name_ishostname(name, wildcard));
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_in_aaaa(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_aaaa);
@@ -232,7 +231,7 @@ checknames_in_aaaa(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

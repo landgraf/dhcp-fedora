@@ -1,14 +1,18 @@
 /*
- * Copyright (C) 2009, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: context.c,v 1.3 2009/09/02 23:48:02 tbox Exp $ */
 
 #include <config.h>
+
+#include <stdbool.h>
 
 #include <isc/app.h>
 #include <isc/lib.h>
@@ -44,7 +48,7 @@
 #ifndef ISC_PLATFORM_USETHREADS
 irs_context_t *irs_g_context = NULL;
 #else
-static isc_boolean_t thread_key_initialized = ISC_FALSE;
+static bool thread_key_initialized = false;
 static isc_mutex_t thread_key_mutex;
 static isc_thread_key_t irs_context_key;
 static isc_once_t once = ISC_ONCE_INIT;
@@ -155,7 +159,7 @@ thread_key_init(void) {
 					  free_specific_context) != 0) {
 			result = ISC_R_FAILURE;
 		} else
-			thread_key_initialized = ISC_TRUE;
+			thread_key_initialized = true;
 
 		UNLOCK(&thread_key_mutex);
 	}

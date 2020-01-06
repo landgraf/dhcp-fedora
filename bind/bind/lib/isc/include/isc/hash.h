@@ -1,16 +1,21 @@
 /*
- * Copyright (C) 2003-2007, 2009, 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef ISC_HASH_H
 #define ISC_HASH_H 1
 
+#include <stdbool.h>
+
+#include <isc/deprecated.h>
 #include <isc/types.h>
-#include <isc/util.h>
 
 /*****
  ***** Module Info
@@ -152,11 +157,11 @@ isc_hash_init(void);
 /*@{*/
 unsigned int
 isc_hash_ctxcalc(isc_hash_t *hctx, const unsigned char *key,
-		 unsigned int keylen, isc_boolean_t case_sensitive)
+		 unsigned int keylen, bool case_sensitive)
 	ISC_DEPRECATED;
 unsigned int
 isc_hash_calc(const unsigned char *key, unsigned int keylen,
-	      isc_boolean_t case_sensitive)
+	      bool case_sensitive)
 	ISC_DEPRECATED;
 /*!<
  * \brief Calculate a hash value.
@@ -173,13 +178,13 @@ isc_hash_calc(const unsigned char *key, unsigned int keylen,
  * specified for the corresponding hash object.
  *
  * 'case_sensitive' specifies whether the hash key should be treated as
- * case_sensitive values.  It should typically be ISC_FALSE if the hash key
+ * case_sensitive values.  It should typically be false if the hash key
  * is a DNS name.
  */
 /*@}*/
 
 void
-isc__hash_setvec(const isc_uint16_t *vec)
+isc__hash_setvec(const uint16_t *vec)
 	ISC_DEPRECATED;
 
 /*!<
@@ -201,14 +206,14 @@ isc_hash_get_initializer(void);
 void
 isc_hash_set_initializer(const void *initializer);
 
-isc_uint32_t
+uint32_t
 isc_hash_function(const void *data, size_t length,
-		  isc_boolean_t case_sensitive,
-		  const isc_uint32_t *previous_hashp);
-isc_uint32_t
+		  bool case_sensitive,
+		  const uint32_t *previous_hashp);
+uint32_t
 isc_hash_function_reverse(const void *data, size_t length,
-			  isc_boolean_t case_sensitive,
-			  const isc_uint32_t *previous_hashp);
+			  bool case_sensitive,
+			  const uint32_t *previous_hashp);
 /*!<
  * \brief Calculate a hash over data.
  *
@@ -232,7 +237,7 @@ isc_hash_function_reverse(const void *data, size_t length,
  * 'length' is the size of the data to be hashed.
  *
  * 'case_sensitive' specifies whether the hash key should be treated as
- * case_sensitive values.  It should typically be ISC_FALSE if the hash key
+ * case_sensitive values.  It should typically be false if the hash key
  * is a DNS name.
  *
  * 'previous_hashp' is a pointer to a previous hash value returned by

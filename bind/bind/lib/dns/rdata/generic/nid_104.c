@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2013-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef RDATA_GENERIC_NID_104_C
@@ -29,13 +32,13 @@ fromtext_nid(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 
 	if (locator_pton(DNS_AS_STR(token), locator) != 1)
 		RETTOK(DNS_R_SYNTAX);
@@ -56,16 +59,16 @@ totext_nid(ARGS_TOTEXT) {
 	dns_rdata_toregion(rdata, &region);
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	sprintf(buf, "%u", num);
+	snprintf(buf, sizeof(buf), "%u", num);
 	RETERR(str_totext(buf, target));
 
 	RETERR(str_totext(" ", target));
 
-	sprintf(buf, "%x:%x:%x:%x",
-		region.base[0]<<8 | region.base[1],
-		region.base[2]<<8 | region.base[3],
-		region.base[4]<<8 | region.base[5],
-		region.base[6]<<8 | region.base[7]);
+	snprintf(buf, sizeof(buf), "%x:%x:%x:%x",
+		 region.base[0]<<8 | region.base[1],
+		 region.base[2]<<8 | region.base[3],
+		 region.base[4]<<8 | region.base[5],
+		 region.base[6]<<8 | region.base[7]);
 	return (str_totext(buf, target));
 }
 
@@ -119,7 +122,7 @@ fromstruct_nid(ARGS_FROMSTRUCT) {
 	dns_rdata_nid_t *nid = source;
 
 	REQUIRE(type == dns_rdatatype_nid);
-	REQUIRE(source != NULL);
+	REQUIRE(nid != NULL);
 	REQUIRE(nid->common.rdtype == type);
 	REQUIRE(nid->common.rdclass == rdclass);
 
@@ -136,7 +139,7 @@ tostruct_nid(ARGS_TOSTRUCT) {
 	dns_rdata_nid_t *nid = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_nid);
-	REQUIRE(target != NULL);
+	REQUIRE(nid != NULL);
 	REQUIRE(rdata->length == 10);
 
 	UNUSED(mctx);
@@ -155,7 +158,7 @@ static inline void
 freestruct_nid(ARGS_FREESTRUCT) {
 	dns_rdata_nid_t *nid = source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(nid != NULL);
 	REQUIRE(nid->common.rdtype == dns_rdatatype_nid);
 
 	return;
@@ -186,7 +189,7 @@ digest_nid(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_nid(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_nid);
@@ -196,10 +199,10 @@ checkowner_nid(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_nid(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_nid);
@@ -209,7 +212,7 @@ checknames_nid(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

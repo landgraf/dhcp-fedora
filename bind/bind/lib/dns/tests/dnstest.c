@@ -1,24 +1,41 @@
 /*
- * Copyright (C) 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file */
 
 #include <config.h>
 
+#include <stdarg.h>
+#include <stddef.h>
+#include <setjmp.h>
+
+#include <inttypes.h>
+#include <sched.h> /* IWYU pragma: keep */
+#include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+#if HAVE_CMOCKA
+#define UNIT_TESTING
+#include <cmocka.h>
 
 #include <isc/app.h>
 #include <isc/buffer.h>
 #include <isc/entropy.h>
 #include <isc/file.h>
 #include <isc/hash.h>
+#include <isc/hex.h>
+#include <isc/lex.h>
 #include <isc/mem.h>
 #include <isc/os.h>
 #include <isc/print.h>
@@ -29,6 +46,7 @@
 #include <isc/timer.h>
 #include <isc/util.h>
 
+#include <dns/callbacks.h>
 #include <dns/db.h>
 #include <dns/fixedname.h>
 #include <dns/log.h>
@@ -47,11 +65,11 @@ isc_task_t *maintask = NULL;
 isc_timermgr_t *timermgr = NULL;
 isc_socketmgr_t *socketmgr = NULL;
 dns_zonemgr_t *zonemgr = NULL;
-isc_boolean_t app_running = ISC_FALSE;
+bool app_running = false;
 int ncpus;
-isc_boolean_t debug_mem_record = ISC_TRUE;
+bool debug_mem_record = true;
 
-static isc_boolean_t hash_active = ISC_FALSE, dst_active = ISC_FALSE;
+static bool tests_active = false, test_running = false;
 
 /*
  * Logging categories: this needs to match the list in bin/named/log.c.
@@ -70,16 +88,22 @@ static isc_logcategory_t categories[] = {
 
 static void
 cleanup_managers(void) {
-	if (app_running)
-		isc_app_finish();
-	if (socketmgr != NULL)
-		isc_socketmgr_destroy(&socketmgr);
-	if (maintask != NULL)
+	if (maintask != NULL) {
+		isc_task_shutdown(maintask);
 		isc_task_destroy(&maintask);
-	if (taskmgr != NULL)
+	}
+	if (socketmgr != NULL) {
+		isc_socketmgr_destroy(&socketmgr);
+	}
+	if (taskmgr != NULL) {
 		isc_taskmgr_destroy(&taskmgr);
-	if (timermgr != NULL)
+	}
+	if (timermgr != NULL) {
 		isc_timermgr_destroy(&timermgr);
+	}
+	if (app_running) {
+		isc_app_finish();
+	}
 }
 
 static isc_result_t
@@ -97,33 +121,55 @@ create_managers(void) {
 	CHECK(isc_task_create(taskmgr, 0, &maintask));
 	return (ISC_R_SUCCESS);
 
-  cleanup:
+ cleanup:
 	cleanup_managers();
 	return (result);
 }
 
-isc_result_t
-dns_test_begin(FILE *logfile, isc_boolean_t start_managers) {
+int
+dns_test_init(void **state) {
 	isc_result_t result;
 
-	if (start_managers)
-		CHECK(isc_app_start());
-	if (debug_mem_record)
+	UNUSED(state);
+
+	if (debug_mem_record) {
 		isc_mem_debugging |= ISC_MEM_DEBUGRECORD;
-	CHECK(isc_mem_create(0, 0, &mctx));
-	CHECK(isc_entropy_create(mctx, &ectx));
+	}
 
-	CHECK(isc_hash_create(mctx, ectx, DNS_NAME_MAXWIRE));
-	hash_active = ISC_TRUE;
+	INSIST(mctx == NULL);
+	result = isc_mem_create(0, 0, &mctx);
+	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
-	CHECK(dst_lib_init(mctx, ectx, ISC_ENTROPY_BLOCKING));
-	dst_active = ISC_TRUE;
+	result = isc_entropy_create(mctx, &ectx);
+	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
+	result = dst_lib_init(mctx, ectx, ISC_ENTROPY_BLOCKING);
+	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+
+	result = isc_hash_create(mctx, ectx, DNS_NAME_MAXWIRE);
+	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+
+	tests_active = true;
+	return (0);
+}
+
+isc_result_t
+dns_test_begin(FILE *logfile, bool start_managers) {
+	isc_result_t result;
+
+	INSIST(!test_running);
+	test_running = true;
+
+	if (start_managers) {
+		CHECK(isc_app_start());
+	}
 	if (logfile != NULL) {
 		isc_logdestination_t destination;
 		isc_logconfig_t *logconfig = NULL;
 
+		INSIST(lctx == NULL);
 		CHECK(isc_log_create(mctx, &lctx, &logconfig));
+
 		isc_log_registercategories(lctx, categories);
 		isc_log_setcontext(lctx);
 		dns_log_init(lctx);
@@ -142,44 +188,51 @@ dns_test_begin(FILE *logfile, isc_boolean_t start_managers) {
 
 	dns_result_register();
 
-	if (start_managers)
+	if (start_managers) {
 		CHECK(create_managers());
+	}
 
 	/*
-	 * atf-run changes us to a /tmp directory, so tests
+	 * The caller might run from another directory, so tests
 	 * that access test data files must first chdir to the proper
 	 * location.
 	 */
-	if (chdir(TESTS) == -1)
+	if (chdir(TESTS) == -1) {
 		CHECK(ISC_R_FAILURE);
+	}
 
 	return (ISC_R_SUCCESS);
 
-  cleanup:
+ cleanup:
 	dns_test_end();
 	return (result);
 }
 
 void
 dns_test_end(void) {
-	if (dst_active) {
-		dst_lib_destroy();
-		dst_active = ISC_FALSE;
-	}
-	if (hash_active) {
-		isc_hash_destroy();
-		hash_active = ISC_FALSE;
-	}
-	if (ectx != NULL)
-		isc_entropy_detach(&ectx);
-
 	cleanup_managers();
 
-	if (lctx != NULL)
+	if (lctx != NULL) {
 		isc_log_destroy(&lctx);
+	}
 
-	if (mctx != NULL)
-		isc_mem_destroy(&mctx);
+	test_running = false;
+}
+
+int
+dns_test_final(void **state) {
+	UNUSED(state);
+
+	if (!tests_active) {
+		return (0);
+	}
+
+	isc_hash_destroy();
+	isc_entropy_detach(&ectx);
+	dst_lib_destroy();
+	isc_mem_destroy(&mctx);
+
+	return (0);
 }
 
 /*
@@ -201,58 +254,68 @@ dns_test_makeview(const char *name, dns_view_t **viewp) {
 	return (result);
 }
 
-/*
- * Create a zone with origin 'name', return a pointer to the zone object in
- * 'zonep'.  If 'view' is set, add the zone to that view; otherwise, create
- * a new view for the purpose.
- *
- * If the created view is going to be needed by the caller subsequently,
- * then 'keepview' should be set to true; this will prevent the view
- * from being detached.  In this case, the caller is responsible for
- * detaching the view.
- */
 isc_result_t
 dns_test_makezone(const char *name, dns_zone_t **zonep, dns_view_t *view,
-		  isc_boolean_t keepview)
+		  bool createview)
 {
-	isc_result_t result;
+	dns_fixedname_t fixed_origin;
 	dns_zone_t *zone = NULL;
-	isc_buffer_t buffer;
-	dns_fixedname_t fixorigin;
+	isc_result_t result;
 	dns_name_t *origin;
 
-	if (view == NULL)
-		CHECK(dns_view_create(mctx, dns_rdataclass_in, "view", &view));
-	else if (!keepview)
-		keepview = ISC_TRUE;
+	REQUIRE(view == NULL || !createview);
 
-	zone = *zonep;
-	if (zone == NULL)
-		CHECK(dns_zone_create(&zone, mctx));
+	/*
+	 * Create the zone structure.
+	 */
+	result = dns_zone_create(&zone, mctx);
+	if (result != ISC_R_SUCCESS) {
+		return (result);
+	}
 
-	isc_buffer_constinit(&buffer, name, strlen(name));
-	isc_buffer_add(&buffer, strlen(name));
-	dns_fixedname_init(&fixorigin);
-	origin = dns_fixedname_name(&fixorigin);
-	CHECK(dns_name_fromtext(origin, &buffer, dns_rootname, 0, NULL));
-	CHECK(dns_zone_setorigin(zone, origin));
-	dns_zone_setview(zone, view);
+	/*
+	 * Set zone type and origin.
+	 */
 	dns_zone_settype(zone, dns_zone_master);
-	dns_zone_setclass(zone, view->rdclass);
-	dns_view_addzone(view, zone);
+	origin = dns_fixedname_initname(&fixed_origin);
+	result = dns_name_fromstring(origin, name, 0, NULL);
+	if (result != ISC_R_SUCCESS) {
+		goto detach_zone;
+	}
+	result = dns_zone_setorigin(zone, origin);
+	if (result != ISC_R_SUCCESS) {
+		goto detach_zone;
+	}
 
-	if (!keepview)
-		dns_view_detach(&view);
+	/*
+	 * If requested, create a view.
+	 */
+	if (createview) {
+		result = dns_test_makeview("view", &view);
+		if (result != ISC_R_SUCCESS) {
+			goto detach_zone;
+		}
+	}
+
+	/*
+	 * If a view was passed as an argument or created above, attach the
+	 * created zone to it.  Otherwise, set the zone's class to IN.
+	 */
+	if (view != NULL) {
+		dns_zone_setview(zone, view);
+		dns_zone_setclass(zone, view->rdclass);
+		dns_view_addzone(view, zone);
+	} else {
+		dns_zone_setclass(zone, dns_rdataclass_in);
+	}
 
 	*zonep = zone;
 
 	return (ISC_R_SUCCESS);
 
-  cleanup:
-	if (zone != NULL)
-		dns_zone_detach(&zone);
-	if (view != NULL)
-		dns_view_detach(&view);
+ detach_zone:
+	dns_zone_detach(&zone);
+
 	return (result);
 }
 
@@ -297,7 +360,7 @@ dns_test_closezonemgr(void) {
  * Sleep for 'usec' microseconds.
  */
 void
-dns_test_nap(isc_uint32_t usec) {
+dns_test_nap(uint32_t usec) {
 #ifdef HAVE_NANOSLEEP
 	struct timespec ts;
 
@@ -323,8 +386,7 @@ dns_test_loaddb(dns_db_t **db, dns_dbtype_t dbtype, const char *origin,
 	dns_fixedname_t		fixed;
 	dns_name_t		*name;
 
-	dns_fixedname_init(&fixed);
-	name = dns_fixedname_name(&fixed);
+	name = dns_fixedname_initname(&fixed);
 
 	result = dns_name_fromstring(name, origin, 0, NULL);
 	if (result != ISC_R_SUCCESS)
@@ -351,6 +413,29 @@ fromhex(char c) {
 	printf("bad input format: %02x\n", c);
 	exit(3);
 	/* NOTREACHED */
+}
+
+/*
+ * Format contents of given memory region as a hex string, using the buffer
+ * of length 'buflen' pointed to by 'buf'. 'buflen' must be at least three
+ * times 'len'. Always returns 'buf'.
+ */
+char *
+dns_test_tohex(const unsigned char *data, size_t len, char *buf, size_t buflen)
+{
+	isc_constregion_t source = {
+		.base = data,
+		.length = len
+	};
+	isc_buffer_t target;
+	isc_result_t result;
+
+	memset(buf, 0, buflen);
+	isc_buffer_init(&target, buf, buflen);
+	result = isc_hex_totext((isc_region_t *)&source, 1, " ", &target);
+	assert_int_equal(result, ISC_R_SUCCESS);
+
+	return (buf);
 }
 
 isc_result_t
@@ -408,3 +493,184 @@ dns_test_getdata(const char *file, unsigned char *buf,
 	isc_stdio_close(f);
 	return (result);
 }
+
+static void
+nullmsg(dns_rdatacallbacks_t *cb, const char *fmt, ...) {
+	UNUSED(cb);
+	UNUSED(fmt);
+}
+
+isc_result_t
+dns_test_rdatafromstring(dns_rdata_t *rdata, dns_rdataclass_t rdclass,
+			 dns_rdatatype_t rdtype, unsigned char *dst,
+			 size_t dstlen, const char *src, bool warnings)
+{
+	dns_rdatacallbacks_t callbacks;
+	isc_buffer_t source, target;
+	isc_lex_t *lex = NULL;
+	isc_lexspecials_t specials = { 0 };
+	isc_result_t result;
+	size_t length;
+
+	REQUIRE(rdata != NULL);
+	REQUIRE(DNS_RDATA_INITIALIZED(rdata));
+	REQUIRE(dst != NULL);
+	REQUIRE(src != NULL);
+
+	/*
+	 * Set up source to hold the input string.
+	 */
+	length = strlen(src);
+	isc_buffer_constinit(&source, src, length);
+	isc_buffer_add(&source, length);
+
+	/*
+	 * Create a lexer as one is required by dns_rdata_fromtext().
+	 */
+	result = isc_lex_create(mctx, 64, &lex);
+	if (result != ISC_R_SUCCESS) {
+		return (result);
+	}
+
+	/*
+	 * Set characters which will be treated as valid multi-line RDATA
+	 * delimiters while reading the source string.  These should match
+	 * specials from lib/dns/master.c.
+	 */
+	specials[0] = 1;
+	specials['('] = 1;
+	specials[')'] = 1;
+	specials['"'] = 1;
+	isc_lex_setspecials(lex, specials);
+
+	/*
+	 * Expect DNS masterfile comments.
+	 */
+	isc_lex_setcomments(lex, ISC_LEXCOMMENT_DNSMASTERFILE);
+
+	/*
+	 * Point lexer at source.
+	 */
+	result = isc_lex_openbuffer(lex, &source);
+	if (result != ISC_R_SUCCESS) {
+		goto destroy_lexer;
+	}
+
+	/*
+	 * Set up target for storing uncompressed wire form of provided RDATA.
+	 */
+	isc_buffer_init(&target, dst, dstlen);
+
+	/*
+	 * Set up callbacks so warnings and errors are not printed.
+	 */
+	if (!warnings) {
+		dns_rdatacallbacks_init(&callbacks);
+		callbacks.warn = callbacks.error = nullmsg;
+	}
+
+	/*
+	 * Parse input string, determining result.
+	 */
+	result = dns_rdata_fromtext(rdata, rdclass, rdtype, lex, dns_rootname,
+				    0, mctx, &target, &callbacks);
+
+ destroy_lexer:
+	isc_lex_destroy(&lex);
+
+	return (result);
+}
+
+void
+dns_test_namefromstring(const char *namestr, dns_fixedname_t *fname) {
+	size_t length;
+	isc_buffer_t *b = NULL;
+	isc_result_t result;
+	dns_name_t *name;
+
+	length = strlen(namestr);
+
+	name = dns_fixedname_initname(fname);
+
+	result = isc_buffer_allocate(mctx, &b, length);
+	assert_int_equal(result, ISC_R_SUCCESS);
+
+	isc_buffer_putmem(b, (const unsigned char *) namestr, length);
+	result = dns_name_fromtext(name, b, dns_rootname, 0, NULL);
+	assert_int_equal(result, ISC_R_SUCCESS);
+
+	isc_buffer_free(&b);
+}
+
+isc_result_t
+dns_test_difffromchanges(dns_diff_t *diff, const zonechange_t *changes,
+			 bool warnings)
+{
+	isc_result_t result = ISC_R_SUCCESS;
+	unsigned char rdata_buf[1024];
+	dns_difftuple_t *tuple = NULL;
+	isc_consttextregion_t region;
+	dns_rdatatype_t rdatatype;
+	dns_fixedname_t fixedname;
+	dns_rdata_t rdata;
+	dns_name_t *name;
+	size_t i;
+
+	REQUIRE(diff != NULL);
+	REQUIRE(changes != NULL);
+
+	dns_diff_init(mctx, diff);
+
+	for (i = 0; changes[i].owner != NULL; i++) {
+		/*
+		 * Parse owner name.
+		 */
+		name = dns_fixedname_initname(&fixedname);
+		result = dns_name_fromstring(name, changes[i].owner, 0, mctx);
+		if (result != ISC_R_SUCCESS) {
+			break;
+		}
+
+		/*
+		 * Parse RDATA type.
+		 */
+		region.base = changes[i].type;
+		region.length = strlen(changes[i].type);
+		result = dns_rdatatype_fromtext(&rdatatype,
+						(isc_textregion_t *)&region);
+		if (result != ISC_R_SUCCESS) {
+			break;
+		}
+
+		/*
+		 * Parse RDATA.
+		 */
+		dns_rdata_init(&rdata);
+		result = dns_test_rdatafromstring(&rdata, dns_rdataclass_in,
+						  rdatatype, rdata_buf,
+						  sizeof(rdata_buf),
+						  changes[i].rdata,
+						  warnings);
+		if (result != ISC_R_SUCCESS) {
+			break;
+		}
+
+		/*
+		 * Create a diff tuple for the parsed change and append it to
+		 * the diff.
+		 */
+		result = dns_difftuple_create(mctx, changes[i].op, name,
+					      changes[i].ttl, &rdata, &tuple);
+		if (result != ISC_R_SUCCESS) {
+			break;
+		}
+		dns_diff_append(diff, &tuple);
+	}
+
+	if (result != ISC_R_SUCCESS) {
+		dns_diff_clear(diff);
+	}
+
+	return (result);
+}
+#endif /* HAVE_CMOCKA */

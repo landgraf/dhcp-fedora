@@ -1,17 +1,22 @@
 /*
- * Copyright (C) 1998-2002, 2004-2007, 2009, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: netaddr.h,v 1.37 2009/01/17 23:47:43 tbox Exp $ */
 
 #ifndef ISC_NETADDR_H
 #define ISC_NETADDR_H 1
 
 /*! \file isc/netaddr.h */
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/lang.h>
 #include <isc/net.h>
@@ -33,24 +38,24 @@ struct isc_netaddr {
 		char un[sizeof(((struct sockaddr_un *)0)->sun_path)];
 #endif
 	} type;
-	isc_uint32_t zone;
+	uint32_t zone;
 };
 
-isc_boolean_t
+bool
 isc_netaddr_equal(const isc_netaddr_t *a, const isc_netaddr_t *b);
 
 /*%<
- * Compare network addresses 'a' and 'b'.  Return #ISC_TRUE if
- * they are equal, #ISC_FALSE if not.
+ * Compare network addresses 'a' and 'b'.  Return #true if
+ * they are equal, #false if not.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_eqprefix(const isc_netaddr_t *a, const isc_netaddr_t *b,
 		     unsigned int prefixlen);
 /*%<
  * Compare the 'prefixlen' most significant bits of the network
  * addresses 'a' and 'b'.  If 'b''s scope is zero then 'a''s scope is
- * ignored.  Return #ISC_TRUE if they are equal, #ISC_FALSE if not.
+ * ignored.  Return #true if they are equal, #false if not.
  */
 
 isc_result_t
@@ -105,9 +110,9 @@ isc_result_t
 isc_netaddr_frompath(isc_netaddr_t *netaddr, const char *path);
 
 void
-isc_netaddr_setzone(isc_netaddr_t *netaddr, isc_uint32_t zone);
+isc_netaddr_setzone(isc_netaddr_t *netaddr, uint32_t zone);
 
-isc_uint32_t
+uint32_t
 isc_netaddr_getzone(const isc_netaddr_t *netaddr);
 
 void
@@ -122,34 +127,34 @@ isc_netaddr_any6(isc_netaddr_t *netaddr);
  * Return the IPv6 wildcard address.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_ismulticast(isc_netaddr_t *na);
 /*%<
- * Returns ISC_TRUE if the address is a multicast address.
+ * Returns true if the address is a multicast address.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_isexperimental(isc_netaddr_t *na);
 /*%<
- * Returns ISC_TRUE if the address is a experimental (CLASS E) address.
+ * Returns true if the address is a experimental (CLASS E) address.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_islinklocal(isc_netaddr_t *na);
 /*%<
- * Returns #ISC_TRUE if the address is a link local address.
+ * Returns #true if the address is a link local address.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_issitelocal(isc_netaddr_t *na);
 /*%<
- * Returns #ISC_TRUE if the address is a site local address.
+ * Returns #true if the address is a site local address.
  */
 
-isc_boolean_t
+bool
 isc_netaddr_isnetzero(isc_netaddr_t *na);
 /*%<
- * Returns #ISC_TRUE if the address is in net zero.
+ * Returns #true if the address is in net zero.
  */
 
 void
@@ -172,6 +177,12 @@ isc_netaddr_prefixok(const isc_netaddr_t *na, unsigned int prefixlen);
  *	ISC_R_FAILURE		extra bits.
  */
 
+bool
+isc_netaddr_isloopback(const isc_netaddr_t *na);
+/*
+ * Test whether the netaddr 'na' is a loopback IPv4 or IPv6 address (in
+ * 127.0.0.0/8 or ::1).
+ */
 ISC_LANG_ENDDECLS
 
 #endif /* ISC_NETADDR_H */

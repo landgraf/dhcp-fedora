@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2011, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: update.h,v 1.5 2011/08/30 23:46:53 tbox Exp $ */
 
 #ifndef DNS_UPDATE_H
 #define DNS_UPDATE_H 1
@@ -16,6 +18,8 @@
 /***
  ***	Imports
  ***/
+
+#include <inttypes.h>
 
 #include <isc/lang.h>
 
@@ -34,8 +38,8 @@ ISC_LANG_BEGINDECLS
  ***	Functions
  ***/
 
-isc_uint32_t
-dns_update_soaserial(isc_uint32_t serial, dns_updatemethod_t method);
+uint32_t
+dns_update_soaserial(uint32_t serial, dns_updatemethod_t method);
 /*%<
  * Return the next serial number after 'serial', depending on the
  * update method 'method':
@@ -49,12 +53,12 @@ dns_update_soaserial(isc_uint32_t serial, dns_updatemethod_t method);
 isc_result_t
 dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 		      dns_dbversion_t *oldver, dns_dbversion_t *newver,
-		      dns_diff_t *diff, isc_uint32_t sigvalidityinterval);
+		      dns_diff_t *diff, uint32_t sigvalidityinterval);
 
 isc_result_t
 dns_update_signaturesinc(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 			 dns_dbversion_t *oldver, dns_dbversion_t *newver,
-			 dns_diff_t *diff, isc_uint32_t sigvalidityinterval,
+			 dns_diff_t *diff, uint32_t sigvalidityinterval,
 			 dns_update_state_t **state);
 
 ISC_LANG_ENDDECLS

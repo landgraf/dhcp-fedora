@@ -1,17 +1,16 @@
 /*
- * Copyright (C) 1996-2001, 2004, 2005, 2007, 2011-2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /*! \file lwinetpton.c
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char rcsid[] = "$Id$";
-#endif /* LIBC_SCCS and not lint */
 
 #include <config.h>
 
@@ -72,21 +71,21 @@ static int
 inet_pton4(const char *src, unsigned char *dst) {
 	static const char digits[] = "0123456789";
 	int saw_digit, octets, ch;
-	unsigned char tmp[NS_INADDRSZ], *tp;
+	unsigned char tmp[NS_INADDRSZ] = { 0 }, *tp;
 
 	saw_digit = 0;
 	octets = 0;
-	*(tp = tmp) = 0;
+	tp = tmp;
 	while ((ch = *src++) != '\0') {
 		const char *pch;
 
 		if ((pch = strchr(digits, ch)) != NULL) {
-			unsigned int new = *tp * 10;
+			unsigned int byte = *tp * 10;
 
-			new += (unsigned int)(pch - digits);
-			if (new > 255)
+			byte += (unsigned int)(pch - digits);
+			if (byte > 255)
 				return (0);
-			*tp = new;
+			*tp = byte;
 			if (! saw_digit) {
 				if (++octets > 4)
 					return (0);
@@ -95,12 +94,7 @@ inet_pton4(const char *src, unsigned char *dst) {
 		} else if (ch == '.' && saw_digit) {
 			if (octets == 4)
 				return (0);
-			/*
-			 * "clang --analyse" generates warnings using:
-			 * 		*++tp = 0;
-			 */
 			tp++;
-			*tp = 0;
 			saw_digit = 0;
 		} else
 			return (0);

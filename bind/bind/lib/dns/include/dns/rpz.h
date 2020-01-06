@@ -1,17 +1,22 @@
 /*
- * Copyright (C) 2011-2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id$ */
-
 
 #ifndef DNS_RPZ_H
 #define DNS_RPZ_H 1
 
+#include <stdbool.h>
+
+#include <isc/deprecated.h>
+#include <isc/event.h>
+#include <isc/ht.h>
 #include <isc/lang.h>
 #include <isc/refcount.h>
 #include <isc/rwlock.h>
@@ -38,7 +43,7 @@ ISC_LANG_BEGINDECLS
 #define DNS_RPZ_TCP_ONLY_NAME	DNS_RPZ_PREFIX"tcp-only"
 
 
-typedef isc_uint8_t		dns_rpz_prefix_t;
+typedef uint8_t		dns_rpz_prefix_t;
 
 typedef enum {
 	DNS_RPZ_TYPE_BAD,
@@ -63,22 +68,23 @@ typedef enum {
 	DNS_RPZ_POLICY_NXDOMAIN = 5,	/* 'nxdomain': answer with NXDOMAIN */
 	DNS_RPZ_POLICY_NODATA = 6,	/* 'nodata': answer with ANCOUNT=0 */
 	DNS_RPZ_POLICY_CNAME = 7,	/* 'cname x': answer with x's rrsets */
+	DNS_RPZ_POLICY_DNS64,		/* Apply DN64 to the A rewrite */
 	DNS_RPZ_POLICY_RECORD,
 	DNS_RPZ_POLICY_WILDCNAME,
 	DNS_RPZ_POLICY_MISS,
 	DNS_RPZ_POLICY_ERROR
 } dns_rpz_policy_t;
 
-typedef isc_uint8_t	    dns_rpz_num_t;
+typedef uint8_t	    dns_rpz_num_t;
 
 #define DNS_RPZ_MAX_ZONES   32
 #if DNS_RPZ_MAX_ZONES > 32
 # if DNS_RPZ_MAX_ZONES > 64
 #  error "rpz zone bit masks must fit in a word"
 # endif
-typedef isc_uint64_t	    dns_rpz_zbits_t;
+typedef uint64_t	    dns_rpz_zbits_t;
 #else
-typedef isc_uint32_t	    dns_rpz_zbits_t;
+typedef uint32_t	    dns_rpz_zbits_t;
 #endif
 
 #define DNS_RPZ_ALL_ZBITS   ((dns_rpz_zbits_t)-1)
@@ -166,9 +172,9 @@ typedef struct dns_rpz_popt dns_rpz_popt_t;
 struct dns_rpz_popt {
 	dns_rpz_zbits_t	    no_rd_ok;
 	dns_rpz_zbits_t	    no_log;
-	isc_boolean_t	    break_dnssec;
-	isc_boolean_t	    qname_wait_recurse;
-	isc_boolean_t	    nsip_wait_recurse;
+	bool	    break_dnssec;
+	bool	    qname_wait_recurse;
+	bool	    nsip_wait_recurse;
 	unsigned int	    min_ns_labels;
 	dns_rpz_num_t	    num_zones;
 };
@@ -276,8 +282,8 @@ typedef struct {
 	 */
 	struct {
 		isc_result_t		result;
-		isc_boolean_t		is_zone;
-		isc_boolean_t		authoritative;
+		bool		is_zone;
+		bool		authoritative;
 		dns_zone_t		*zone;
 		dns_db_t		*db;
 		dns_dbnode_t		*node;
@@ -370,4 +376,3 @@ dns_rpz_find_name(dns_rpz_zones_t *rpzs, dns_rpz_type_t rpz_type,
 ISC_LANG_ENDDECLS
 
 #endif /* DNS_RPZ_H */
-

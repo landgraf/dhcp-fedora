@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2009, 2012-2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* $Id: getaddrinfo.c,v 1.3 2009/09/02 23:48:02 tbox Exp $ */
@@ -119,14 +122,23 @@
 
 #include <config.h>
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include <isc/app.h>
 #include <isc/buffer.h>
 #include <isc/lib.h>
 #include <isc/mem.h>
+#include <isc/print.h>
 #include <isc/sockaddr.h>
 #include <isc/string.h>
 #include <isc/util.h>
@@ -294,25 +306,45 @@ getaddrinfo(const char *hostname, const char *servname,
 
 		port = strtol(servname, &e, 10);
 		if (*e == '\0') {
-			if (socktype == 0)
+			if (socktype == 0) {
 				return (EAI_SOCKTYPE);
-			if (port < 0 || port > 65535)
+			}
+			if (port < 0 || port > 65535) {
 				return (EAI_SERVICE);
+			}
 			port = htons((unsigned short) port);
 		} else {
+#ifdef _WIN32
+			WORD wVersionRequested;
+			WSADATA wsaData;
+
+			wVersionRequested = MAKEWORD(2, 0);
+
+			err = WSAStartup(wVersionRequested, &wsaData );
+			if (err != 0) {
+				return (EAI_FAIL);
+			}
+#endif
 			sp = getservbyname(servname, proto);
-			if (sp == NULL)
+			if (sp != NULL)
+				port = sp->s_port;
+#ifdef _WIN32
+			WSACleanup();
+#endif
+			if (sp == NULL) {
 				return (EAI_SERVICE);
-			port = sp->s_port;
+			}
 			if (socktype == 0) {
-				if (strcmp(sp->s_proto, "tcp") == 0)
+				if (strcmp(sp->s_proto, "tcp") == 0) {
 					socktype = SOCK_STREAM;
-				else if (strcmp(sp->s_proto, "udp") == 0)
+				} else if (strcmp(sp->s_proto, "udp") == 0) {
 					socktype = SOCK_DGRAM;
+				}
 			}
 		}
-	} else
+	} else {
 		port = 0;
+	}
 
 	/*
 	 * Next, deal with just a service name, and no hostname.
@@ -364,7 +396,7 @@ getaddrinfo(const char *hostname, const char *servname,
 #ifdef IRS_HAVE_SIN6_SCOPE_ID
 		char *p, *ep;
 		char ntmp[NI_MAXHOST];
-		isc_uint32_t scopeid;
+		uint32_t scopeid;
 #endif
 
 #ifdef IRS_HAVE_SIN6_SCOPE_ID
@@ -373,8 +405,7 @@ getaddrinfo(const char *hostname, const char *servname,
 		 */
 		ntmp[0] = '\0';
 		if (strchr(hostname, '%') != NULL) {
-			strncpy(ntmp, hostname, sizeof(ntmp) - 1);
-			ntmp[sizeof(ntmp) - 1] = '\0';
+			strlcpy(ntmp, hostname, sizeof(ntmp));
 			p = strchr(ntmp, '%');
 			ep = NULL;
 
@@ -384,7 +415,7 @@ getaddrinfo(const char *hostname, const char *servname,
 			 */
 
 			if (p != NULL)
-				scopeid = (isc_uint32_t)strtoul(p + 1,
+				scopeid = (uint32_t)strtoul(p + 1,
 								&ep, 10);
 			if (p != NULL && ep != NULL && ep[0] == '\0')
 				*p = '\0';
@@ -501,7 +532,7 @@ done:
 
 typedef struct gai_restrans {
 	dns_clientrestrans_t	*xid;
-	isc_boolean_t		is_inprogress;
+	bool		is_inprogress;
 	int			error;
 	struct addrinfo		ai_sentinel;
 	struct gai_resstate	*resstate;
@@ -539,8 +570,8 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 	dns_name_t *qdomain;
 	unsigned int namelen;
 	isc_buffer_t b;
-	isc_boolean_t need_v4 = ISC_FALSE;
-	isc_boolean_t need_v6 = ISC_FALSE;
+	bool need_v4 = false;
+	bool need_v6 = false;
 
 	state = isc_mem_get(mctx, sizeof(*state));
 	if (state == NULL)
@@ -550,8 +581,7 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 	namelen = strlen(domain);
 	isc_buffer_constinit(&b, domain, namelen);
 	isc_buffer_add(&b, namelen);
-	dns_fixedname_init(&fixeddomain);
-	qdomain = dns_fixedname_name(&fixeddomain);
+	qdomain = dns_fixedname_initname(&fixeddomain);
 	result = dns_name_fromtext(qdomain, &b, dns_rootname, 0, NULL);
 	if (result != ISC_R_SUCCESS) {
 		isc_mem_put(mctx, state, sizeof(*state));
@@ -562,8 +592,7 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 	namelen = strlen(hostname);
 	isc_buffer_constinit(&b, hostname, namelen);
 	isc_buffer_add(&b, namelen);
-	dns_fixedname_init(&state->fixedname);
-	state->qname = dns_fixedname_name(&state->fixedname);
+	state->qname = dns_fixedname_initname(&state->fixedname);
 	result = dns_name_fromtext(state->qname, &b, qdomain, 0, NULL);
 	if (result != ISC_R_SUCCESS) {
 		isc_mem_put(mctx, state, sizeof(*state));
@@ -571,9 +600,9 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 	}
 
 	if (head->ai_family == AF_UNSPEC || head->ai_family == AF_INET)
-		need_v4 = ISC_TRUE;
+		need_v4 = true;
 	if (head->ai_family == AF_UNSPEC || head->ai_family == AF_INET6)
-		need_v6 = ISC_TRUE;
+		need_v6 = true;
 
 	state->trans6 = NULL;
 	state->trans4 = NULL;
@@ -586,7 +615,7 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 		state->trans4->error = 0;
 		state->trans4->xid = NULL;
 		state->trans4->resstate = state;
-		state->trans4->is_inprogress = ISC_TRUE;
+		state->trans4->is_inprogress = true;
 		state->trans4->ai_sentinel.ai_next = NULL;
 	}
 	if (need_v6) {
@@ -601,7 +630,7 @@ make_resstate(isc_mem_t *mctx, gai_statehead_t *head, const char *hostname,
 		state->trans6->error = 0;
 		state->trans6->xid = NULL;
 		state->trans6->resstate = state;
-		state->trans6->is_inprogress = ISC_TRUE;
+		state->trans6->is_inprogress = true;
 		state->trans6->ai_sentinel.ai_next = NULL;
 	}
 
@@ -681,7 +710,7 @@ process_answer(isc_task_t *task, isc_event_t *event) {
 	dns_clientresevent_t *rev = (dns_clientresevent_t *)event;
 	dns_rdatatype_t qtype;
 	dns_name_t *name;
-	isc_boolean_t wantcname;
+	bool wantcname;
 
 	REQUIRE(trans != NULL);
 	resstate = trans->resstate;
@@ -698,7 +727,7 @@ process_answer(isc_task_t *task, isc_event_t *event) {
 	}
 
 	INSIST(trans->is_inprogress);
-	trans->is_inprogress = ISC_FALSE;
+	trans->is_inprogress = false;
 
 	switch (rev->result) {
 	case ISC_R_SUCCESS:
@@ -725,7 +754,7 @@ process_answer(isc_task_t *task, isc_event_t *event) {
 		goto done;
 	}
 
-	wantcname = ISC_TF((resstate->head->ai_flags & AI_CANONNAME) != 0);
+	wantcname = ((resstate->head->ai_flags & AI_CANONNAME) != 0);
 
 	/* Parse the response and construct the addrinfo chain */
 	for (name = ISC_LIST_HEAD(rev->answerlist); name != NULL;
@@ -738,7 +767,7 @@ process_answer(isc_task_t *task, isc_event_t *event) {
 			isc_buffer_t b;
 
 			isc_buffer_init(&b, cname, sizeof(cname));
-			result = dns_name_totext(name, ISC_TRUE, &b);
+			result = dns_name_totext(name, true, &b);
 			if (result != ISC_R_SUCCESS) {
 				error = EAI_FAIL;
 				goto done;
@@ -905,7 +934,7 @@ resolve_name(int family, const char *hostname, int flags,
 	dns_client_t *client;
 	gai_resstate_t *resstate;
 	gai_statehead_t head;
-	isc_boolean_t all_fail = ISC_TRUE;
+	bool all_fail = true;
 
 	/* get IRS context and the associated parameters */
 	irsctx = NULL;
@@ -952,10 +981,10 @@ resolve_name(int family, const char *hostname, int flags,
 							 resstate->trans4,
 							 &resstate->trans4->xid);
 			if (result == ISC_R_SUCCESS) {
-				resstate->trans4->is_inprogress = ISC_TRUE;
-				all_fail = ISC_FALSE;
+				resstate->trans4->is_inprogress = true;
+				all_fail = false;
 			} else
-				resstate->trans4->is_inprogress = ISC_FALSE;
+				resstate->trans4->is_inprogress = false;
 		}
 		if (resstate->trans6 != NULL) {
 			result = dns_client_startresolve(client,
@@ -967,10 +996,10 @@ resolve_name(int family, const char *hostname, int flags,
 							 resstate->trans6,
 							 &resstate->trans6->xid);
 			if (result == ISC_R_SUCCESS) {
-				resstate->trans6->is_inprogress = ISC_TRUE;
-				all_fail = ISC_FALSE;
+				resstate->trans6->is_inprogress = true;
+				all_fail = false;
 			} else
-				resstate->trans6->is_inprogress= ISC_FALSE;
+				resstate->trans6->is_inprogress= false;
 		}
 	}
 	UNLOCK(&head.list_lock);

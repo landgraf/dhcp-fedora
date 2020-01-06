@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2002, 2004-2007, 2010, 2012, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id: ds.h,v 1.12 2010/12/23 23:47:08 tbox Exp $ */
 
 #ifndef DNS_DS_H
 #define DNS_DS_H 1
@@ -29,7 +31,7 @@ ISC_LANG_BEGINDECLS
 
 isc_result_t
 dns_ds_buildrdata(dns_name_t *owner, dns_rdata_t *key,
-		  unsigned int digest_type, unsigned char *buffer,
+		  dns_dsdigest_t digest_type, unsigned char *buffer,
 		  dns_rdata_t *rdata);
 /*%<
  * Build the rdata of a DS record.

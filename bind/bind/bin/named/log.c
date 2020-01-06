@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 1999-2002, 2004-2007, 2009, 2013, 2014, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
-
-/* $Id: log.c,v 1.49 2009/01/07 01:46:40 jinmei Exp $ */
 
 /*! \file */
 
@@ -36,6 +37,7 @@ static isc_logcategory_t categories[] = {
 	{ "unmatched",	 		0 },
 	{ "update-security",		0 },
 	{ "query-errors",		0 },
+	{ "trust-anchor-telemetry",	0 },
 	{ NULL, 			0 }
 };
 
@@ -59,7 +61,7 @@ static isc_logmodule_t modules[] = {
 };
 
 isc_result_t
-ns_log_init(isc_boolean_t safe) {
+ns_log_init(bool safe) {
 	isc_result_t result;
 	isc_logconfig_t *lcfg = NULL;
 

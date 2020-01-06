@@ -1,13 +1,18 @@
 /*
- * Copyright (C) 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef DNS_IPKEYLIST_H
 #define DNS_IPKEYLIST_H 1
+
+#include <inttypes.h>
 
 #include <isc/types.h>
 #include <dns/types.h>
@@ -21,8 +26,8 @@ struct dns_ipkeylist {
 	isc_dscp_t		*dscps;
 	dns_name_t		**keys;
 	dns_name_t		**labels;
-	isc_uint32_t		count;
-	isc_uint32_t		allocated;
+	uint32_t		count;
+	uint32_t		allocated;
 };
 
 void

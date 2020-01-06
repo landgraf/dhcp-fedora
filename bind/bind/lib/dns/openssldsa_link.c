@@ -1,11 +1,14 @@
 /*
- * Portions Copyright (C) 1999-2002, 2004-2009, 2011-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Portions Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Portions Copyright (C) 1995-2000 by Network Associates, Inc.
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * Portions Copyright (C) Network Associates, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -31,10 +34,12 @@
 
 #ifndef PK11_DSA_DISABLE
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <isc/entropy.h>
 #include <isc/mem.h>
+#include <isc/safe.h>
 #include <isc/sha1.h>
 #include <isc/util.h>
 
@@ -48,7 +53,7 @@
 
 static isc_result_t openssldsa_todns(const dst_key_t *key, isc_buffer_t *data);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if !defined(HAVE_DSA_GET0_PQG)
 static void
 DSA_get0_pqg(const DSA *d, const BIGNUM **p, const BIGNUM **q,
 	     const BIGNUM **g)
@@ -378,7 +383,7 @@ openssldsa_verify(dst_context_t *dctx, const isc_region_t *sig) {
 	}
 }
 
-static isc_boolean_t
+static bool
 openssldsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	DSA *dsa1, *dsa2;
 	const BIGNUM *pub_key1 = NULL, *priv_key1 = NULL;
@@ -390,9 +395,9 @@ openssldsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 	dsa2 = key2->keydata.dsa;
 
 	if (dsa1 == NULL && dsa2 == NULL)
-		return (ISC_TRUE);
+		return (true);
 	else if (dsa1 == NULL || dsa2 == NULL)
-		return (ISC_FALSE);
+		return (false);
 
 	DSA_get0_key(dsa1, &pub_key1, &priv_key1);
 	DSA_get0_key(dsa2, &pub_key2, &priv_key2);
@@ -401,15 +406,15 @@ openssldsa_compare(const dst_key_t *key1, const dst_key_t *key2) {
 
 	if (BN_cmp(p1, p2) != 0 || BN_cmp(q1, q2) != 0 ||
 	    BN_cmp(g1, g2) != 0 || BN_cmp(pub_key1, pub_key2) != 0)
-		return (ISC_FALSE);
+		return (false);
 
 	if (priv_key1 != NULL || priv_key2 != NULL) {
 		if (priv_key1 == NULL || priv_key2 == NULL)
-			return (ISC_FALSE);
+			return (false);
 		if (BN_cmp(priv_key1, priv_key2))
-			return (ISC_FALSE);
+			return (false);
 	}
-	return (ISC_TRUE);
+	return (true);
 }
 
 #if OPENSSL_VERSION_NUMBER > 0x00908000L
@@ -451,7 +456,7 @@ openssldsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 	UNUSED(unused);
 
 	result = dst__entropy_getdata(rand_array, sizeof(rand_array),
-				      ISC_FALSE);
+				      false);
 	if (result != ISC_R_SUCCESS)
 		return (result);
 
@@ -483,6 +488,7 @@ openssldsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 					       DST_R_OPENSSLFAILURE));
 	}
 	BN_GENCB_free(cb);
+	cb = NULL;
 #else
 	dsa = DSA_generate_parameters(key->key_size, rand_array,
 				      ISC_SHA1_DIGESTLENGTH, NULL, NULL,
@@ -505,13 +511,13 @@ openssldsa_generate(dst_key_t *key, int unused, void (*callback)(int)) {
 	return (ISC_R_SUCCESS);
 }
 
-static isc_boolean_t
+static bool
 openssldsa_isprivate(const dst_key_t *key) {
 	DSA *dsa = key->keydata.dsa;
 	const BIGNUM *priv_key = NULL;
 
 	DSA_get0_key(dsa, NULL, &priv_key);
-	return (ISC_TF(dsa != NULL && priv_key != NULL));
+	return (dsa != NULL && priv_key != NULL);
 }
 
 static void
@@ -711,7 +717,7 @@ openssldsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		pub->keydata.pkey = NULL;
 		key->key_size = pub->key_size;
 		dst__privstruct_free(&priv, mctx);
-		memset(&priv, 0, sizeof(priv));
+		isc_safe_memwipe(&priv, sizeof(priv));
 		return (ISC_R_SUCCESS);
 	}
 
@@ -747,7 +753,7 @@ openssldsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		}
 	}
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	DSA_set0_key(dsa, pub_key, priv_key);
 	DSA_set0_pqg(dsa, p, q, g);
 	key->key_size = BN_num_bits(p);
@@ -762,7 +768,7 @@ openssldsa_parse(dst_key_t *key, isc_lex_t *lexer, dst_key_t *pub) {
 		BN_free(g);
 	openssldsa_destroy(key);
 	dst__privstruct_free(&priv, mctx);
-	memset(&priv, 0, sizeof(priv));
+	isc_safe_memwipe(&priv, sizeof(priv));
 	return (ret);
 }
 

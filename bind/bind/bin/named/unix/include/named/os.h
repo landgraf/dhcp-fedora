@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 1999-2002, 2004, 2005, 2007-2009, 2014, 2016, 2017  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 #ifndef NS_OS_H
@@ -12,6 +15,7 @@
 /*! \file */
 
 #include <pwd.h>
+#include <stdbool.h>
 
 #include <isc/types.h>
 
@@ -46,12 +50,12 @@ void
 ns_os_minprivs(void);
 
 FILE *
-ns_os_openfile(const char *filename, mode_t mode, isc_boolean_t switch_user);
+ns_os_openfile(const char *filename, mode_t mode, bool switch_user);
 
 void
-ns_os_writepidfile(const char *filename, isc_boolean_t first_time);
+ns_os_writepidfile(const char *filename, bool first_time);
 
-isc_boolean_t
+bool
 ns_os_issingleton(const char *filename);
 
 void

@@ -1,15 +1,19 @@
 /*
- * Copyright (C) 1998-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 #include <config.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include <isc/buffer.h>
 #include <isc/parseint.h>
@@ -132,6 +136,8 @@
 	{ DNS_KEYALG_ECCGOST, "ECCGOST", 0 }, \
 	{ DNS_KEYALG_ECDSA256, "ECDSAP256SHA256", 0 }, \
 	{ DNS_KEYALG_ECDSA384, "ECDSAP384SHA384", 0 }, \
+	{ DNS_KEYALG_ED25519, "ED25519", 0 }, \
+	{ DNS_KEYALG_ED448, "ED448", 0 }, \
 	{ DNS_KEYALG_INDIRECT, "INDIRECT", 0 }, \
 	{ DNS_KEYALG_PRIVATEDNS, "PRIVATEDNS", 0 }, \
 	{ DNS_KEYALG_PRIVATEOID, "PRIVATEOID", 0 }, \
@@ -233,33 +239,41 @@ str_totext(const char *source, isc_buffer_t *target) {
 
 static isc_result_t
 maybe_numeric(unsigned int *valuep, isc_textregion_t *source,
-	      unsigned int max, isc_boolean_t hex_allowed)
+	      unsigned int max, bool hex_allowed)
 {
 	isc_result_t result;
-	isc_uint32_t n;
+	uint32_t n;
 	char buffer[NUMBERSIZE];
+	int v;
 
 	if (! isdigit(source->base[0] & 0xff) ||
 	    source->length > NUMBERSIZE - 1)
+	{
 		return (ISC_R_BADNUMBER);
+	}
 
 	/*
 	 * We have a potential number.	Try to parse it with
 	 * isc_parse_uint32().	isc_parse_uint32() requires
 	 * null termination, so we must make a copy.
 	 */
-	strncpy(buffer, source->base, sizeof(buffer));
-	buffer[sizeof(buffer) - 1] = '\0';
-
+	v = snprintf(buffer, sizeof(buffer), "%.*s",
+		     (int)source->length, source->base);
+	if (v < 0 || (unsigned)v != source->length) {
+		return (ISC_R_BADNUMBER);
+	}
 	INSIST(buffer[source->length] == '\0');
 
 	result = isc_parse_uint32(&n, buffer, 10);
-	if (result == ISC_R_BADNUMBER && hex_allowed)
+	if (result == ISC_R_BADNUMBER && hex_allowed) {
 		result = isc_parse_uint32(&n, buffer, 16);
-	if (result != ISC_R_SUCCESS)
+	}
+	if (result != ISC_R_SUCCESS) {
 		return (result);
-	if (n > max)
+	}
+	if (n > max) {
 		return (ISC_R_RANGE);
+	}
 	*valuep = n;
 	return (ISC_R_SUCCESS);
 }
@@ -271,7 +285,7 @@ dns_mnemonic_fromtext(unsigned int *valuep, isc_textregion_t *source,
 	isc_result_t result;
 	int i;
 
-	result = maybe_numeric(valuep, source, max, ISC_FALSE);
+	result = maybe_numeric(valuep, source, max, false);
 	if (result != ISC_R_BADNUMBER)
 		return (result);
 
@@ -367,8 +381,9 @@ dns_secalg_format(dns_secalg_t alg, char *cp, unsigned int size) {
 	result = dns_secalg_totext(alg, &b);
 	isc_buffer_usedregion(&b, &r);
 	r.base[r.length] = 0;
-	if (result != ISC_R_SUCCESS)
+	if (result != ISC_R_SUCCESS) {
 		r.base[0] = 0;
+	}
 }
 
 isc_result_t
@@ -397,9 +412,12 @@ dns_keyflags_fromtext(dns_keyflags_t *flagsp, isc_textregion_t *source)
 {
 	isc_result_t result;
 	char *text, *end;
-	unsigned int value, mask;
+	unsigned int value = 0;
+#ifdef notyet
+	unsigned int mask = 0;
+#endif
 
-	result = maybe_numeric(&value, source, 0xffff, ISC_TRUE);
+	result = maybe_numeric(&value, source, 0xffff, true);
 	if (result == ISC_R_SUCCESS) {
 		*flagsp = value;
 		return (ISC_R_SUCCESS);
@@ -409,7 +427,6 @@ dns_keyflags_fromtext(dns_keyflags_t *flagsp, isc_textregion_t *source)
 
 	text = source->base;
 	end = source->base + source->length;
-	value = mask = 0;
 
 	while (text < end) {
 		struct keyflag *p;
@@ -429,8 +446,8 @@ dns_keyflags_fromtext(dns_keyflags_t *flagsp, isc_textregion_t *source)
 #ifdef notyet
 		if ((mask & p->mask) != 0)
 			warn("overlapping key flags");
-#endif
 		mask |= p->mask;
+#endif
 		text += len;
 		if (delim != NULL)
 			text++; /* Skip "|" */
@@ -463,8 +480,9 @@ dns_dsdigest_format(dns_dsdigest_t typ, char *cp, unsigned int size) {
 	result = dns_dsdigest_totext(typ, &b);
 	isc_buffer_usedregion(&b, &r);
 	r.base[r.length] = 0;
-	if (result != ISC_R_SUCCESS)
+	if (result != ISC_R_SUCCESS) {
 		r.base[0] = 0;
+	}
 }
 
 /*
@@ -500,8 +518,12 @@ dns_rdataclass_fromtext(dns_rdataclass_t *classp, isc_textregion_t *source) {
 			char *endp;
 			unsigned int val;
 
-			strncpy(buf, source->base + 5, source->length - 5);
-			buf[source->length - 5] = '\0';
+			/*
+			 * source->base is not required to be NUL terminated.
+			 * Copy up to remaining bytes and NUL terminate.
+			 */
+			snprintf(buf, sizeof(buf), "%.*s",
+				 (int)(source->length - 5), source->base + 5);
 			val = strtoul(buf, &endp, 10);
 			if (*endp == '\0' && val <= 0xffff) {
 				*classp = (dns_rdataclass_t)val;

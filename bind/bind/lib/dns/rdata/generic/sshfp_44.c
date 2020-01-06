@@ -1,12 +1,14 @@
 /*
- * Copyright (C) 2003, 2004, 2006, 2007, 2009, 2011-2013, 2015, 2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
-/* $Id$ */
 
 /* RFC 4255 */
 
@@ -18,6 +20,7 @@
 static inline isc_result_t
 fromtext_sshfp(ARGS_FROMTEXT) {
 	isc_token_t token;
+	int len = -1;
 
 	REQUIRE(type == dns_rdatatype_sshfp);
 
@@ -31,7 +34,7 @@ fromtext_sshfp(ARGS_FROMTEXT) {
 	 * Algorithm.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint8_tobuffer(token.value.as_ulong, target));
@@ -40,15 +43,29 @@ fromtext_sshfp(ARGS_FROMTEXT) {
 	 * Digest type.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint8_tobuffer(token.value.as_ulong, target));
 
 	/*
+	 * Enforce known digest lengths.
+	 */
+	switch (token.value.as_ulong) {
+	case 1:
+		len = ISC_SHA1_DIGESTLENGTH;
+		break;
+	case 2:
+		len = ISC_SHA256_DIGESTLENGTH;
+		break;
+	default:
+		break;
+	}
+
+	/*
 	 * Digest.
 	 */
-	return (isc_hex_tobuffer(lexer, target, -1));
+	return (isc_hex_tobuffer(lexer, target, len));
 }
 
 static inline isc_result_t
@@ -69,7 +86,7 @@ totext_sshfp(ARGS_TOTEXT) {
 	 */
 	n = uint8_fromregion(&sr);
 	isc_region_consume(&sr, 1);
-	sprintf(buf, "%u ", n);
+	snprintf(buf, sizeof(buf), "%u ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -77,8 +94,12 @@ totext_sshfp(ARGS_TOTEXT) {
 	 */
 	n = uint8_fromregion(&sr);
 	isc_region_consume(&sr, 1);
-	sprintf(buf, "%u", n);
+	snprintf(buf, sizeof(buf), "%u", n);
 	RETERR(str_totext(buf, target));
+
+	if (sr.length == 0U) {
+		return (ISC_R_SUCCESS);
+	}
 
 	/*
 	 * Digest.
@@ -108,8 +129,14 @@ fromwire_sshfp(ARGS_FROMWIRE) {
 	UNUSED(options);
 
 	isc_buffer_activeregion(source, &sr);
-	if (sr.length < 4)
+	if (sr.length < 2) {
 		return (ISC_R_UNEXPECTEDEND);
+	}
+
+	if ((sr.base[1] == 1 && sr.length != ISC_SHA1_DIGESTLENGTH + 2) ||
+	    (sr.base[1] == 2 && sr.length != ISC_SHA256_DIGESTLENGTH + 2)) {
+		return (DNS_R_FORMERR);
+	}
 
 	isc_buffer_forward(source, sr.length);
 	return (mem_tobuffer(target, sr.base, sr.length));
@@ -149,7 +176,7 @@ fromstruct_sshfp(ARGS_FROMSTRUCT) {
 	dns_rdata_sshfp_t *sshfp = source;
 
 	REQUIRE(type == dns_rdatatype_sshfp);
-	REQUIRE(source != NULL);
+	REQUIRE(sshfp != NULL);
 	REQUIRE(sshfp->common.rdtype == type);
 	REQUIRE(sshfp->common.rdclass == rdclass);
 
@@ -168,7 +195,7 @@ tostruct_sshfp(ARGS_TOSTRUCT) {
 	isc_region_t region;
 
 	REQUIRE(rdata->type == dns_rdatatype_sshfp);
-	REQUIRE(target != NULL);
+	REQUIRE(sshfp != NULL);
 	REQUIRE(rdata->length != 0);
 
 	sshfp->common.rdclass = rdata->rdclass;
@@ -228,7 +255,7 @@ digest_sshfp(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_sshfp(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_sshfp);
@@ -238,10 +265,10 @@ checkowner_sshfp(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_sshfp(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_sshfp);
@@ -250,7 +277,7 @@ checknames_sshfp(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int

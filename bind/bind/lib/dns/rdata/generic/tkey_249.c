@@ -1,15 +1,12 @@
 /*
- * Copyright (C) 1999-2004, 2007, 2009, 2011, 2012, 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
-/* $Id$ */
-
-/*
- * Reviewed: Thu Mar 16 17:35:30 PST 2000 by halley.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* draft-ietf-dnsext-tkey-01.txt */
@@ -38,7 +35,7 @@ fromtext_tkey(ARGS_FROMTEXT) {
 	 * Algorithm.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
 	if (origin == NULL)
@@ -50,21 +47,21 @@ fromtext_tkey(ARGS_FROMTEXT) {
 	 * Inception.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	RETERR(uint32_tobuffer(token.value.as_ulong, target));
 
 	/*
 	 * Expiration.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	RETERR(uint32_tobuffer(token.value.as_ulong, target));
 
 	/*
 	 * Mode.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -73,7 +70,7 @@ fromtext_tkey(ARGS_FROMTEXT) {
 	 * Error.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_string,
-				      ISC_FALSE));
+				      false));
 	if (dns_tsigrcode_fromtext(&rcode, &token.value.as_textregion)
 				!= ISC_R_SUCCESS)
 	{
@@ -90,7 +87,7 @@ fromtext_tkey(ARGS_FROMTEXT) {
 	 * Key Size.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -104,7 +101,7 @@ fromtext_tkey(ARGS_FROMTEXT) {
 	 * Other Size.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      ISC_FALSE));
+				      false));
 	if (token.value.as_ulong > 0xffffU)
 		RETTOK(ISC_R_RANGE);
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
@@ -122,7 +119,7 @@ totext_tkey(ARGS_TOTEXT) {
 	unsigned long n;
 	dns_name_t name;
 	dns_name_t prefix;
-	isc_boolean_t sub;
+	bool sub;
 
 	REQUIRE(rdata->type == dns_rdatatype_tkey);
 	REQUIRE(rdata->length != 0);
@@ -145,7 +142,7 @@ totext_tkey(ARGS_TOTEXT) {
 	 */
 	n = uint32_fromregion(&sr);
 	isc_region_consume(&sr, 4);
-	sprintf(buf, "%lu ", n);
+	snprintf(buf, sizeof(buf), "%lu ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -153,7 +150,7 @@ totext_tkey(ARGS_TOTEXT) {
 	 */
 	n = uint32_fromregion(&sr);
 	isc_region_consume(&sr, 4);
-	sprintf(buf, "%lu ", n);
+	snprintf(buf, sizeof(buf), "%lu ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -161,7 +158,7 @@ totext_tkey(ARGS_TOTEXT) {
 	 */
 	n = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%lu ", n);
+	snprintf(buf, sizeof(buf), "%lu ", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -172,7 +169,7 @@ totext_tkey(ARGS_TOTEXT) {
 	if (dns_tsigrcode_totext((dns_rcode_t)n, target) == ISC_R_SUCCESS)
 		RETERR(str_totext(" ", target));
 	else {
-		sprintf(buf, "%lu ", n);
+		snprintf(buf, sizeof(buf), "%lu ", n);
 		RETERR(str_totext(buf, target));
 	}
 
@@ -181,7 +178,7 @@ totext_tkey(ARGS_TOTEXT) {
 	 */
 	n = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%lu", n);
+	snprintf(buf, sizeof(buf), "%lu", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -209,7 +206,7 @@ totext_tkey(ARGS_TOTEXT) {
 	 */
 	n = uint16_fromregion(&sr);
 	isc_region_consume(&sr, 2);
-	sprintf(buf, "%lu", n);
+	snprintf(buf, sizeof(buf), "%lu", n);
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -346,7 +343,7 @@ fromstruct_tkey(ARGS_FROMSTRUCT) {
 	dns_rdata_tkey_t *tkey = source;
 
 	REQUIRE(type == dns_rdatatype_tkey);
-	REQUIRE(source != NULL);
+	REQUIRE(tkey != NULL);
 	REQUIRE(tkey->common.rdtype == type);
 	REQUIRE(tkey->common.rdclass == rdclass);
 
@@ -406,7 +403,7 @@ tostruct_tkey(ARGS_TOSTRUCT) {
 	isc_region_t sr;
 
 	REQUIRE(rdata->type == dns_rdatatype_tkey);
-	REQUIRE(target != NULL);
+	REQUIRE(tkey != NULL);
 	REQUIRE(rdata->length != 0);
 
 	tkey->common.rdclass = rdata->rdclass;
@@ -492,7 +489,7 @@ static inline void
 freestruct_tkey(ARGS_FREESTRUCT) {
 	dns_rdata_tkey_t *tkey = (dns_rdata_tkey_t *) source;
 
-	REQUIRE(source != NULL);
+	REQUIRE(tkey != NULL);
 
 	if (tkey->mctx == NULL)
 		return;
@@ -527,7 +524,7 @@ digest_tkey(ARGS_DIGEST) {
 	return (ISC_R_NOTIMPLEMENTED);
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_tkey(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_tkey);
@@ -537,10 +534,10 @@ checkowner_tkey(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_tkey(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_tkey);
@@ -549,10 +546,10 @@ checknames_tkey(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_result_t
+static inline int
 casecompare_tkey(ARGS_COMPARE) {
 	return (compare_tkey(rdata1, rdata2));
 }

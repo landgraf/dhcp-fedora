@@ -1,9 +1,12 @@
 /*
- * Copyright (C) 2014-2016  Internet Systems Consortium, Inc. ("ISC")
+ * Copyright (C) Internet Systems Consortium, Inc. ("ISC")
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * See the COPYRIGHT file distributed with this work for additional
+ * information regarding copyright ownership.
  */
 
 /* draft-ietf-dnsop-delegation-trust-maintainance-14 */
@@ -88,7 +91,7 @@ tostruct_cds(ARGS_TOSTRUCT) {
 	dns_rdata_cds_t *cds = target;
 
 	REQUIRE(rdata->type == dns_rdatatype_cds);
-	REQUIRE(target != NULL);
+	REQUIRE(cds != NULL);
 	REQUIRE(rdata->length != 0);
 
 	/*
@@ -103,17 +106,19 @@ tostruct_cds(ARGS_TOSTRUCT) {
 
 static inline void
 freestruct_cds(ARGS_FREESTRUCT) {
-	dns_rdata_cds_t *ds = source;
+	dns_rdata_cds_t *cds = source;
 
-	REQUIRE(ds != NULL);
-	REQUIRE(ds->common.rdtype == dns_rdatatype_cds);
+	REQUIRE(cds != NULL);
+	REQUIRE(cds->common.rdtype == dns_rdatatype_cds);
 
-	if (ds->mctx == NULL)
+	if (cds->mctx == NULL) {
 		return;
+	}
 
-	if (ds->digest != NULL)
-		isc_mem_free(ds->mctx, ds->digest);
-	ds->mctx = NULL;
+	if (cds->digest != NULL) {
+		isc_mem_free(cds->mctx, cds->digest);
+	}
+	cds->mctx = NULL;
 }
 
 static inline isc_result_t
@@ -138,7 +143,7 @@ digest_cds(ARGS_DIGEST) {
 	return ((digest)(arg, &r));
 }
 
-static inline isc_boolean_t
+static inline bool
 checkowner_cds(ARGS_CHECKOWNER) {
 
 	REQUIRE(type == dns_rdatatype_cds);
@@ -148,10 +153,10 @@ checkowner_cds(ARGS_CHECKOWNER) {
 	UNUSED(rdclass);
 	UNUSED(wildcard);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
-static inline isc_boolean_t
+static inline bool
 checknames_cds(ARGS_CHECKNAMES) {
 
 	REQUIRE(rdata->type == dns_rdatatype_cds);
@@ -160,7 +165,7 @@ checknames_cds(ARGS_CHECKNAMES) {
 	UNUSED(owner);
 	UNUSED(bad);
 
-	return (ISC_TRUE);
+	return (true);
 }
 
 static inline int
